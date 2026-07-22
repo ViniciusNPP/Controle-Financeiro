@@ -123,10 +123,19 @@ class _ChartsScreenState extends State<ChartsScreen> {
     return Column(
       children: [
         Expanded(
-          child: PageView(
-            controller: _pageController,
-            onPageChanged: (i) => setState(() => _paginaAtual = i),
-            children: [for (final g in graficos) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: g)],
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              PageView(
+                controller: _pageController,
+                onPageChanged: (i) => setState(() => _paginaAtual = i),
+                children: [for (final g in graficos) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: g)],
+              ),
+              if (_paginaAtual > 0)
+                Positioned(left: 0, child: _setaCarrossel(Icons.chevron_left_rounded, _paginaAnterior)),
+              if (_paginaAtual < graficos.length - 1)
+                Positioned(right: 0, child: _setaCarrossel(Icons.chevron_right_rounded, _proximaPagina)),
+            ],
           ),
         ),
         const SizedBox(height: 12),
@@ -147,6 +156,32 @@ class _ChartsScreenState extends State<ChartsScreen> {
         ),
         const SizedBox(height: 4),
       ],
+    );
+  }
+
+  void _paginaAnterior() {
+    _pageController.previousPage(duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+  }
+
+  void _proximaPagina() {
+    _pageController.nextPage(duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+  }
+
+  /// Seta discreta: fundo translúcido, some quando não há mais pra onde ir
+  /// (controlado pelo chamador via _paginaAtual), fica sutil até ser tocada.
+  Widget _setaCarrossel(IconData icone, VoidCallback aoTocar) {
+    return Material(
+      color: Colors.black.withOpacity(0.06),
+      shape: const CircleBorder(),
+      child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
+        customBorder: const CircleBorder(),
+        onTap: aoTocar,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(icone, size: 22, color: AppColors.textSecondary.withOpacity(0.8)),
+        ),
+      ),
     );
   }
 }
