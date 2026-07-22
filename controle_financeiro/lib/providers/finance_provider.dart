@@ -50,7 +50,6 @@ class FinanceProvider extends ChangeNotifier {
     }
 
     return DadosApp(
-      conta: local.conta ?? remoto.conta,
       categorias: categoriasMescladas,
       transacoes: transacoesMescladas,
     );
@@ -61,11 +60,6 @@ class FinanceProvider extends ChangeNotifier {
     await _sync.escreverNaPasta(_dados);
     _ultimaSincronizacao = DateTime.now();
     notifyListeners();
-  }
-
-  Future<void> definirConta(String email, String senhaHash) async {
-    _dados = _dados.copyWith(conta: ContaLocal(email: email, senhaHash: senhaHash));
-    await _persistirETentarSincronizar();
   }
 
   Future<void> adicionarTransacao({
