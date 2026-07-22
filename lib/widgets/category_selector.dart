@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/categoria.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
+import 'botoes_personalizados.dart';
 
 /// Campo de categoria. Fica visualmente "apagado" e não clicável enquanto
 /// nenhum tipo (Entrada/Saída) foi escolhido. Quando habilitado, mostra só
@@ -34,6 +35,7 @@ class CategorySelector extends StatelessWidget {
         child: Opacity(
           opacity: habilitado ? 1 : 0.55,
           child: InkWell(
+            mouseCursor: habilitado ? SystemMouseCursors.click : null,
             borderRadius: BorderRadius.circular(14),
             onTap: () => _abrirSelecao(context),
             child: Padding(
@@ -108,7 +110,7 @@ class CategorySelector extends StatelessWidget {
                       ListTile(
                         leading: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
                         title: const Text(
-                          '+ Nova categoria',
+                          'Nova categoria',
                           style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
                         ),
                         onTap: () async {
@@ -145,7 +147,11 @@ class CategorySelector extends StatelessWidget {
           decoration: const InputDecoration(hintText: 'Nome da categoria'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            style: estiloBotao(corForeGround: Color(0xFF3e3b79)),
+            child: const Text('Cancelar')
+          ),
           ElevatedButton(
             onPressed: () async {
               final nome = controller.text.trim();
@@ -153,6 +159,7 @@ class CategorySelector extends StatelessWidget {
               final nova = await provider.adicionarCategoria(nome, tipo);
               if (ctx.mounted) Navigator.of(ctx).pop(nova);
             },
+            style: estiloBotao(corBackGround: Color(0xFF3e3b79), isSide: true),
             child: const Text('Adicionar'),
           ),
         ],

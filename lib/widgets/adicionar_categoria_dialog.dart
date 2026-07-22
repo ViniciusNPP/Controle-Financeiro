@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
@@ -94,12 +95,14 @@ class _AdicionarCategoriaDialogState extends State<AdicionarCategoriaDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
+          style: estiloBotao(corForeGround: Color(0xFF3e3b79)),
           child: const Text('Fechar'),
         ),
         ElevatedButton.icon(
           onPressed: _salvando ? null : _adicionar,
           icon: const Icon(Icons.add_rounded, size: 18),
           label: const Text('Adicionar'),
+          style: estiloBotao(corBackGround: Color(0xFF3e3b79), isSide: true),
         ),
       ],
     );

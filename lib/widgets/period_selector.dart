@@ -247,6 +247,7 @@ class _PeriodSelectorState extends State<PeriodSelector> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
+                style:ElevatedButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
                 icon: const Icon(Icons.chevron_left_rounded, size: 20),
                 onPressed: () {
                   final novo = DateTime(valor.year, valor.month - 1);
@@ -259,6 +260,7 @@ class _PeriodSelectorState extends State<PeriodSelector> {
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               ),
               IconButton(
+                style:ElevatedButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
                 icon: const Icon(Icons.chevron_right_rounded, size: 20),
                 onPressed: () {
                   final novo = DateTime(valor.year, valor.month + 1);

@@ -148,6 +148,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
               child: GestureDetector(
                 onSecondaryTap: _ordenacaoAnterior,
                 child: InkWell(
+                  mouseCursor: SystemMouseCursors.click,
                   borderRadius: BorderRadius.circular(12),
                   onTap: _proximaOrdenacao,
                   child: Container(
@@ -183,7 +184,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
               ? Center(child: Text('Nenhum lançamento encontrado', style: Theme.of(context).textTheme.bodyMedium))
               : ListView.separated(
                   itemCount: lista.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
+                  separatorBuilder: (_, _) => const Divider(height: 1, color: AppColors.border),
                   itemBuilder: (context, i) => _linhaTabela(context, lista[i]),
                 ),
         ),
@@ -209,6 +210,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   Widget _linhaTabela(BuildContext context, Transacao t) {
     final cor = t.tipo == TipoLancamento.entrada ? AppColors.entrada : AppColors.saida;
     return InkWell(
+      mouseCursor: SystemMouseCursors.click,
       onTap: () => showDialog(context: context, builder: (_) => TransacaoDetailDialog(transacao: t)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

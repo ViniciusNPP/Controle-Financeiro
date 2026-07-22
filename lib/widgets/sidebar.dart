@@ -4,14 +4,12 @@ import '../theme/app_theme.dart';
 class AppSidebarContent extends StatelessWidget {
   final int abaSelecionada; // 0 = Adicionar, 1 = Gráficos, 2 = Histórico, 3 = Categorias
   final ValueChanged<int> onSelecionar;
-  final VoidCallback onSair;
   final VoidCallback onSincronizar;
 
   const AppSidebarContent({
     super.key,
     required this.abaSelecionada,
     required this.onSelecionar,
-    required this.onSair,
     required this.onSincronizar,
   });
 
@@ -60,12 +58,6 @@ class AppSidebarContent extends StatelessWidget {
               indice: -1,
               onTapExtra: onSincronizar,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Divider(color: Colors.white.withOpacity(0.12), height: 1),
-            ),
-            _item(context, icon: Icons.logout_rounded, label: 'Sair', indice: -1, onTapExtra: onSair),
-            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -86,6 +78,7 @@ class AppSidebarContent extends StatelessWidget {
         color: selecionado ? Colors.white.withOpacity(0.12) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
           borderRadius: BorderRadius.circular(12),
           onTap: () {
             if (onTapExtra != null) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/filtro_historico.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
@@ -104,6 +105,9 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
               onPressed: _adicionar,
               icon: const Icon(Icons.add_rounded, size: 18),
               label: const Text('Adicionar filtro'),
+              style: ElevatedButton.styleFrom(
+                enabledMouseCursor: SystemMouseCursors.click,
+              ),
             ),
           ),
           if (widget.filtrosAtivos.isNotEmpty) ...[

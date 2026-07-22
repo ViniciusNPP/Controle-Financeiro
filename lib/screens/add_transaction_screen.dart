@@ -5,6 +5,7 @@ import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/form_fields.dart';
 import '../widgets/category_selector.dart';
+import '../widgets/botoes_personalizados.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -90,6 +91,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _valido && !_salvando ? _salvar : null,
+                  style: estiloBotao(corBackGround: Color(0xFF3e3b79), isSide: true),
                   child: _salvando
                       ? const SizedBox(
                           width: 20,

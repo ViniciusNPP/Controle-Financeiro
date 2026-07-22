@@ -66,42 +66,81 @@ class CategoriasScreen extends StatelessWidget {
   }
 
   Widget _blocoCategorias(
-    BuildContext context, {
-    required String titulo,
-    required List<Categoria> categorias,
-    required TipoLancamento tipo,
-    required Color cor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(width: 8, height: 8, decoration: BoxDecoration(color: cor, shape: BoxShape.circle)),
-              const SizedBox(width: 8),
-              Text(titulo, style: Theme.of(context).textTheme.titleMedium),
-              const Spacer(),
-              Text('${categorias.length}', style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (categorias.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Text('Nenhuma categoria ainda.', style: Theme.of(context).textTheme.bodyMedium),
+  BuildContext context, {
+  required String titulo,
+  required List<Categoria> categorias,
+  required TipoLancamento tipo,
+  required Color cor,
+}) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: AppTheme.cardDecoration(),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: cor,
+                shape: BoxShape.circle,
+              ),
             ),
-          for (final c in categorias) _itemCategoria(context, c, cor),
-          _botaoAdicionar(context, tipo, cor),
-        ],
-      ),
-    );
-  }
+            const SizedBox(width: 8),
+            Text(
+              titulo,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const Spacer(),
+            Text(
+              '${categorias.length}',
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        Expanded(
+          child: ListView.builder(
+            itemCount: categorias.isEmpty ? 1 : categorias.length,
+            itemBuilder: (context, index) {
+              if (categorias.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    'Nenhuma categoria ainda.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                );
+              }
+
+              return _itemCategoria(
+                context,
+                categorias[index],
+                cor,
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        _botaoAdicionar(context, tipo, cor),
+      ],
+    ),
+  );
+}
 
   Widget _itemCategoria(BuildContext context, Categoria c, Color cor) {
     return InkWell(
+      mouseCursor: SystemMouseCursors.click,
       borderRadius: BorderRadius.circular(12),
       onTap: () => showDialog(context: context, builder: (_) => CategoriaDetailDialog(categoria: c)),
       child: Container(
@@ -120,6 +159,7 @@ class CategoriasScreen extends StatelessWidget {
 
   Widget _botaoAdicionar(BuildContext context, TipoLancamento tipo, Color cor) {
     return InkWell(
+      mouseCursor: SystemMouseCursors.click,
       borderRadius: BorderRadius.circular(12),
       onTap: () => showDialog(context: context, builder: (_) => AdicionarCategoriaDialog(tipo: tipo)),
       child: Container(

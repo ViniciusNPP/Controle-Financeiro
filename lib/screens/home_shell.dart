@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/sidebar.dart';
@@ -23,28 +22,6 @@ class _HomeShellState extends State<HomeShell> {
 
   static const _larguraSidebar = 250.0;
   static const _quebraDesktop = 900.0;
-
-  void _confirmarSaida(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Sair da conta'),
-        content: const Text('Tem certeza que deseja sair? Você vai precisar entrar novamente com seu email e senha.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.saida),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              context.read<AuthProvider>().sair();
-            },
-            child: const Text('Sair'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _abrirSincronizacao(BuildContext context) {
     final finance = context.read<FinanceProvider>();
@@ -76,7 +53,6 @@ class _HomeShellState extends State<HomeShell> {
                   child: AppSidebarContent(
                     abaSelecionada: _aba,
                     onSelecionar: (i) => setState(() => _aba = i),
-                    onSair: () => _confirmarSaida(context),
                     onSincronizar: () => _abrirSincronizacao(context),
                   ),
                 ),
@@ -107,7 +83,6 @@ class _HomeShellState extends State<HomeShell> {
             child: AppSidebarContent(
               abaSelecionada: _aba,
               onSelecionar: (i) => setState(() => _aba = i),
-              onSair: () => _confirmarSaida(context),
               onSincronizar: () => _abrirSincronizacao(context),
             ),
           ),

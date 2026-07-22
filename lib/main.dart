@@ -3,9 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'providers/finance_provider.dart';
-import 'providers/auth_provider.dart';
 import 'theme/app_theme.dart';
-import 'screens/login_screen.dart';
 import 'screens/home_shell.dart';
 
 Future<void> main() async {
@@ -15,7 +13,6 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => FinanceProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: const MeuApp(),
     ),
@@ -62,7 +59,6 @@ class _RaizAppState extends State<_RaizApp> {
   @override
   Widget build(BuildContext context) {
     final finance = context.watch<FinanceProvider>();
-    final auth = context.watch<AuthProvider>();
 
     if (!finance.carregado) {
       return const Scaffold(
@@ -71,6 +67,6 @@ class _RaizAppState extends State<_RaizApp> {
       );
     }
 
-    return auth.autenticado ? const HomeShell() : const LoginScreen();
+    return const HomeShell();
   }
 }

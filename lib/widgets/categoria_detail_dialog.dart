@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
+import 'botoes_personalizados.dart';
 
 class CategoriaDetailDialog extends StatefulWidget {
   final Categoria categoria;
@@ -185,14 +185,14 @@ class _CategoriaDetailDialogState extends State<CategoriaDetailDialog> {
         }),
         icon: const Icon(Icons.arrow_back_rounded, size: 18),
         label: const Text('Voltar'),
-        style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+        style: estiloBotao(corForeGround: AppColors.textSecondary),
       );
     }
     return TextButton.icon(
       onPressed: () => Navigator.of(context).pop(),
       icon: const Icon(Icons.close_rounded, size: 18),
       label: const Text('Cancelar'),
-      style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+      style: estiloBotao(corForeGround: AppColors.textSecondary),
     );
   }
 
@@ -203,7 +203,7 @@ class _CategoriaDetailDialogState extends State<CategoriaDetailDialog> {
           onPressed: _valido ? _salvar : null,
           icon: const Icon(Icons.save_rounded, size: 18),
           label: const Text('Salvar'),
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.entrada),
+          style: estiloBotao(corBackGround: AppColors.entrada, isSide: true),
         ),
       ];
     }
@@ -212,13 +212,14 @@ class _CategoriaDetailDialogState extends State<CategoriaDetailDialog> {
         onPressed: _confirmarExclusao,
         icon: const Icon(Icons.delete_outline_rounded, size: 18),
         label: const Text('Excluir'),
-        style: OutlinedButton.styleFrom(foregroundColor: AppColors.saida, side: const BorderSide(color: AppColors.saida)),
+        style: estiloBotao(corForeGround: AppColors.saida, isSide: true),
       ),
       const SizedBox(width: 10),
       ElevatedButton.icon(
         onPressed: () => setState(() => _editando = true),
         icon: const Icon(Icons.edit_rounded, size: 18),
         label: const Text('Editar'),
+        style: estiloBotao(corBackGround: Color(0xFF201d4d), isSide: true),
       ),
     ];
   }
