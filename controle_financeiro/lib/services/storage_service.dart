@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import '../models/categoria.dart';
 import '../models/transacao.dart';
 
@@ -48,9 +49,8 @@ class StorageService {
   static const String _fileName = 'dados_financeiro.json';
 
   Future<File> _localFile() async {
-    final dir = Directory.current.path;
-    final pastaProjeto = path.normalize(path.join(dir, 'data'));
-    final pasta = Directory(pastaProjeto);
+    final dir = await getApplicationSupportDirectory();
+    final pasta = Directory(path.join(dir.path, 'data'));
     if (!await pasta.exists()) {
       await pasta.create(recursive: true);
     }
@@ -67,13 +67,20 @@ class StorageService {
       }
       final conteudo = await file.readAsString();
       return DadosApp.fromJson(jsonDecode(conteudo) as Map<String, dynamic>);
-    } catch (_) {
+    } catch (e, st) {
+      // Não engula o erro silenciosamente em dev — ajuda a diagnosticar
+      print('Erro ao carregar dados: $e\n$st');
       return DadosApp.vazio();
     }
   }
 
   Future<void> salvar(DadosApp dados) async {
-    final file = await _localFile();
-    await file.writeAsString(jsonEncode(dados.toJson()));
+    try {
+      final file = await _localFile();
+      await file.writeAsString(jsonEncode(dados.toJson()));
+    } catch (e, st) {
+      print('Erro ao salvar dados: $e\n$st');
+      rethrow; // deixa o erro subir para quem chamou saber que falhou
+    }
   }
 }

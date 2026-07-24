@@ -64,25 +64,12 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
   }
 
   void _confirmarExclusao() {
-    showDialog(
+    confirmarExclusao(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Excluir lançamento'),
-        content: const Text('Tem certeza que deseja excluir este lançamento? Essa ação não pode ser desfeita.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.saida),
-            onPressed: () async {
-              await context.read<FinanceProvider>().excluirTransacao(widget.transacao.id);
-              if (ctx.mounted) Navigator.of(ctx).pop();
-              if (mounted) Navigator.of(context).pop();
-            },
-            child: const Text('Excluir'),
-          ),
-        ],
-      ),
+      titulo: 'Excluir lançamento',
+      mensagem: 'Tem certeza que deseja excluir este lançamento? Essa ação não pode ser desfeita.',
+      corBotaoExcluir: AppColors.saida,
+      aoConfirmar: () => context.read<FinanceProvider>().excluirTransacao(widget.transacao.id),
     );
   }
 

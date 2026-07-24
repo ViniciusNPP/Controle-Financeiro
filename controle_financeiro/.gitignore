@@ -33,6 +33,7 @@ build/
 .pub/
 /coverage/
 /data/
+installer/
 
 # Symbolication related
 app.*.symbols

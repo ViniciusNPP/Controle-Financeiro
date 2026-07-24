@@ -143,7 +143,7 @@ class FinanceProvider extends ChangeNotifier {
   Future<bool> importarDeArquivo() async {
     final importado = await _sync.importarArquivo();
     if (importado == null) return false;
-    _dados = _mesclar(_dados, importado);
+    _dados = importado; // substitui completamente os dados atuais
     await _storage.salvar(_dados);
     _ultimaSincronizacao = DateTime.now();
     notifyListeners();

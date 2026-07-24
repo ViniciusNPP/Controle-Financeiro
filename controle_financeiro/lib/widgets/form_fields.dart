@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
@@ -20,12 +21,25 @@ class DatePickerField extends StatelessWidget {
           final escolhida = await showDatePicker(
             context: context,
             initialDate: valor,
-            firstDate: DateTime(2015),
+            firstDate: DateTime(1900),
             lastDate: DateTime.now(),
             helpText: 'Escolha a data',
             cancelText: 'Cancelar',
             confirmText: 'Confirmar',
             locale: const Locale('pt', 'BR'),
+            builder: (context, child) {
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  textButtonTheme: TextButtonThemeData(
+                    style: estiloBotao(corForeGround: Color(0xFF2e2a6e)),
+                  ),
+                  iconButtonTheme: IconButtonThemeData(
+                    style: estiloBotao(),
+                  ),
+                ),
+                child: child!,
+              );
+            },
           );
           if (escolhida != null) onChanged(escolhida);
         },

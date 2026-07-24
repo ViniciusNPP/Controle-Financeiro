@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:controle_financeiro/services/sync_service.dart';
+import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/finance_provider.dart';
@@ -130,6 +132,35 @@ class _SincronizacaoSheetState extends State<_SincronizacaoSheet> {
     });
   }
 
+  Future<void> _importarComTratamentoDeErro() async {
+    setState(() {
+      _carregando = true;
+      _mensagem = null;
+    });
+    try {
+      final ok = await widget.finance.importarDeArquivo();
+      if (!mounted) return;
+      setState(() {
+        _carregando = false;
+        _mensagem = ok ? 'Dados importados com sucesso!' : null;
+      });
+    } on FormatoInvalidoException catch (e) {
+      if (!mounted) return;
+      setState(() => _carregando = false);
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Text('Não foi possível importar'),
+          content: Text(e.mensagem),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Entendi')),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ultimaSinc = widget.finance.ultimaSincronizacao;
@@ -150,36 +181,39 @@ class _SincronizacaoSheetState extends State<_SincronizacaoSheet> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
-            if (Platform.isAndroid) ...[
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.upload_rounded, size: 18),
-                  label: const Text('Exportar dados agora'),
-                  onPressed: _carregando ? null : () => _executar(widget.finance.exportarParaArquivo),
-                ),
+            // Exportar/Importar manual — disponível em qualquer plataforma
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.upload_rounded, size: 18),
+                label: const Text('Exportar dados'),
+                style: estiloBotao(corBackGround: Color(0xFF3e3b79)),
+                onPressed: _carregando ? null : () => _executar(widget.finance.exportarParaArquivo),
               ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.download_rounded, size: 18),
+                label: const Text('Importar dados'),
+                style: estiloBotao(corBackGround: Color(0xFFffffff), corForeGround: Color(0xFF3e3b79), isSide: true),
+                onPressed: _carregando ? null : _importarComTratamentoDeErro,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Sincronização automática por pasta — só faz sentido no desktop
+            if (!Platform.isAndroid) ...[
+              const Divider(),
               const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.download_rounded, size: 18),
-                  label: const Text('Importar dados'),
-                  onPressed: _carregando ? null : () => _executar(widget.finance.importarDeArquivo),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'No Android, a sincronização é manual: exporte pra salvar na pasta do Drive/OneDrive, e importe pra trazer o que foi feito no outro aparelho.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ] else ...[
               Text(_pasta ?? 'Nenhuma pasta escolhida ainda', style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.folder_open_rounded, size: 18),
+                  style: estiloBotao(corBackGround: const Color(0xFF3e3b79)),
                   label: Text(_pasta == null ? 'Escolher pasta' : 'Trocar pasta'),
                   onPressed: _carregando
                       ? null
@@ -198,6 +232,11 @@ class _SincronizacaoSheetState extends State<_SincronizacaoSheet> {
               const SizedBox(height: 10),
               Text(
                 'No computador, a sincronização com a pasta escolhida acontece automaticamente a cada alteração.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ] else ...[
+              Text(
+                'No Android, a sincronização é manual: exporte pra salvar na pasta do Drive/OneDrive, e importe pra trazer o que foi feito no outro aparelho.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ],

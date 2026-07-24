@@ -50,27 +50,13 @@ class _CategoriaDetailDialogState extends State<CategoriaDetailDialog> {
   }
 
   void _confirmarExclusao() {
-    showDialog(
+    confirmarExclusao(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Excluir categoria'),
-        content: Text(
+      titulo: 'Excluir categoria',
+      mensagem:
           'Tem certeza que deseja excluir "${widget.categoria.nome}"? Lançamentos já feitos com essa categoria não são afetados, mas ela deixa de aparecer para novos lançamentos.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.saida),
-            onPressed: () async {
-              await context.read<FinanceProvider>().excluirCategoria(widget.categoria.id);
-              if (ctx.mounted) Navigator.of(ctx).pop();
-              if (mounted) Navigator.of(context).pop();
-            },
-            child: const Text('Excluir'),
-          ),
-        ],
-      ),
+      corBotaoExcluir: AppColors.saida,
+      aoConfirmar: () => context.read<FinanceProvider>().excluirCategoria(widget.categoria.id),
     );
   }
 

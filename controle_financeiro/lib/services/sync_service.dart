@@ -96,27 +96,53 @@ class SyncService {
   /// Importação manual: abre o seletor de arquivos para escolher o
   /// dados_financeiro.json salvo anteriormente na pasta compartilhada.
   Future<DadosApp?> importarArquivo() async {
-    try {
-      final resultado = await FilePicker.pickFiles(
-        dialogTitle: 'Selecione o arquivo dados_financeiro.json',
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-        withData: true,
-      );
-      if (resultado == null) return null;
-      final arquivo = resultado.files.single;
+    final resultado = await FilePicker.pickFiles(
+      dialogTitle: 'Selecione o arquivo dados_financeiro.json',
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+      withData: true,
+    );
+    if (resultado == null) return null; // usuário cancelou, sem erro
 
-      String? conteudo;
+    final arquivo = resultado.files.single;
+    String? conteudo;
+    try {
       if (arquivo.path != null) {
         conteudo = await File(arquivo.path!).readAsString();
       } else if (arquivo.bytes != null) {
         conteudo = utf8.decode(arquivo.bytes!);
       }
-      if (conteudo == null) return null;
-
-      return DadosApp.fromJson(jsonDecode(conteudo) as Map<String, dynamic>);
     } catch (_) {
-      return null;
+      throw FormatoInvalidoException('Não foi possível ler o arquivo selecionado.');
+    }
+
+    if (conteudo == null || conteudo.trim().isEmpty) {
+      throw FormatoInvalidoException('O arquivo selecionado está vazio.');
+    }
+
+    late final Map<String, dynamic> json;
+    try {
+      json = jsonDecode(conteudo) as Map<String, dynamic>;
+    } catch (_) {
+      throw FormatoInvalidoException('O arquivo selecionado não é um JSON válido.');
+    }
+
+    if (!json.containsKey('categorias') || !json.containsKey('transacoes')) {
+      throw FormatoInvalidoException(
+        'Esse arquivo não parece ser um backup do Controle Financeiro.',
+      );
+    }
+
+    try {
+      return DadosApp.fromJson(json);
+    } catch (_) {
+      throw FormatoInvalidoException('O arquivo tem dados em um formato inesperado.');
     }
   }
+}
+
+/// Lançada quando o arquivo escolhido não é um backup válido do app.
+class FormatoInvalidoException implements Exception {
+  final String mensagem;
+  FormatoInvalidoException(this.mensagem);
 }
