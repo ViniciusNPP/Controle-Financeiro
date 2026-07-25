@@ -59,7 +59,7 @@ O app salva os dados automaticamente em um arquivo `dados\\\\\\\_financeiro.json
 
 **Sincronização automática por pasta (opcional):**
 
-Essa opção vai criada somente para uma atualização futura para celular Android, por não conseguir sincronizar os dados com os do computador. Ainda não existe o apk por que eu ainda não quis :)
+Essa opção foi criada para fácil acesso do arquivo .json do computador para o celular, então se o uso for somente no computador ou no celular, não há necessidade de usar essa opção. A não ser que queira salvar em aplicativos como Google Drive e OneDrive.
 
 No computador, também é possível escolher uma pasta (por exemplo, dentro do Google Drive ou OneDrive) para que o app sincronize automaticamente a cada alteração, combinando os dados sem substituí-los. Essa opção fica disponível na mesma aba de "Sincronização", em "Escolher pasta".
 
