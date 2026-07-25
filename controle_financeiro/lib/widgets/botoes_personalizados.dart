@@ -1,13 +1,5 @@
 import 'package:flutter/material.dart';
 
-class BotoesPersonalizados extends StatelessWidget {
-const BotoesPersonalizados({ super.key });
-
-  @override
-  Widget build(BuildContext context){
-    return Container();
-  }
-}
 enum Ground {
   foreground,
   background

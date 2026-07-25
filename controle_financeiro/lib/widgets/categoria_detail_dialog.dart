@@ -1,9 +1,11 @@
+import 'package:controle_financeiro/widgets/others_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import 'botoes_personalizados.dart';
+import 'custom_dialogs.dart';
 
 class CategoriaDetailDialog extends StatefulWidget {
   final Categoria categoria;
@@ -64,149 +66,44 @@ class _CategoriaDetailDialogState extends State<CategoriaDetailDialog> {
   Widget build(BuildContext context) {
     final cor = _tipo == TipoLancamento.entrada ? AppColors.entrada : AppColors.saida;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _editando ? 'Editar categoria' : 'Detalhes da categoria',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 22),
-              _linha(
-                'Nome',
-                _editando
-                    ? TextField(
-                        controller: _nomeController,
-                        autofocus: true,
-                        onChanged: (_) => setState(() {}),
-                        decoration: const InputDecoration(hintText: 'Nome da categoria'),
-                      )
-                    : _valorEstatico(widget.categoria.nome),
-              ),
-              const SizedBox(height: 16),
-              _linha(
-                'Tipo',
-                _editando
-                    ? _botoesTipo()
-                    : _valorEstatico(_tipo == TipoLancamento.entrada ? 'Entrada' : 'Saída', cor: cor),
-              ),
-              const SizedBox(height: 26),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _botaoSecundario(),
-                  Row(children: _botoesPrincipais()),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _linha(String rotulo, Widget conteudo) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(rotulo, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-        const SizedBox(height: 6),
-        conteudo,
-      ],
-    );
-  }
-
-  Widget _valorEstatico(String texto, {Color? cor}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(color: AppColors.disabledFill, borderRadius: BorderRadius.circular(12)),
-      child: Text(texto, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cor ?? AppColors.textPrimary)),
-    );
-  }
-
-  Widget _botoesTipo() {
-    return Row(
-      children: [
-        Expanded(child: _botaoTipoItem('Entrada', TipoLancamento.entrada, AppColors.entrada)),
-        const SizedBox(width: 10),
-        Expanded(child: _botaoTipoItem('Saída', TipoLancamento.saida, AppColors.saida)),
-      ],
-    );
-  }
-
-  Widget _botaoTipoItem(String label, TipoLancamento tipo, Color cor) {
-    final selecionado = _tipo == tipo;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => setState(() => _tipo = tipo),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 13),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selecionado ? cor.withOpacity(0.12) : AppColors.disabledFill,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selecionado ? cor : Colors.transparent, width: 1.5),
-          ),
-          child: Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: selecionado ? cor : AppColors.textSecondary)),
-        ),
-      ),
-    );
-  }
-
-  Widget _botaoSecundario() {
-    if (_editando) {
-      return TextButton.icon(
-        onPressed: () => setState(() {
+    return DetailDialogShell(
+      titulo: _editando ? 'Editar categoria' : 'Detalhes da categoria',
+      maxWidth: 400,
+      botaoSecundario: botaoSecundarioDialog(
+        editando: _editando,
+        onVoltar: () => setState(() {
           _editando = false;
           _resetarCampos();
         }),
-        icon: const Icon(Icons.arrow_back_rounded, size: 18),
-        label: const Text('Voltar'),
-        style: estiloBotao(corForeGround: AppColors.textSecondary),
-      );
-    }
-    return TextButton.icon(
-      onPressed: () => Navigator.of(context).pop(),
-      icon: const Icon(Icons.close_rounded, size: 18),
-      label: const Text('Cancelar'),
-      style: estiloBotao(corForeGround: AppColors.textSecondary),
-    );
-  }
-
-  List<Widget> _botoesPrincipais() {
-    if (_editando) {
-      return [
-        ElevatedButton.icon(
-          onPressed: _valido ? _salvar : null,
-          icon: const Icon(Icons.save_rounded, size: 18),
-          label: const Text('Salvar'),
-          style: estiloBotao(corBackGround: AppColors.entrada, isSide: true),
+        onCancelar: () => Navigator.of(context).pop(),
+      ),
+      botoesPrincipais: botoesPrincipaisDialog(
+        editando: _editando,
+        valido: _valido,
+        onSalvar: _salvar,
+        onExcluir: _confirmarExclusao,
+        onEditar: () => setState(() => _editando = true),
+      ),
+      children: [
+        LinhaDetalhe(
+         rotulo: 'Nome',
+         conteudo: _editando
+              ? TextField(
+                  controller: _nomeController,
+                  autofocus: true,
+                  onChanged: (_) => setState(() {}),
+                  decoration: const InputDecoration(hintText: 'Nome da categoria'),
+                )
+              : ValorEstatico(widget.categoria.nome),
         ),
-      ];
-    }
-    return [
-      OutlinedButton.icon(
-        onPressed: _confirmarExclusao,
-        icon: const Icon(Icons.delete_outline_rounded, size: 18),
-        label: const Text('Excluir'),
-        style: estiloBotao(corForeGround: AppColors.saida, isSide: true),
-      ),
-      const SizedBox(width: 10),
-      ElevatedButton.icon(
-        onPressed: () => setState(() => _editando = true),
-        icon: const Icon(Icons.edit_rounded, size: 18),
-        label: const Text('Editar'),
-        style: estiloBotao(corBackGround: Color(0xFF201d4d), isSide: true),
-      ),
-    ];
+        LinhaDetalhe(
+         rotulo: 'Tipo',
+         conteudo: _editando
+              ? SeletorTipo(tipoSelecionado: _tipo, onSelecionar: (t) => setState(() => _tipo = t))
+              : ValorEstatico(_tipo == TipoLancamento.entrada ? 'Entrada' : 'Saída', cor: cor),
+        ),
+      ],
+      
+    );
   }
 }

@@ -15,9 +15,21 @@ Aplicativo em Flutter para controlar finanças pessoais no Windows. Ele permite 
 
 ### 1\. Instalar o aplicativo
 
+#### Windows
+
 1. Execute o arquivo "controle\_financeiro\_app.exe"
 2. Siga todas as instruções de instalação e mude conforme o que queira. Recomendado criar atalho para maior facilidade de acesso.
 3. Clique no aplicativo.exe criado após a instalação para abrir o aplicativo. Ou procure "Controle Financeiro" na barra de pesquisa do Windows e clique para abri-lo.
+
+#### Android
+
+1. Execute o arquivo "app-arm64-v8a-release.apk"
+2. No celular, habilite a opção "Instalar apps desconhecidos" do aplicativo em que você está instalando o app
+3. Desabilite a opção "Bloqueador automático" em Segurança e privacidade -> Bloqueador automático para o Android permitir a instalação do app
+4. Na janela que abrir, clique em "Mais detalhes"
+5. Clique em "Instalar assim mesmo"
+6. Clique em abrir para abrir app
+7. Pode habilitar novamente o "Bloqueador automático", não atrapalhará em nada o aplicativo depois que ele for instalado
 
 ### 2\. Adicionar um lançamento
 
@@ -29,7 +41,7 @@ Aplicativo em Flutter para controlar finanças pessoais no Windows. Ele permite 
 
 ### 3\. Salvar, exportar e importar dados
 
-O app salva os dados automaticamente em um arquivo `dados\_financeiro.json`, guardado localmente no computador. Não é necessário salvar manualmente.
+O app salva os dados automaticamente em um arquivo `dados\\\\\\\_financeiro.json`, guardado localmente no computador. Não é necessário salvar manualmente.
 
 **Para exportar:**
 
@@ -41,9 +53,9 @@ O app salva os dados automaticamente em um arquivo `dados\_financeiro.json`, gua
 
 1. Clique em "Sincronização"
 2. Na aba que abrir, clique no botão "Importar dados"
-3. Procure o arquivo `dados\_financeiro.json` e selecione-o
+3. Procure o arquivo `dados\\\\\\\_financeiro.json` e selecione-o
 
-> ⚠️ \*\*Atenção:\*\* importar um arquivo \*\*substitui completamente\*\* os dados atuais do app pelos dados do arquivo selecionado. Essa ação não pode ser desfeita. Se quiser apenas combinar dados de dois dispositivos sem perder nada, use a opção de "Escolher pasta" descrita abaixo.
+> ⚠️ \\\\\\\*\\\\\\\*Atenção:\\\\\\\*\\\\\\\* importar um arquivo \\\\\\\*\\\\\\\*substitui completamente\\\\\\\*\\\\\\\* os dados atuais do app pelos dados do arquivo selecionado. Essa ação não pode ser desfeita. Se quiser apenas combinar dados de dois dispositivos sem perder nada, use a opção de "Escolher pasta" descrita abaixo.
 
 **Sincronização automática por pasta (opcional):**
 
