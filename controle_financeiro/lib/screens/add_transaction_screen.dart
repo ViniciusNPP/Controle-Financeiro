@@ -40,7 +40,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     if (!mounted) return;
     _valorKey.currentState?.limpar();
     setState(() {
-      _data = DateTime.now();
       _tipo = null;
       _categoria = null;
       _valor = 0;
@@ -54,54 +53,56 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: AppTheme.cardDecoration(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Novo lançamento', style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 24),
-              _rotulo('Data'),
-              DatePickerField(valor: _data, onChanged: (d) => setState(() => _data = d)),
-              const SizedBox(height: 20),
-              _rotulo('Tipo'),
-              Row(
-                children: [
-                  Expanded(child: _botaoTipo('Entrada', TipoLancamento.entrada, AppColors.entrada)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _botaoTipo('Saída', TipoLancamento.saida, AppColors.saida)),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _rotulo('Categoria'),
-              CategorySelector(
-                tipo: _tipo,
-                categoriaSelecionada: _categoria,
-                onSelecionar: (c) => setState(() => _categoria = c),
-              ),
-              const SizedBox(height: 20),
-              _rotulo('Valor'),
-              CurrencyInput(key: _valorKey, onChanged: (v) => setState(() => _valor = v)),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _valido && !_salvando ? _salvar : null,
-                  style: estiloBotao(corBackGround: Color(0xFF3e3b79), isSide: true),
-                  child: _salvando
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Salvar lançamento'),
+    return Center(
+      child: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: double.infinity),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: AppTheme.cardDecoration(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Novo lançamento', style: Theme.of(context).textTheme.headlineMedium),
+                const SizedBox(height: 24),
+                _rotulo('Data'),
+                DatePickerField(valor: _data, onChanged: (d) => setState(() => _data = d)),
+                const SizedBox(height: 20),
+                _rotulo('Tipo'),
+                Row(
+                  children: [
+                    Expanded(child: _botaoTipo('Entrada', TipoLancamento.entrada, AppColors.entrada)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _botaoTipo('Saída', TipoLancamento.saida, AppColors.saida)),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                _rotulo('Categoria'),
+                CategorySelector(
+                  tipo: _tipo,
+                  categoriaSelecionada: _categoria,
+                  onSelecionar: (c) => setState(() => _categoria = c),
+                ),
+                const SizedBox(height: 20),
+                _rotulo('Valor'),
+                CurrencyInput(key: _valorKey, onChanged: (v) => setState(() => _valor = v)),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _valido && !_salvando ? _salvar : null,
+                    style: estiloBotao(corBackGround: Color(0xFF3e3b79), isSide: true),
+                    child: _salvando
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Salvar lançamento'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

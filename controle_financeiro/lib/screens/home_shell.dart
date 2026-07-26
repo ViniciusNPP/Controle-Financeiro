@@ -61,7 +61,7 @@ class _HomeShellState extends State<HomeShell> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
-                    child: telas[_aba],
+                    child: IndexedStack(index: _aba, children: telas),
                   ),
                 ),
               ],
@@ -75,6 +75,7 @@ class _HomeShellState extends State<HomeShell> {
           appBar: AppBar(
             title: Text(titulos[_aba]),
             leading: IconButton(
+              mouseCursor: SystemMouseCursors.click,
               icon: const Icon(Icons.menu_rounded),
               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
             ),
@@ -89,8 +90,8 @@ class _HomeShellState extends State<HomeShell> {
             ),
           ),
           body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: telas[_aba],
+            padding: const EdgeInsets.only(left: 16, top: 16, right: 16, bottom: 30),
+            child: IndexedStack(index: _aba, children: telas),
           ),
         );
       },

@@ -47,9 +47,6 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     });
   }
 
-  /// Saídas contam como valor negativo na comparação (mesmo sem mostrar o
-  /// sinal na tabela), então uma entrada de R$50 é "maior" que uma saída de
-  /// R$60 (que vale -60 na prática).
   double _valorComSinal(Transacao t) => t.tipo == TipoLancamento.saida ? -t.valor : t.valor;
 
   IconData get _iconeOrdenacao {
@@ -188,6 +185,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
                   itemBuilder: (context, i) => _linhaTabela(context, lista[i]),
                 ),
         ),
+        _linhaTotal(lista),
       ],
     );
   }
@@ -199,7 +197,6 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
       child: Row(
         children: [
           Expanded(flex: 3, child: Text('DATA', style: estilo)),
-          Expanded(flex: 3, child: Text('TIPO', style: estilo)),
           Expanded(flex: 4, child: Text('CATEGORIA', style: estilo)),
           Expanded(flex: 3, child: Text('VALOR', style: estilo, textAlign: TextAlign.right)),
         ],
@@ -218,20 +215,6 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
           children: [
             Expanded(flex: 3, child: Text(Formatters.data(t.data), style: const TextStyle(fontSize: 13.5))),
             Expanded(
-              flex: 3,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: cor.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-                  child: Text(
-                    t.tipo == TipoLancamento.entrada ? 'Entrada' : 'Saída',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cor),
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
               flex: 4,
               child: Text(t.categoriaNome, style: const TextStyle(fontSize: 13.5), overflow: TextOverflow.ellipsis),
             ),
@@ -245,6 +228,25 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _linhaTotal(List<Transacao> lista) {
+    final total = lista.fold<double>(0, (soma, t) => soma + _valorComSinal(t));
+    final cor = total < 0 ? AppColors.saida : AppColors.entrada;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Total', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+          Text(
+            Formatters.moeda(total.abs()),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cor),
+          ),
+        ],
       ),
     );
   }

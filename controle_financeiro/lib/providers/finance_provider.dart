@@ -77,7 +77,14 @@ class FinanceProvider extends ChangeNotifier {
       categoriaNome: categoriaNome,
       valor: valor,
     );
-    _dados = _dados.copyWith(transacoes: [..._dados.transacoes, nova]);
+
+    _dados = _dados.copyWith(
+      transacoes: [..._dados.transacoes, nova],
+      categorias: [
+        for (final c in _dados.categorias)
+          if (c.id == categoriaId) c.copyWith(vezesUsada: c.vezesUsada + 1) else c,
+      ],
+    );
     await _persistirETentarSincronizar();
   }
 
@@ -122,8 +129,15 @@ class FinanceProvider extends ChangeNotifier {
     await _persistirETentarSincronizar();
   }
 
-  List<Categoria> categoriasPorTipo(TipoLancamento tipo) =>
-      _dados.categorias.where((c) => c.tipo == tipo).toList();
+  List<Categoria> categoriasPorTipo(TipoLancamento tipo) {
+    final lista = _dados.categorias.where((c) => c.tipo == tipo).toList();
+    lista.sort((a, b) {
+      final porUso = b.vezesUsada.compareTo(a.vezesUsada);
+      if (porUso != 0) return porUso;
+      return a.nome.toLowerCase().compareTo(b.nome.toLowerCase()); // desempate alfabético
+    });
+    return lista;
+  }
 
   // --- Sincronização ---
 
