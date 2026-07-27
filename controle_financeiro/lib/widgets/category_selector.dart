@@ -65,10 +65,28 @@ class CategorySelector extends StatelessWidget {
     );
   }
 
+  List<Categoria> categoriasPorUso(
+    BuildContext context,
+    TipoLancamento tipo,
+  ) {
+    final provider = context.read<FinanceProvider>();
+    final categorias = provider.categoriasPorTipo(tipo);
+
+    categorias.map((categoria) {
+      final vezes = provider.transacoes.where(
+        (t) => t.categoriaNome == categoria.nome,
+      ).length;
+
+      return categoria.copyWith(vezesUsada: vezes);
+    }).toList();
+
+    categorias.sort((a, b) => b.vezesUsada.compareTo(a.vezesUsada));
+    return categorias;
+  }
+  
   void _abrirSelecao(BuildContext context) async {
     if (tipo == null) return;
-    final provider = context.read<FinanceProvider>();
-    final categorias = provider.categoriasPorTipo(tipo!);
+    final categorias = categoriasPorUso(context, tipo!);
 
     final resultado = await showModalBottomSheet<Categoria>(
       context: context,

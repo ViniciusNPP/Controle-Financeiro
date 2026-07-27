@@ -71,7 +71,7 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
       titulo: 'Excluir lançamento',
       mensagem: 'Tem certeza que deseja excluir este lançamento? Essa ação não pode ser desfeita.',
       corBotaoExcluir: AppColors.saida,
-      aoConfirmar: () => context.read<FinanceProvider>().excluirTransacao(widget.transacao.id),
+      aoConfirmar: () => context.read<FinanceProvider>().excluirTransacao(widget.transacao.id, _categoria!.id),
     );
   }
 
