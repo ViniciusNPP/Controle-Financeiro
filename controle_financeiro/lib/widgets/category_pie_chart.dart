@@ -47,21 +47,25 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                 : Row(
                     children: [
                       Expanded(
-                        flex: 5,
+                        flex: 8,
                         child: PieChart(
                           PieChartData(
                             sectionsSpace: 2,
                             centerSpaceRadius: 36,
                             pieTouchData: PieTouchData(
                               touchCallback: (event, response) {
+                                final indiceSobPonteiro = response?.touchedSection?.touchedSectionIndex;
+                                if (event is FlTapUpEvent) {
+                                  setState(() {
+                                    _indiceTocado = (indiceSobPonteiro != null && indiceSobPonteiro == _indiceTocado)
+                                        ? null
+                                        : indiceSobPonteiro;
+                                  });
+                                  return;
+                                }
+                                if (event is FlTapCancelEvent) return;
                                 setState(() {
-                                  if (!event.isInterestedForInteractions ||
-                                      response == null ||
-                                      response.touchedSection == null) {
-                                    _indiceTocado = null;
-                                    return;
-                                  }
-                                  _indiceTocado = response.touchedSection!.touchedSectionIndex;
+                                  _indiceTocado = event.isInterestedForInteractions ? indiceSobPonteiro : null;
                                 });
                               },
                             ),
@@ -83,7 +87,7 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 30),
                       Expanded(
                         flex: 6,
                         child: ListView.builder(

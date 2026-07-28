@@ -40,17 +40,15 @@ class SyncService {
     await prefs.remove(_chavePasta);
   }
 
-  /// Escrita automática e silenciosa (usada no desktop a cada alteração).
+  /// Escrita automática e silenciosa (usada a cada alteração).
   Future<void> escreverNaPasta(DadosApp dados) async {
+    final jsonStr = jsonEncode(dados.toJson());
     final pasta = await pastaConfigurada();
     if (pasta == null) return;
     try {
       final file = File('$pasta${Platform.pathSeparator}$_nomeArquivo');
-      await file.writeAsString(jsonEncode(dados.toJson()));
-    } catch (_) {
-      // Falha silenciosa: os dados continuam salvos localmente e a
-      // tentativa de sincronizar acontece de novo na próxima alteração.
-    }
+      await file.writeAsString(jsonStr);
+    } catch (_) {}
   }
 
   Future<DadosApp?> lerDaPasta() async {

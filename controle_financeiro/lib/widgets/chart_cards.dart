@@ -7,7 +7,12 @@ import '../utils/period_utils.dart';
 /// Gráfico de barras genérico usado nos 3 gráficos "gerais" (Entradas,
 /// Saídas, Saldo). Quando [destaque] é true, usa o tratamento visual
 /// especial em degradê (reservado para o Saldo, o número mais importante).
-class BarChartCard extends StatelessWidget {
+///
+/// Quando há mais de um período sendo exibido, o usuário pode tocar em
+/// qualquer lugar do card para alternar entre a visão "por período" e uma
+/// única barra "Total" com a soma de tudo que está sendo mostrado. Tocar
+/// de novo volta para a visão normal.
+class BarChartCard extends StatefulWidget {
   final String titulo;
   final Map<DateTime, double> dados;
   final bool agruparPorAno;
@@ -26,25 +31,42 @@ class BarChartCard extends StatelessWidget {
   });
 
   @override
+  State<BarChartCard> createState() => _BarChartCardState();
+}
+
+class _BarChartCardState extends State<BarChartCard> {
+  bool _mostrandoTotal = false;
+
+  @override
   Widget build(BuildContext context) {
-    final chaves = dados.keys.toList()..sort();
-    final valores = chaves.map((k) => dados[k] ?? 0).toList();
+    final chaves = widget.dados.keys.toList()..sort();
+    final valores = chaves.map((k) => widget.dados[k] ?? 0).toList();
     final total = valores.fold<double>(0, (a, b) => a + b);
 
-    final minValor = valores.isEmpty ? 0.0 : valores.reduce((a, b) => a < b ? a : b);
-    final maxValor = valores.isEmpty ? 0.0 : valores.reduce((a, b) => a > b ? a : b);
+    // Só faz sentido alternar para "Total" se houver mais de um período para somar.
+    final podeAlternar = chaves.length > 1;
+    final exibirTotal = podeAlternar && _mostrandoTotal;
+
+    // Valores efetivamente desenhados: os buckets normais, ou uma única barra com a soma de tudo.
+    final valoresExibidos = exibirTotal ? [total] : valores;
+    final quantidadeBarras = valoresExibidos.length;
+
+    final minValor = valoresExibidos.isEmpty ? 0.0 : valoresExibidos.reduce((a, b) => a < b ? a : b);
+    final maxValor = valoresExibidos.isEmpty ? 0.0 : valoresExibidos.reduce((a, b) => a > b ? a : b);
     final minY = minValor < 0 ? minValor * 1.2 : 0.0;
     var maxY = maxValor > 0 ? maxValor * 1.2 : 1.0;
     if (maxY <= minY) maxY = minY + 1;
 
-    final corTexto = destaque ? Colors.white : AppColors.textPrimary;
-    final corTextoSecundario = destaque ? Colors.white.withOpacity(0.75) : AppColors.textSecondary;
-    final corBarra = destaque ? Colors.white : cor;
+    final corTexto = widget.destaque ? Colors.white : AppColors.textPrimary;
+    final corTextoSecundario = widget.destaque ? Colors.white.withOpacity(0.75) : AppColors.textSecondary;
+    final corBarra = widget.destaque ? Colors.white : widget.cor;
+    // Linha de referência do zero
+    final corLinhaZero = widget.destaque ? Colors.white.withOpacity(0.35) : Colors.grey.withOpacity(0.55);
 
-    return Container(
+    final Widget conteudo = Container(
       padding: const EdgeInsets.all(20),
-      height: alturaFixa,
-      decoration: destaque
+      height: widget.alturaFixa,
+      decoration: widget.destaque
           ? BoxDecoration(
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
@@ -57,12 +79,19 @@ class BarChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(titulo, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: corTextoSecundario)),
+          Text(widget.titulo, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: corTextoSecundario)),
           const SizedBox(height: 4),
           Text(
             Formatters.moeda(total),
             style: Theme.of(context).textTheme.displayMedium?.copyWith(color: corTexto),
           ),
+          if (podeAlternar) ...[
+            const SizedBox(height: 2),
+            Text(
+              exibirTotal ? 'Toque para ver por período' : 'Toque para ver o total',
+              style: TextStyle(fontSize: 11, color: corTextoSecundario),
+            ),
+          ],
           const SizedBox(height: 16),
           Expanded(
             child: chaves.isEmpty
@@ -79,12 +108,24 @@ class BarChartCard extends StatelessWidget {
                       alignment: BarChartAlignment.spaceAround,
                       gridData: const FlGridData(show: false),
                       borderData: FlBorderData(show: false),
+                      // Linha de referência no zero, pra dar noção de
+                      // "chão" quando alguma barra fica negativa.
+                      extraLinesData: ExtraLinesData(
+                        horizontalLines: [
+                          HorizontalLine(
+                            y: 0,
+                            color: corLinhaZero,
+                            strokeWidth: 1,
+                            dashArray: [6, 4],
+                          ),
+                        ],
+                      ),
                       barTouchData: BarTouchData(
                         touchTooltipData: BarTouchTooltipData(
                           getTooltipItem: (group, groupIndex, rod, rodIndex) => BarTooltipItem(
                             Formatters.moeda(rod.toY),
                             TextStyle(
-                              color: destaque ? AppColors.primary : Colors.white,
+                              color: widget.destaque ? AppColors.primary : Colors.white,
                               fontWeight: FontWeight.w600,
                               fontSize: 12,
                             ),
@@ -100,11 +141,13 @@ class BarChartCard extends StatelessWidget {
                             showTitles: true,
                             getTitlesWidget: (value, meta) {
                               final i = value.toInt();
-                              if (i < 0 || i >= chaves.length) return const SizedBox.shrink();
+                              if (i < 0 || i >= quantidadeBarras) return const SizedBox.shrink();
+                              final rotulo =
+                                  exibirTotal ? 'Total' : PeriodoUtils.rotuloBalde(chaves[i], widget.agruparPorAno);
                               return Padding(
                                 padding: const EdgeInsets.only(top: 6),
                                 child: Text(
-                                  PeriodoUtils.rotuloBalde(chaves[i], agruparPorAno),
+                                  rotulo,
                                   style: TextStyle(fontSize: 11, color: corTextoSecundario),
                                 ),
                               );
@@ -113,15 +156,15 @@ class BarChartCard extends StatelessWidget {
                         ),
                       ),
                       barGroups: [
-                        for (var i = 0; i < chaves.length; i++)
+                        for (var i = 0; i < quantidadeBarras; i++)
                           BarChartGroupData(
                             x: i,
                             barRods: [
                               BarChartRodData(
-                                toY: valores[i],
+                                toY: valoresExibidos[i],
                                 color: corBarra,
-                                width: chaves.length > 8 ? 10 : 20,
-                                borderRadius: valores[i] >= 0
+                                width: exibirTotal ? 32 : (chaves.length > 8 ? 10 : 20),
+                                borderRadius: valoresExibidos[i] >= 0
                                     ? const BorderRadius.vertical(top: Radius.circular(6))
                                     : const BorderRadius.vertical(bottom: Radius.circular(6)),
                               ),
@@ -133,6 +176,14 @@ class BarChartCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+
+    if (!podeAlternar) return conteudo;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _mostrandoTotal = !_mostrandoTotal),
+      child: conteudo,
     );
   }
 }

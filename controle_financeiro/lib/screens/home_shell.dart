@@ -89,9 +89,11 @@ class _HomeShellState extends State<HomeShell> {
               onSincronizar: () => _abrirSincronizacao(context),
             ),
           ),
-          body: Padding(
-            padding: const EdgeInsets.only(left: 16, top: 16, right: 16, bottom: 30),
-            child: IndexedStack(index: _aba, children: telas),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              child: IndexedStack(index: _aba, children: telas),
+            ),
           ),
         );
       },

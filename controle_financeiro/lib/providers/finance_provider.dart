@@ -105,9 +105,13 @@ class FinanceProvider extends ChangeNotifier {
     await _persistirETentarSincronizar();
   }
 
-  Future<void> excluirTransacao(String id) async {
+  Future<void> excluirTransacao(String id, String categoriaId) async {
     _dados = _dados.copyWith(
       transacoes: _dados.transacoes.where((t) => t.id != id).toList(),
+      categorias: [
+        for (final c in _dados.categorias)
+          if (c.id == categoriaId) c.copyWith(vezesUsada: c.vezesUsada - 1) else c,
+      ]
     );
     await _persistirETentarSincronizar();
   }
@@ -144,6 +148,8 @@ class FinanceProvider extends ChangeNotifier {
   Future<String?> escolherPastaSincronizacao() => _sync.escolherPasta();
 
   Future<String?> pastaSincronizacaoAtual() => _sync.pastaConfigurada();
+
+  Future<void> sincronizarAgora() => _persistirETentarSincronizar();
 
   Future<bool> exportarParaArquivo() async {
     final ok = await _sync.exportarArquivo(_dados);
