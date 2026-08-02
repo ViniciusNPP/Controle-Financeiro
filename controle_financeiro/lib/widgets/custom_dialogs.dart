@@ -1,4 +1,5 @@
 import 'package:controle_financeiro/models/categoria.dart';
+import 'package:controle_financeiro/utils/app_shortcuts.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,9 @@ class DetailDialogShell extends StatelessWidget {
   final bool editando;
   final VoidCallback onVoltar;
   final VoidCallback onCancelar;
+  final VoidCallback onSalvar;
+  final VoidCallback onEditar;
+  final VoidCallback onExcluir;
 
   const DetailDialogShell({
     super.key,
@@ -23,6 +27,9 @@ class DetailDialogShell extends StatelessWidget {
     required this.onVoltar,
     required this.onCancelar,
     required this.editando,
+    required this.onSalvar,
+    required this.onEditar,
+    required this.onExcluir,
     this.maxWidth = 420,
   });
 
@@ -34,44 +41,63 @@ class DetailDialogShell extends StatelessWidget {
         if (didPop) return;
         onVoltar();
       },
-      child: Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(titulo, style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 22),
-                for (final linha in children) ...[
-                  linha,
-                  const SizedBox(height: 16),
-                ],
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 10,
-                    runSpacing: 10,
+      child: Shortcuts(
+        shortcuts: atalhosGlobais,
+        child: Actions(
+          actions: {
+            AceitarIntent: CallbackAction<AceitarIntent>(onInvoke: (intend) {
+              if (editando) {
+                onSalvar();
+              } else {
+                onEditar();
+              }
+              return null;
+            }),
+            DelIntent: CallbackAction<DelIntent>(onInvoke: (intent) => onExcluir(),)
+          },
+          child: Focus(
+            autofocus: true,
+            child: Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      botaoSecundario,
-                      Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: botoesPrincipais,
+                      Text(titulo, style: Theme.of(context).textTheme.headlineMedium),
+                      const SizedBox(height: 22),
+                      for (final linha in children) ...[
+                        linha,
+                        const SizedBox(height: 16),
+                      ],
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            botaoSecundario,
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: botoesPrincipais,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          )
         ),
       ),
     );

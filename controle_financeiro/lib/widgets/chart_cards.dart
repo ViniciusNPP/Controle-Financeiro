@@ -4,14 +4,6 @@ import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 import '../utils/period_utils.dart';
 
-/// Gráfico de barras genérico usado nos 3 gráficos "gerais" (Entradas,
-/// Saídas, Saldo). Quando [destaque] é true, usa o tratamento visual
-/// especial em degradê (reservado para o Saldo, o número mais importante).
-///
-/// Quando há mais de um período sendo exibido, o usuário pode tocar em
-/// qualquer lugar do card para alternar entre a visão "por período" e uma
-/// única barra "Total" com a soma de tudo que está sendo mostrado. Tocar
-/// de novo volta para a visão normal.
 class BarChartCard extends StatefulWidget {
   final String titulo;
   final Map<DateTime, double> dados;

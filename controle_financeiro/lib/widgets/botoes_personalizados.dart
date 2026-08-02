@@ -48,37 +48,39 @@ Future<void> confirmarExclusao({
       shortcuts: atalhosGlobais,
       child: Actions(
         actions: {
-          AceitarIntent: CallbackAction<AceitarIntent> (onInvoke: (intent) {
-            aoConfirmar();
-            if (ctx.mounted) Navigator.of(ctx).pop();
-            if (ctx.mounted) Navigator.of(context).pop();
+          AceitarIntent: CallbackAction<AceitarIntent>(onInvoke: (intent) async {
+            await aoConfirmar();
+            if (!fecharTelaAposExcluir) return null;
+            Navigator.of(ctx).pop();
+            Navigator.of(context).pop();
             return null;
-          })
+          }),
         },
         child: Focus(
           autofocus: true,
           child: AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             title: Text(titulo),
             content: Text(mensagem),
+            actionsAlignment: MainAxisAlignment.spaceBetween,
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                style: estiloBotao(corForeGround: Color(0xFF2e2a6e)),
+                style: estiloBotao(corForeGround: AppColors.textSecondary, corBackGround: AppColors.disabledFill),
                 child: const Text('Cancelar'),
               ),
               ElevatedButton(
-                style: estiloBotao(corBackGround: corBotaoExcluir),
                 onPressed: () async {
                   await aoConfirmar();
-                  if (ctx.mounted) Navigator.of(ctx).pop();
-                  if (ctx.mounted) Navigator.of(context).pop();
+                  if (!fecharTelaAposExcluir) return;
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).pop();
                 },
+                style: estiloBotao(corForeGround: Colors.white, corBackGround: corBotaoExcluir),
                 child: const Text('Excluir'),
               ),
             ],
           ),
-        )
+        ),
       ),
     ),
   );
