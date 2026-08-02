@@ -27,10 +27,12 @@ class HistoricoScreen extends StatefulWidget {
 
 class _HistoricoScreenState extends State<HistoricoScreen> {
   final List<FiltroHistorico> _filtros = [];
+  FiltroHistorico? _filtroRapido;
   _ModoOrdenacao _ordenacao = _ModoOrdenacao.dataDecrescente;
 
   void _adicionarFiltro(FiltroHistorico f) => setState(() => _filtros.add(f));
   void _removerFiltro(String id) => setState(() => _filtros.removeWhere((f) => f.id == id));
+  void _setFiltroRapido(FiltroHistorico? f) => setState(() => _filtroRapido = f);
 
   void _proximaOrdenacao() {
     setState(() {
@@ -92,7 +94,11 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   }
 
   List<Transacao> _filtrarEOrdenar(List<Transacao> todas) {
-    final lista = todas.where((t) => _filtros.every((f) => f.aplica(t))).toList();
+    final lista = todas.where((t) {
+      final passaFiltrosAtivos = _filtros.every((f) => f.aplica(t));
+      final passaFiltroRapido = _filtroRapido?.aplica(t) ?? true;
+      return passaFiltrosAtivos && passaFiltroRapido;
+    }).toList();
 
     switch (_ordenacao) {
       case _ModoOrdenacao.dataCrescente:
@@ -133,6 +139,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
           sugestoesCategorias: sugestoesCategorias,
           onAdicionar: _adicionarFiltro,
           onRemover: _removerFiltro,
+          onFiltroRapidoChanged: _setFiltroRapido,
         ),
         const SizedBox(height: 16),
         Row(

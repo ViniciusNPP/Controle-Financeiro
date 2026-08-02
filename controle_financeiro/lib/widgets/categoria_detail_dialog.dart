@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/utils/app_shortcuts.dart';
 import 'package:controle_financeiro/widgets/others_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -65,45 +66,68 @@ class _CategoriaDetailDialogState extends State<CategoriaDetailDialog> {
   @override
   Widget build(BuildContext context) {
     final cor = _tipo == TipoLancamento.entrada ? AppColors.entrada : AppColors.saida;
-
-    return DetailDialogShell(
-      titulo: _editando ? 'Editar categoria' : 'Detalhes da categoria',
-      maxWidth: 400,
-      botaoSecundario: botaoSecundarioDialog(
-        editando: _editando,
-        onVoltar: () => setState(() {
+    void onVoltar() {
+      setState(() {
           _editando = false;
           _resetarCampos();
-        }),
-        onCancelar: () => Navigator.of(context).pop(),
-      ),
-      botoesPrincipais: botoesPrincipaisDialog(
-        editando: _editando,
-        valido: _valido,
-        onSalvar: _salvar,
-        onExcluir: _confirmarExclusao,
-        onEditar: () => setState(() => _editando = true),
-      ),
-      children: [
-        LinhaDetalhe(
-         rotulo: 'Nome',
-         conteudo: _editando
-              ? TextField(
-                  controller: _nomeController,
-                  autofocus: true,
-                  onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(hintText: 'Nome da categoria'),
-                )
-              : ValorEstatico(widget.categoria.nome),
+        });
+    }
+    void onCancelar() => Navigator.of(context).pop();
+
+    return Shortcuts(
+      shortcuts: atalhosGlobais,
+      child: Actions(
+        actions: {
+          DelIntent: CallbackAction<DelIntent>(onInvoke: (intent) => _confirmarExclusao()),
+          AceitarIntent: CallbackAction<AceitarIntent>(onInvoke: (intent) {
+            if (_editando) _salvar();
+              setState(() => _editando = true);
+            return null;
+          }),
+        },
+        child: Focus(
+          autofocus: true,
+          child: DetailDialogShell(
+            titulo: _editando ? 'Editar categoria' : 'Detalhes da categoria',
+            maxWidth: 400,
+            onVoltar: () => onVoltar(),
+            onCancelar: () => onCancelar(),
+            editando: _editando,
+            botaoSecundario: botaoSecundarioDialog(
+              editando: _editando,
+              onVoltar: () => onVoltar(),
+              onCancelar: () => onCancelar(),
+            ),
+            botoesPrincipais: botoesPrincipaisDialog(
+              editando: _editando,
+              valido: _valido,
+              onSalvar: _salvar,
+              onExcluir: _confirmarExclusao,
+              onEditar: () => setState(() => _editando = true),
+            ),
+            children: [
+              LinhaDetalhe(
+              rotulo: 'Nome',
+              conteudo: _editando
+                    ? TextField(
+                        controller: _nomeController,
+                        autofocus: true,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(hintText: 'Nome da categoria'),
+                      )
+                    : ValorEstatico(widget.categoria.nome),
+              ),
+              LinhaDetalhe(
+              rotulo: 'Tipo',
+              conteudo: _editando
+                    ? SeletorTipo(tipoSelecionado: _tipo, onSelecionar: (t) => setState(() => _tipo = t))
+                    : ValorEstatico(_tipo == TipoLancamento.entrada ? 'Entrada' : 'Saída', cor: cor),
+              ),
+            ],
+            
+          ),
         ),
-        LinhaDetalhe(
-         rotulo: 'Tipo',
-         conteudo: _editando
-              ? SeletorTipo(tipoSelecionado: _tipo, onSelecionar: (t) => setState(() => _tipo = t))
-              : ValorEstatico(_tipo == TipoLancamento.entrada ? 'Entrada' : 'Saída', cor: cor),
-        ),
-      ],
-      
+      ),
     );
   }
 }

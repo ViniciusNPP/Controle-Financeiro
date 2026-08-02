@@ -1,7 +1,7 @@
+import 'package:controle_financeiro/widgets/month_year_navigator.dart';
 import 'package:flutter/material.dart';
 import '../models/transacao.dart';
 import '../theme/app_theme.dart';
-import '../utils/formatters.dart';
 import '../utils/period_utils.dart';
 
 enum _ModoPeriodo { mensal, anual }
@@ -208,9 +208,9 @@ class _PeriodSelectorState extends State<PeriodSelector> {
     if (_granMensal == _GranMensal.personalizado) {
       return Row(
         children: [
-          Expanded(child: _seletorMes('De', _mesPersonalizadoDe, (d) => _mesPersonalizadoDe = d)),
+          Expanded(child: _seletorMes('De', _mesPersonalizadoDe, (d) => _mesPersonalizadoDe = d, abreviado: true)),
           const SizedBox(width: 12),
-          Expanded(child: _seletorMes('Até', _mesPersonalizadoAte, (d) => _mesPersonalizadoAte = d)),
+          Expanded(child: _seletorMes('Até', _mesPersonalizadoAte, (d) => _mesPersonalizadoAte = d, abreviado: true)),
         ],
       );
     }
@@ -231,84 +231,28 @@ class _PeriodSelectorState extends State<PeriodSelector> {
     return _seletorAno(null, _anoReferencia, (a) => _anoReferencia = a);
   }
 
-  Widget _seletorMes(String? rotulo, DateTime valor, void Function(DateTime) set) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (rotulo != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4, left: 4),
-            child: Text(rotulo, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-          ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(color: AppColors.disabledFill, borderRadius: BorderRadius.circular(12)),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                style:ElevatedButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
-                icon: const Icon(Icons.chevron_left_rounded, size: 20),
-                onPressed: () {
-                  final novo = DateTime(valor.year, valor.month - 1);
-                  setState(() => set(DateTime(novo.year, novo.month)));
-                  _emitir();
-                },
-              ),
-              Text(
-                '${Formatters.nomesMesesCompleto[valor.month]} ${valor.year}',
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-              ),
-              IconButton(
-                style:ElevatedButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
-                icon: const Icon(Icons.chevron_right_rounded, size: 20),
-                onPressed: () {
-                  final novo = DateTime(valor.year, valor.month + 1);
-                  setState(() => set(DateTime(novo.year, novo.month)));
-                  _emitir();
-                },
-              ),
-            ],
-          ),
-        ),
-      ],
+  Widget _seletorMes(String? rotulo, DateTime valor, void Function(DateTime) set, {bool abreviado = false}) {
+    return MonthYearNavigator(
+      granularidade: GranularidadeNavegador.mes,
+      valor: valor,
+      rotulo: rotulo,
+      abreviado: abreviado,
+      onChanged: (d) {
+        setState(() => set(DateTime(d.year, d.month)));
+        _emitir();
+      },
     );
   }
 
   Widget _seletorAno(String? rotulo, int valor, void Function(int) set) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (rotulo != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4, left: 4),
-            child: Text(rotulo, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-          ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(color: AppColors.disabledFill, borderRadius: BorderRadius.circular(12)),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left_rounded, size: 20),
-                onPressed: () {
-                  setState(() => set(valor - 1));
-                  _emitir();
-                },
-              ),
-              Text('$valor', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              IconButton(
-                icon: const Icon(Icons.chevron_right_rounded, size: 20),
-                onPressed: () {
-                  setState(() => set(valor + 1));
-                  _emitir();
-                },
-              ),
-            ],
-          ),
-        ),
-      ],
+    return MonthYearNavigator(
+      granularidade: GranularidadeNavegador.ano,
+      valor: DateTime(valor),
+      rotulo: rotulo,
+      onChanged: (d) {
+        setState(() => set(d.year));
+        _emitir();
+      },
     );
   }
 }

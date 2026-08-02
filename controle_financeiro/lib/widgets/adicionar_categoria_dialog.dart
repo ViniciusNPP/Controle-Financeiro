@@ -5,10 +5,6 @@ import '../models/categoria.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 
-/// Popup de adicionar categoria usado na aba Categorias. Diferente do
-/// "+ nova categoria" do formulário de lançamento, este NÃO fecha ao
-/// adicionar: mostra uma confirmação rápida e limpa o campo, para o usuário
-/// poder adicionar várias categorias seguidas sem reabrir o popup.
 class AdicionarCategoriaDialog extends StatefulWidget {
   final TipoLancamento tipo;
 

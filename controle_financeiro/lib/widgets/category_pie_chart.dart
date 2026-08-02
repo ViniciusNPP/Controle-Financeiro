@@ -21,11 +21,33 @@ class CategoryPieChartCard extends StatefulWidget {
 
 class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
   int? _indiceTocado;
+  List<MapEntry<String, double>> _entradasFiltradas() {
+    final ordenadas = widget.dados.entries.where((e) => e.value > 0).toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final total = ordenadas.fold<double>(0, (a, e) => a + e.value);
+    if (total == 0) return ordenadas;
+
+    const limite = 0.95;
+    final resultado = <MapEntry<String, double>>[];
+    double acumulado = 0;
+    double outros = 0;
+
+    for (final entrada in ordenadas) {
+      if (acumulado / total < limite) {
+        resultado.add(entrada);
+        acumulado += entrada.value;
+      } else {
+        outros += entrada.value;
+      }
+    }
+
+    if (outros > 0) resultado.add(MapEntry('Outros', outros));
+    return resultado;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final entradas = widget.dados.entries.where((e) => e.value > 0).toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final entradas = _entradasFiltradas();
     final total = entradas.fold<double>(0, (a, e) => a + e.value);
 
     return Container(

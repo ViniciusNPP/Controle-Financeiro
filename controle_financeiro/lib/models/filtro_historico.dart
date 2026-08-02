@@ -18,13 +18,11 @@ extension CampoFiltroLabel on CampoFiltro {
   }
 }
 
-enum Operador { igual, maior, maiorIgual, menor, menorIgual }
+enum Operador { maior, maiorIgual, menor, menorIgual }
 
 extension OperadorLabel on Operador {
   String get simbolo {
     switch (this) {
-      case Operador.igual:
-        return '=';
       case Operador.maior:
         return '>';
       case Operador.maiorIgual:
@@ -38,8 +36,6 @@ extension OperadorLabel on Operador {
 
   String get rotulo {
     switch (this) {
-      case Operador.igual:
-        return 'Igual';
       case Operador.maior:
         return 'Maior';
       case Operador.maiorIgual:
@@ -52,10 +48,6 @@ extension OperadorLabel on Operador {
   }
 }
 
-/// Um filtro ativo no histórico. Para Tipo/Categoria usa [texto] (busca por
-/// conter o termo). Para Data/Valor usa dois campos + operador: quando o
-/// segundo campo está preenchido, ele manda (aplica o operador); quando só
-/// o primeiro está preenchido, busca por igualdade.
 class FiltroHistorico {
   final String id;
   final CampoFiltro campo;
@@ -76,7 +68,7 @@ class FiltroHistorico {
     this.data2,
     this.numero1,
     this.numero2,
-    this.operador = Operador.igual,
+    this.operador = Operador.maior,
   });
 
   bool aplica(Transacao t) {
@@ -102,11 +94,6 @@ class FiltroHistorico {
     }
   }
 
-  /// - Os dois campos preenchidos: filtra por intervalo (entre v1 e v2,
-  ///   independente de qual é o menor), o operador é ignorado.
-  /// - Só o campo 2 preenchido: aplica o operador sobre v2.
-  /// - Só o campo 1 preenchido: busca por igualdade a v1.
-  /// - Nenhum preenchido: filtro inativo (sempre passa).
   bool _aplicaIntervalo<T>({
     required T valor,
     required T? v1,
@@ -122,8 +109,6 @@ class FiltroHistorico {
     if (v2 != null) {
       final cmp = comparar(valor, v2);
       switch (operador) {
-        case Operador.igual:
-          return cmp == 0;
         case Operador.maior:
           return cmp > 0;
         case Operador.maiorIgual:

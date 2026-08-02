@@ -22,7 +22,7 @@ class DatePickerField extends StatelessWidget {
             context: context,
             initialDate: valor,
             firstDate: DateTime(1900),
-            lastDate: DateTime.now(),
+            lastDate: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
             helpText: 'Escolha a data',
             cancelText: 'Cancelar',
             confirmText: 'Confirmar',
@@ -131,6 +131,38 @@ class CurrencyInputState extends State<CurrencyInput> {
 
   void limpar() {
     setState(() => _controller.text = '0,00');
+  }
+
+  void adicionarDigito(String digito) {
+    final oldValue = _controller.value;
+    final novoTexto = oldValue.text + digito;
+    final novoValue = TextEditingValue(
+      text: novoTexto,
+      selection: TextSelection.collapsed(offset: novoTexto.length),
+    );
+
+    final formatado = _CentavosInputFormatter().formatEditUpdate(oldValue, novoValue);
+
+    setState(() => _controller.value = formatado);
+    widget.onChanged(valorAtual);
+  }
+
+  void removerDigito() {
+    final oldValue = _controller.value;
+    final digitosAtuais = oldValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    final digitosReduzidos = digitosAtuais.length > 1
+        ? digitosAtuais.substring(0, digitosAtuais.length - 1)
+        : '0';
+
+    final novoValue = TextEditingValue(
+      text: digitosReduzidos,
+      selection: TextSelection.collapsed(offset: digitosReduzidos.length),
+    );
+
+    final formatado = _CentavosInputFormatter().formatEditUpdate(oldValue, novoValue);
+
+    setState(() => _controller.value = formatado);
+    widget.onChanged(valorAtual);
   }
 
   @override

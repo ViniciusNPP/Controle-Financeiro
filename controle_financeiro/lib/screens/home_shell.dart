@@ -38,7 +38,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final telas = [const AddTransactionScreen(), const ChartsScreen(), const HistoricoScreen(), const CategoriasScreen()];
+    final telas = [AddTransactionScreen(ativa: _aba == 0,), ChartsScreen(), HistoricoScreen(), CategoriasScreen()];
     final titulos = ['Adicionar lançamento', 'Gráficos', 'Histórico', 'Categorias'];
 
     return LayoutBuilder(

@@ -10,6 +10,9 @@ class DetailDialogShell extends StatelessWidget {
   final Widget botaoSecundario;
   final List<Widget> botoesPrincipais;
   final double maxWidth;
+  final bool editando;
+  final VoidCallback onVoltar;
+  final VoidCallback onCancelar;
 
   const DetailDialogShell({
     super.key,
@@ -17,47 +20,57 @@ class DetailDialogShell extends StatelessWidget {
     required this.children,
     required this.botaoSecundario,
     required this.botoesPrincipais,
+    required this.onVoltar,
+    required this.onCancelar,
+    required this.editando,
     this.maxWidth = 420,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(titulo, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 22),
-              for (final linha in children) ...[
-                linha,
-                const SizedBox(height: 16),
-              ],
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    botaoSecundario,
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: botoesPrincipais,
-                    ),
-                  ],
+    return PopScope(
+      canPop: !editando,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        onVoltar();
+      },
+      child: Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(titulo, style: Theme.of(context).textTheme.headlineMedium),
+                const SizedBox(height: 22),
+                for (final linha in children) ...[
+                  linha,
+                  const SizedBox(height: 16),
+                ],
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      botaoSecundario,
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: botoesPrincipais,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -103,7 +116,7 @@ List<Widget> botoesPrincipaisDialog({
         onPressed: valido ? onSalvar : null,
         icon: const Icon(Icons.save_rounded, size: 18),
         label: const Text('Salvar'),
-        style:estiloBotao(corBackGround: corSalvar, isSide: true),
+        style: estiloBotao(corBackGround: corSalvar, isSide: true),
       ),
     ];
   }
@@ -134,8 +147,18 @@ class ValorEstatico extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(color: AppColors.disabledFill, borderRadius: BorderRadius.circular(12)),
-      child: Text(texto, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cor ?? AppColors.textPrimary)),
+      decoration: BoxDecoration(
+        color: AppColors.disabledFill,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        texto,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: cor ?? AppColors.textPrimary,
+        ),
+      ),
     );
   }
 }
@@ -144,20 +167,38 @@ class SeletorTipo extends StatelessWidget {
   final TipoLancamento tipoSelecionado;
   final ValueChanged<TipoLancamento> onSelecionar;
 
-  const SeletorTipo({super.key, required this.tipoSelecionado, required this.onSelecionar});
+  const SeletorTipo({
+    super.key,
+    required this.tipoSelecionado,
+    required this.onSelecionar,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _item(context, 'Entrada', TipoLancamento.entrada, AppColors.entrada)),
+        Expanded(
+          child: _item(
+            context,
+            'Entrada',
+            TipoLancamento.entrada,
+            AppColors.entrada,
+          ),
+        ),
         const SizedBox(width: 10),
-        Expanded(child: _item(context, 'Saída', TipoLancamento.saida, AppColors.saida)),
+        Expanded(
+          child: _item(context, 'Saída', TipoLancamento.saida, AppColors.saida),
+        ),
       ],
     );
   }
 
-  Widget _item(BuildContext context, String label, TipoLancamento tipo, Color cor) {
+  Widget _item(
+    BuildContext context,
+    String label,
+    TipoLancamento tipo,
+    Color cor,
+  ) {
     final selecionado = tipoSelecionado == tipo;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -169,9 +210,18 @@ class SeletorTipo extends StatelessWidget {
           decoration: BoxDecoration(
             color: selecionado ? cor.withOpacity(0.12) : AppColors.disabledFill,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selecionado ? cor : Colors.transparent, width: 1.5),
+            border: Border.all(
+              color: selecionado ? cor : Colors.transparent,
+              width: 1.5,
+            ),
           ),
-          child: Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: selecionado ? cor : AppColors.textSecondary)),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: selecionado ? cor : AppColors.textSecondary,
+            ),
+          ),
         ),
       ),
     );

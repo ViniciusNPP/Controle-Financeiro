@@ -1,3 +1,5 @@
+import 'package:controle_financeiro/theme/app_theme.dart';
+import 'package:controle_financeiro/utils/app_shortcuts.dart';
 import 'package:flutter/material.dart';
 
 enum Ground {
@@ -42,28 +44,69 @@ Future<void> confirmarExclusao({
 }) {
   return showDialog(
     context: context,
-    builder: (ctx) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      title: Text(titulo),
-      content: Text(mensagem),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(),
-          style: estiloBotao(corForeGround: Color(0xFF2e2a6e)),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          style: estiloBotao(corBackGround: corBotaoExcluir),
-          onPressed: () async {
-            await aoConfirmar();
+    builder: (ctx) => Shortcuts(
+      shortcuts: atalhosGlobais,
+      child: Actions(
+        actions: {
+          AceitarIntent: CallbackAction<AceitarIntent> (onInvoke: (intent) {
+            aoConfirmar();
             if (ctx.mounted) Navigator.of(ctx).pop();
-            if (fecharTelaAposExcluir && context.mounted) {
-              Navigator.of(context).pop();
-            }
-          },
-          child: const Text('Excluir'),
+            if (ctx.mounted) Navigator.of(context).pop();
+            return null;
+          })
+        },
+        child: Focus(
+          autofocus: true,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            title: Text(titulo),
+            content: Text(mensagem),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                style: estiloBotao(corForeGround: Color(0xFF2e2a6e)),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: estiloBotao(corBackGround: corBotaoExcluir),
+                onPressed: () async {
+                  await aoConfirmar();
+                  if (ctx.mounted) Navigator.of(ctx).pop();
+                  if (ctx.mounted) Navigator.of(context).pop();
+                },
+                child: const Text('Excluir'),
+              ),
+            ],
+          ),
+        )
+      ),
+    ),
+  );
+}
+
+Widget botaoSelecionavel({
+  required String label,
+  required bool selecionado,
+  required Color cor,
+  required VoidCallback onTap,
+}) {
+  return MouseRegion(
+    cursor: SystemMouseCursors.click,
+    child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selecionado ? cor.withOpacity(0.12) : AppColors.disabledFill,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: selecionado ? cor : Colors.transparent, width: 1.5),
         ),
-      ],
+        child: Text(
+          label,
+          style: TextStyle(fontWeight: FontWeight.w600, color: selecionado ? cor : AppColors.textSecondary),
+        ),
+      ),
     ),
   );
 }

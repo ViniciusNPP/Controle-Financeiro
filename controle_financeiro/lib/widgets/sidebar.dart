@@ -78,6 +78,7 @@ class AppSidebarContent extends StatelessWidget {
         color: selecionado ? Colors.white.withOpacity(0.12) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
+          canRequestFocus: false,
           mouseCursor: SystemMouseCursors.click,
           borderRadius: BorderRadius.circular(12),
           onTap: () {
