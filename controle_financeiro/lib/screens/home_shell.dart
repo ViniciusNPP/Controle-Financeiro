@@ -20,7 +20,8 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _aba = 0;
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _scaffoldKey = GlobalKey<ScaffoldState>(); //Chave mobile
+  final _conteudoKey = GlobalKey(); //Chave desktop
 
   static const _larguraSidebar = 250.0;
   static const _quebraDesktop = 900.0;
@@ -40,6 +41,8 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final telas = [AddTransactionScreen(ativa: _aba == 0,), ChartsScreen(), HistoricoScreen(), CategoriasScreen()];
     final titulos = ['Adicionar lançamento', 'Gráficos', 'Histórico', 'Categorias'];
+
+    final conteudo = IndexedStack(key: _conteudoKey, index: _aba, children: telas);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -61,7 +64,7 @@ class _HomeShellState extends State<HomeShell> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
-                    child: IndexedStack(index: _aba, children: telas),
+                    child: conteudo,
                   ),
                 ),
               ],
@@ -92,7 +95,7 @@ class _HomeShellState extends State<HomeShell> {
           body: SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: IndexedStack(index: _aba, children: telas),
+              child: conteudo,
             ),
           ),
         );

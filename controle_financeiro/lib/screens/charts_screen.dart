@@ -18,7 +18,8 @@ class ChartsScreen extends StatefulWidget {
 class _ChartsScreenState extends State<ChartsScreen> {
   FiltroPeriodo? _filtro;
   int _paginaAtual = 0;
-  final _pageController = PageController();
+  int _totalPaginas = 0;
+  PageController _pageController = PageController(initialPage: 0);
 
   @override
   void dispose() {
@@ -40,13 +41,13 @@ class _ChartsScreenState extends State<ChartsScreen> {
 
     final graficos = [
       BarChartCard(
-        titulo: 'Entradas gerais',
+        titulo: 'Entradas',
         dados: entradasPorBalde,
         agruparPorAno: filtro.agruparPorAno,
         cor: AppColors.entrada,
       ),
       BarChartCard(
-        titulo: 'Saídas gerais',
+        titulo: 'Saídas',
         dados: saidasPorBalde,
         agruparPorAno: filtro.agruparPorAno,
         cor: AppColors.saida,
@@ -62,14 +63,22 @@ class _ChartsScreenState extends State<ChartsScreen> {
       CategoryPieChartCard(titulo: 'Entradas específicas', dados: entradasPorCategoria),
     ];
 
+    final graficosCarrossel = [
+      graficos[2], // Saldo
+      graficos[0], // Entradas
+      graficos[1], // Saídas
+      graficos[3], // Saídas específicas
+      graficos[4], // Entradas específicas
+    ];
+    
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 900;
+        final larguraSuficiente = constraints.maxWidth >= 500;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (isDesktop) ...[
+            if (larguraSuficiente) ...[
               Text('Gráficos', style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 16),
             ],
@@ -79,7 +88,14 @@ class _ChartsScreenState extends State<ChartsScreen> {
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: isDesktop ? _gradeDesktop(graficos) : _carrosselMobile(graficos),
+              child: LayoutBuilder(
+                builder: (context, restante) {
+                  const alturaMinimaGrade = 380.0; // ajuste esse número se quiser trocar
+                  final alturaSuficiente = restante.maxHeight >= alturaMinimaGrade;
+                  final usarGrade = larguraSuficiente && alturaSuficiente;
+                  return usarGrade ? _gradeDesktop(graficos) : _carrosselMobile(graficosCarrossel);
+                },
+              ),
             ),
           ],
         );
@@ -88,38 +104,42 @@ class _ChartsScreenState extends State<ChartsScreen> {
   }
 
   Widget _gradeDesktop(List<Widget> graficos) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: SizedBox(height: 280, child: graficos[0])),
-                const SizedBox(width: 16),
-                Expanded(child: SizedBox(height: 280, child: graficos[1])),
-                const SizedBox(width: 16),
-                Expanded(child: SizedBox(height: 280, child: graficos[2])),
-              ],
-            ),
+    const espacamento = 16.0;
+    return Column(
+      children: [
+        Expanded(
+          flex: 280,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: graficos[0]),
+              const SizedBox(width: espacamento),
+              Expanded(child: graficos[1]),
+              const SizedBox(width: espacamento),
+              Expanded(child: graficos[2]),
+            ],
           ),
-          const SizedBox(height: 16),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: SizedBox(height: 320, child: graficos[3])),
-                const SizedBox(width: 16),
-                Expanded(child: SizedBox(height: 320, child: graficos[4])),
-              ],
-            ),
+        ),
+        const SizedBox(height: espacamento),
+        Expanded(
+          flex: 320,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: graficos[3]),
+              const SizedBox(width: espacamento),
+              Expanded(child: graficos[4]),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _carrosselMobile(List<Widget> graficos) {
+    _pageController = PageController(initialPage: _paginaAtual);
+    _totalPaginas = graficos.length;
+    
     return Column(
       children: [
         Expanded(
@@ -128,13 +148,14 @@ class _ChartsScreenState extends State<ChartsScreen> {
             children: [
               PageView(
                 controller: _pageController,
-                onPageChanged: (i) => setState(() => _paginaAtual = i),
+                onPageChanged: (i) => setState(() {
+                  _paginaAtual = i;
+                  // print("Página atual: $_paginaAtual");
+                }),
                 children: [for (final g in graficos) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: g)],
               ),
-              if (_paginaAtual > 0)
-                Positioned(left: 0, child: _setaCarrossel(Icons.chevron_left_rounded, _paginaAnterior)),
-              if (_paginaAtual < graficos.length - 1)
-                Positioned(right: 0, child: _setaCarrossel(Icons.chevron_right_rounded, _proximaPagina)),
+              Positioned(left: 0, child: _setaCarrossel(Icons.chevron_left_rounded, _paginaAnterior)),
+              Positioned(right: 0, child: _setaCarrossel(Icons.chevron_right_rounded, _proximaPagina)),
             ],
           ),
         ),
@@ -160,15 +181,21 @@ class _ChartsScreenState extends State<ChartsScreen> {
   }
 
   void _paginaAnterior() {
-    _pageController.previousPage(duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+    if (_paginaAtual == 0) {
+      _pageController.animateToPage(_totalPaginas - 1, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+    } else {
+      _pageController.previousPage(duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+    }
   }
 
   void _proximaPagina() {
-    _pageController.nextPage(duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+    if (_paginaAtual == _totalPaginas - 1) {
+      _pageController.animateToPage(0, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+    } else {
+      _pageController.nextPage(duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+    }
   }
 
-  /// Seta discreta: fundo translúcido, some quando não há mais pra onde ir
-  /// (controlado pelo chamador via _paginaAtual), fica sutil até ser tocada.
   Widget _setaCarrossel(IconData icone, VoidCallback aoTocar) {
     return Material(
       color: Colors.black.withOpacity(0.06),

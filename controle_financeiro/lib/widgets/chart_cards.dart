@@ -27,7 +27,6 @@ class BarChartCard extends StatefulWidget {
 }
 
 class _BarChartCardState extends State<BarChartCard> {
-  bool _mostrandoTotal = false;
 
   @override
   Widget build(BuildContext context) {
@@ -35,12 +34,9 @@ class _BarChartCardState extends State<BarChartCard> {
     final valores = chaves.map((k) => widget.dados[k] ?? 0).toList();
     final total = valores.fold<double>(0, (a, b) => a + b);
 
-    // Só faz sentido alternar para "Total" se houver mais de um período para somar.
     final podeAlternar = chaves.length > 1;
-    final exibirTotal = podeAlternar && _mostrandoTotal;
 
-    // Valores efetivamente desenhados: os buckets normais, ou uma única barra com a soma de tudo.
-    final valoresExibidos = exibirTotal ? [total] : valores;
+    final valoresExibidos = valores;
     final quantidadeBarras = valoresExibidos.length;
 
     final minValor = valoresExibidos.isEmpty ? 0.0 : valoresExibidos.reduce((a, b) => a < b ? a : b);
@@ -50,10 +46,9 @@ class _BarChartCardState extends State<BarChartCard> {
     if (maxY <= minY) maxY = minY + 1;
 
     final corTexto = widget.destaque ? Colors.white : AppColors.textPrimary;
-    final corTextoSecundario = widget.destaque ? Colors.white.withOpacity(0.75) : AppColors.textSecondary;
+    final corTextoSecundario = widget.destaque ? Colors.white.withValues(alpha: 0.75) : AppColors.textSecondary;
     final corBarra = widget.destaque ? Colors.white : widget.cor;
-    // Linha de referência do zero
-    final corLinhaZero = widget.destaque ? Colors.white.withOpacity(0.35) : Colors.grey.withOpacity(0.55);
+    final corLinhaZero = widget.destaque ? Colors.white.withValues(alpha: 0.35) : Colors.grey.withValues(alpha: 0.55);
 
     final Widget conteudo = Container(
       padding: const EdgeInsets.all(20),
@@ -71,21 +66,29 @@ class _BarChartCardState extends State<BarChartCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.titulo, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: corTextoSecundario)),
-          const SizedBox(height: 4),
-          Text(
-            Formatters.moeda(total),
-            style: Theme.of(context).textTheme.displayMedium?.copyWith(color: corTexto),
-          ),
-          if (podeAlternar) ...[
-            const SizedBox(height: 2),
-            Text(
-              exibirTotal ? 'Toque para ver por período' : 'Toque para ver o total',
-              style: TextStyle(fontSize: 11, color: corTextoSecundario),
-            ),
-          ],
-          const SizedBox(height: 16),
           Expanded(
+            flex: 80,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              clipBehavior: Clip.hardEdge,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(widget.titulo, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: corTextoSecundario)),
+                  const SizedBox(height: 4),
+                  Text(
+                    Formatters.moeda(total),
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(color: corTexto),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            flex: 160,
             child: chaves.isEmpty
                 ? Center(
                     child: Text(
@@ -100,8 +103,6 @@ class _BarChartCardState extends State<BarChartCard> {
                       alignment: BarChartAlignment.spaceAround,
                       gridData: const FlGridData(show: false),
                       borderData: FlBorderData(show: false),
-                      // Linha de referência no zero, pra dar noção de
-                      // "chão" quando alguma barra fica negativa.
                       extraLinesData: ExtraLinesData(
                         horizontalLines: [
                           HorizontalLine(
@@ -134,8 +135,7 @@ class _BarChartCardState extends State<BarChartCard> {
                             getTitlesWidget: (value, meta) {
                               final i = value.toInt();
                               if (i < 0 || i >= quantidadeBarras) return const SizedBox.shrink();
-                              final rotulo =
-                                  exibirTotal ? 'Total' : PeriodoUtils.rotuloBalde(chaves[i], widget.agruparPorAno);
+                              final rotulo = PeriodoUtils.rotuloBalde(chaves[i], widget.agruparPorAno);
                               return Padding(
                                 padding: const EdgeInsets.only(top: 6),
                                 child: Text(
@@ -155,7 +155,7 @@ class _BarChartCardState extends State<BarChartCard> {
                               BarChartRodData(
                                 toY: valoresExibidos[i],
                                 color: corBarra,
-                                width: exibirTotal ? 32 : (chaves.length > 8 ? 10 : 20),
+                                width: chaves.length > 8 ? 10 : 20,
                                 borderRadius: valoresExibidos[i] >= 0
                                     ? const BorderRadius.vertical(top: Radius.circular(6))
                                     : const BorderRadius.vertical(bottom: Radius.circular(6)),
@@ -174,7 +174,6 @@ class _BarChartCardState extends State<BarChartCard> {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _mostrandoTotal = !_mostrandoTotal),
       child: conteudo,
     );
   }

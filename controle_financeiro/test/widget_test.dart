@@ -1,18 +1,22 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
 import 'package:controle_financeiro/main.dart';
+import 'package:controle_financeiro/providers/finance_provider.dart';
+import 'package:controle_financeiro/screens/charts_screen.dart';
 
 void main() {
-  testWidgets('o app inicia corretamente', (WidgetTester tester) async {
-    await tester.pumpWidget(const MeuApp());
+  testWidgets('a tela de gráficos renderiza corretamente', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => FinanceProvider()),
+        ],
+        child: const MaterialApp(home: ChartsScreen()),
+      ),
+    );
 
-    expect(find.text('Meu Financeiro'), findsOneWidget);
+    expect(find.text('Gráficos'), findsOneWidget);
   });
 }
