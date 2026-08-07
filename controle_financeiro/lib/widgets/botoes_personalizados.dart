@@ -2,11 +2,6 @@ import 'package:controle_financeiro/theme/app_theme.dart';
 import 'package:controle_financeiro/utils/app_shortcuts.dart';
 import 'package:flutter/material.dart';
 
-enum Ground {
-  foreground,
-  background
-}
-
 ButtonStyle estiloBotao({
   Color corForeGround = const Color(0xFFece6f0),
   Color corBackGround = const Color(0xFFece6f0),

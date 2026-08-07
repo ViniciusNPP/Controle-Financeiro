@@ -78,16 +78,16 @@ class _CategoriaDetailDialogState extends State<CategoriaDetailDialog> {
     return DetailDialogShell(
       titulo: _editando ? 'Editar categoria' : 'Detalhes da categoria',
       maxWidth: 400,
-      onVoltar: () => onVoltar(),
-      onCancelar: () => onCancelar(),
-      onSalvar: () => _salvar(),
-      onEditar: () => onEditar(),
-      onExcluir: () => _confirmarExclusao(),
+      onVoltar: onVoltar,
+      onCancelar: onCancelar,
+      onSalvar: _salvar,
+      onEditar: onEditar,
+      onExcluir: _confirmarExclusao,
       editando: _editando,
       botaoSecundario: botaoSecundarioDialog(
         editando: _editando,
-        onVoltar: () => onVoltar(),
-        onCancelar: () => onCancelar(),
+        onVoltar: onVoltar,
+        onCancelar: onCancelar,
       ),
       botoesPrincipais: botoesPrincipaisDialog(
         editando: _editando,

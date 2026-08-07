@@ -67,11 +67,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 Text('Novo lançamento', style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 24),
                 _rotulo('Data'),
-                GestureDetector(
-                  child: DatePickerField(valor: _data, onChanged: (d) {
+                DatePickerField(valor: _data, onChanged: (d) {
                     setState(() => _data = d);
                   }),
-                ),
                 const SizedBox(height: 20),
                 _rotulo('Tipo'),
                 Row(
@@ -103,14 +101,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ),
                 const SizedBox(height: 20),
                 _rotulo('Categoria'),
-                GestureDetector(
-                  child: CategorySelector(
-                    tipo: _tipo,
-                    categoriaSelecionada: _categoria,
-                    onSelecionar: (c) {
-                      setState(() => _categoria = c);
-                    },
-                  ),
+                CategorySelector(
+                  tipo: _tipo,
+                  categoriaSelecionada: _categoria,
+                  onSelecionar: (c) {
+                    setState(() => _categoria = c);
+                  },
                 ),
                 const SizedBox(height: 20),
                 _rotulo('Valor'),

@@ -34,18 +34,11 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   void _removerFiltro(String id) => setState(() => _filtros.removeWhere((f) => f.id == id));
   void _setFiltroRapido(FiltroHistorico? f) => setState(() => _filtroRapido = f);
 
-  void _proximaOrdenacao() {
-    setState(() {
-      final valores = _ModoOrdenacao.values;
-      _ordenacao = valores[(valores.indexOf(_ordenacao) + 1) % valores.length];
-    });
-  }
-
-  void _ordenacaoAnterior() {
+  void _mudarOrdenacao(int direcao) {
     setState(() {
       final valores = _ModoOrdenacao.values;
       final indiceAtual = valores.indexOf(_ordenacao);
-      _ordenacao = valores[(indiceAtual - 1 + valores.length) % valores.length];
+      _ordenacao = valores[(indiceAtual + direcao + valores.length) % valores.length];
     });
   }
 
@@ -150,11 +143,11 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
             Tooltip(
               message: 'Clique para mudar · botão direito para voltar',
               child: GestureDetector(
-                onSecondaryTap: _ordenacaoAnterior,
+                onSecondaryTap: () => _mudarOrdenacao(-1),
                 child: InkWell(
                   mouseCursor: SystemMouseCursors.click,
                   borderRadius: BorderRadius.circular(12),
-                  onTap: _proximaOrdenacao,
+                  onTap: () => _mudarOrdenacao(1),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: AppTheme.cardDecoration(),

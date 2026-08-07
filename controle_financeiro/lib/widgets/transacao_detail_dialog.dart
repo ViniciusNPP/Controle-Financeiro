@@ -91,16 +91,16 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
     return DetailDialogShell(
       titulo: _editando ? 'Editar lançamento' : 'Detalhes do lançamento',
       maxWidth: 420,
-      onCancelar: () => onCancelar(),
-      onVoltar: () => onVoltar(),
-      onSalvar: () => _salvar(),
-      onEditar: () => onEditar(),
-      onExcluir: () => _confirmarExclusao(),
+      onCancelar: onCancelar,
+      onVoltar: onVoltar,
+      onSalvar: _salvar,
+      onEditar: onEditar,
+      onExcluir: _confirmarExclusao,
       editando: _editando,
       botaoSecundario: botaoSecundarioDialog(
         editando: _editando,
-        onVoltar: () => onVoltar(),
-        onCancelar: () => onCancelar(),
+        onVoltar: onVoltar,
+        onCancelar: onCancelar,
       ),
       botoesPrincipais: botoesPrincipaisDialog(
         editando: _editando,
@@ -119,7 +119,13 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
         LinhaDetalhe(
           rotulo: 'Tipo',
           conteudo: _editando
-              ? SeletorTipo(tipoSelecionado: _tipo, onSelecionar: (t) => setState(() => _tipo = t))
+              ? SeletorTipo(
+                  tipoSelecionado: _tipo,
+                  onSelecionar: (t) => setState(() {
+                    _tipo = t;
+                    _categoria = null;
+                  }),
+                )
               : ValorEstatico(_tipo == TipoLancamento.entrada ? 'Entrada' : 'Saída', cor: corTipo),
         ),
         LinhaDetalhe(

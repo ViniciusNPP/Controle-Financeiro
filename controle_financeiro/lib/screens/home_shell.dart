@@ -43,6 +43,11 @@ class _HomeShellState extends State<HomeShell> {
     final titulos = ['Adicionar lançamento', 'Gráficos', 'Histórico', 'Categorias'];
 
     final conteudo = IndexedStack(key: _conteudoKey, index: _aba, children: telas);
+    final sidebar = AppSidebarContent(
+      abaSelecionada: _aba,
+      onSelecionar: (i) => setState(() => _aba = i),
+      onSincronizar: () => _abrirSincronizacao(context),
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -55,11 +60,7 @@ class _HomeShellState extends State<HomeShell> {
               children: [
                 SizedBox(
                   width: _larguraSidebar,
-                  child: AppSidebarContent(
-                    abaSelecionada: _aba,
-                    onSelecionar: (i) => setState(() => _aba = i),
-                    onSincronizar: () => _abrirSincronizacao(context),
-                  ),
+                  child: sidebar,
                 ),
                 Expanded(
                   child: Padding(
@@ -86,11 +87,7 @@ class _HomeShellState extends State<HomeShell> {
           drawer: Drawer(
             width: 270,
             backgroundColor: AppColors.sidebarBg,
-            child: AppSidebarContent(
-              abaSelecionada: _aba,
-              onSelecionar: (i) => setState(() => _aba = i),
-              onSincronizar: () => _abrirSincronizacao(context),
-            ),
+            child: sidebar,
           ),
           body: SafeArea(
             child: Padding(
@@ -125,7 +122,7 @@ class _SincronizacaoSheetState extends State<_SincronizacaoSheet> {
     });
   }
 
-  Future<void> _executar(Future<bool> Function() acao) async {
+  Future<void> _exportar(Future<bool> Function() acao) async {
     setState(() {
       _carregando = true;
       _mensagem = null;
@@ -138,7 +135,7 @@ class _SincronizacaoSheetState extends State<_SincronizacaoSheet> {
     });
   }
 
-  Future<void> _importarComTratamentoDeErro() async {
+  Future<void> _importar() async {
     setState(() {
       _carregando = true;
       _mensagem = null;
@@ -170,6 +167,8 @@ class _SincronizacaoSheetState extends State<_SincronizacaoSheet> {
   @override
   Widget build(BuildContext context) {
     final ultimaSinc = widget.finance.ultimaSincronizacao;
+    final backgroundColor = Color(0xFF3e3b79);
+    final foregroundColor = Color(0xFFffffff);
 
     return SafeArea(
       child: Padding(
@@ -193,8 +192,8 @@ class _SincronizacaoSheetState extends State<_SincronizacaoSheet> {
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.upload_rounded, size: 18),
                 label: const Text('Exportar dados'),
-                style: estiloBotao(corBackGround: Color(0xFF3e3b79)),
-                onPressed: _carregando ? null : () => _executar(widget.finance.exportarParaArquivo),
+                style: estiloBotao(corBackGround: backgroundColor),
+                onPressed: _carregando ? null : () => _exportar(widget.finance.exportarParaArquivo),
               ),
             ),
             const SizedBox(height: 10),
@@ -203,8 +202,8 @@ class _SincronizacaoSheetState extends State<_SincronizacaoSheet> {
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.download_rounded, size: 18),
                 label: const Text('Importar dados'),
-                style: estiloBotao(corBackGround: Color(0xFFffffff), corForeGround: Color(0xFF3e3b79), isSide: true),
-                onPressed: _carregando ? null : _importarComTratamentoDeErro,
+                style: estiloBotao(corBackGround: foregroundColor, corForeGround: backgroundColor, isSide: true),
+                onPressed: _carregando ? null : _importar,
               ),
             ),
             const SizedBox(height: 16),
@@ -219,7 +218,7 @@ class _SincronizacaoSheetState extends State<_SincronizacaoSheet> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.folder_open_rounded, size: 18),
-                  style: estiloBotao(corBackGround: const Color(0xFF3e3b79)),
+                  style: estiloBotao(corBackGround: backgroundColor),
                   label: Text(_pasta == null ? 'Escolher pasta' : 'Trocar pasta'),
                   onPressed: _carregando
                       ? null

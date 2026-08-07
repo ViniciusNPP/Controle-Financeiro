@@ -34,13 +34,10 @@ class _BarChartCardState extends State<BarChartCard> {
     final valores = chaves.map((k) => widget.dados[k] ?? 0).toList();
     final total = valores.fold<double>(0, (a, b) => a + b);
 
-    final podeAlternar = chaves.length > 1;
+    final quantidadeBarras = valores.length;
 
-    final valoresExibidos = valores;
-    final quantidadeBarras = valoresExibidos.length;
-
-    final minValor = valoresExibidos.isEmpty ? 0.0 : valoresExibidos.reduce((a, b) => a < b ? a : b);
-    final maxValor = valoresExibidos.isEmpty ? 0.0 : valoresExibidos.reduce((a, b) => a > b ? a : b);
+    final minValor = valores.isEmpty ? 0.0 : valores.reduce((a, b) => a < b ? a : b);
+    final maxValor = valores.isEmpty ? 0.0 : valores.reduce((a, b) => a > b ? a : b);
     final minY = minValor < 0 ? minValor * 1.2 : 0.0;
     var maxY = maxValor > 0 ? maxValor * 1.2 : 1.0;
     if (maxY <= minY) maxY = minY + 1;
@@ -153,10 +150,10 @@ class _BarChartCardState extends State<BarChartCard> {
                             x: i,
                             barRods: [
                               BarChartRodData(
-                                toY: valoresExibidos[i],
+                                toY: valores[i],
                                 color: corBarra,
                                 width: chaves.length > 8 ? 10 : 20,
-                                borderRadius: valoresExibidos[i] >= 0
+                                borderRadius: valores[i] >= 0
                                     ? const BorderRadius.vertical(top: Radius.circular(6))
                                     : const BorderRadius.vertical(bottom: Radius.circular(6)),
                               ),
@@ -170,11 +167,6 @@ class _BarChartCardState extends State<BarChartCard> {
       ),
     );
 
-    if (!podeAlternar) return conteudo;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      child: conteudo,
-    );
+    return conteudo;
   }
 }

@@ -285,20 +285,11 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
     }
   }
 
-  void _proximoModoData() {
-    setState(() {
-      final valores = _ModoData.values;
-      _modoData = valores[(valores.indexOf(_modoData) + 1) % valores.length];
-      _limparCampos();
-    });
-    _emitirFiltroRapido();
-  }
-
-  void _modoDataAnterior() {
+  void _mudarModoData(int direcao) {
     setState(() {
       final valores = _ModoData.values;
       final i = valores.indexOf(_modoData);
-      _modoData = valores[(i - 1 + valores.length) % valores.length];
+      _modoData = valores[(i + direcao + valores.length) % valores.length];
       _limparCampos();
     });
     _emitirFiltroRapido();
@@ -319,11 +310,11 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
     return Tooltip(
       message: 'Clique para mudar · botão direito para voltar',
       child: GestureDetector(
-        onSecondaryTap: _modoDataAnterior,
+        onSecondaryTap: () => _mudarModoData(-1),
         child: InkWell(
           mouseCursor: SystemMouseCursors.click,
           borderRadius: BorderRadius.circular(12),
-          onTap: _proximoModoData,
+          onTap: () => _mudarModoData(1),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: AppTheme.cardDecoration(),
@@ -417,6 +408,17 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
     );
   }
 
+  DateTime? _parseData(String texto) {
+    final partes = texto.split('/');
+    if (partes.length != 3) return null;
+    final d = int.tryParse(partes[0]);
+    final m = int.tryParse(partes[1]);
+    final a = int.tryParse(partes[2]);
+    if (d == null || m == null || a == null) return null;
+    if (a <= 1900 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+    return DateTime(a, m, d);
+  }
+
   Widget _campoData(TextEditingController controller, DateTime? valorAtual, ValueChanged<DateTime?> onChanged) {
     return TextField(
       controller: controller,
@@ -454,19 +456,7 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
           },
         ),
       ),
-      onChanged: (texto) {
-        final partes = texto.split('/');
-        if (partes.length == 3) {
-          final d = int.tryParse(partes[0]);
-          final m = int.tryParse(partes[1]);
-          final a = int.tryParse(partes[2]);
-          if (d != null && m != null && a != null && a > 1900 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
-            onChanged(DateTime(a, m, d));
-            return;
-          }
-        }
-        onChanged(null);
-      },
+      onChanged: (texto) => onChanged(_parseData(texto)),
     );
   }
 

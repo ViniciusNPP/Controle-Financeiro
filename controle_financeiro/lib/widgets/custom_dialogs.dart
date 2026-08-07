@@ -204,52 +204,23 @@ class SeletorTipo extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _item(
-            context,
-            'Entrada',
-            TipoLancamento.entrada,
-            AppColors.entrada,
+          child: botaoSelecionavel(
+            label: 'Entrada',
+            selecionado: tipoSelecionado == TipoLancamento.entrada,
+            cor: AppColors.entrada,
+            onTap: () => onSelecionar(TipoLancamento.entrada),
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: _item(context, 'Saída', TipoLancamento.saida, AppColors.saida),
+          child: botaoSelecionavel(
+            label: 'Saída',
+            selecionado: tipoSelecionado == TipoLancamento.saida,
+            cor: AppColors.saida,
+            onTap: () => onSelecionar(TipoLancamento.saida),
+          ),
         ),
       ],
-    );
-  }
-
-  Widget _item(
-    BuildContext context,
-    String label,
-    TipoLancamento tipo,
-    Color cor,
-  ) {
-    final selecionado = tipoSelecionado == tipo;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => onSelecionar(tipo),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 13),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selecionado ? cor.withOpacity(0.12) : AppColors.disabledFill,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selecionado ? cor : Colors.transparent,
-              width: 1.5,
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: selecionado ? cor : AppColors.textSecondary,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

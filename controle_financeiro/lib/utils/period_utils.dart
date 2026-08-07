@@ -78,12 +78,7 @@ class PeriodoUtils {
     );
   }
 
-  static FiltroPeriodo ano(int ano) => FiltroPeriodo(
-        inicio: DateTime(ano),
-        fimExclusivo: DateTime(ano + 1),
-        agruparPorAno: true,
-        rotulo: '$ano',
-      );
+  static FiltroPeriodo ano(int ano) => anosPersonalizado(ano, ano);
 
   static FiltroPeriodo anosPersonalizado(int de, int ate) {
     final inicio = de < ate ? de : ate;
@@ -128,8 +123,7 @@ class PeriodoUtils {
 
   static String rotuloBalde(DateTime balde, bool agruparPorAno) {
     if (agruparPorAno) return '${balde.year}';
-    const nomes = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    return nomes[balde.month];
+    return _rotuloMes(balde).split('/').first;
   }
 }
 

@@ -19,7 +19,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
   FiltroPeriodo? _filtro;
   int _paginaAtual = 0;
   int _totalPaginas = 0;
-  PageController _pageController = PageController(initialPage: 0);
+  late PageController _pageController;
 
   @override
   void dispose() {
@@ -154,8 +154,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
                 }),
                 children: [for (final g in graficos) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: g)],
               ),
-              Positioned(left: 0, child: _setaCarrossel(Icons.chevron_left_rounded, _paginaAnterior)),
-              Positioned(right: 0, child: _setaCarrossel(Icons.chevron_right_rounded, _proximaPagina)),
+              Positioned(left: 0, child: _setaCarrossel(Icons.chevron_left_rounded, () => _navegarPagina(-1))),
+              Positioned(right: 0, child: _setaCarrossel(Icons.chevron_right_rounded, () => _navegarPagina(1))),
             ],
           ),
         ),
@@ -180,17 +180,13 @@ class _ChartsScreenState extends State<ChartsScreen> {
     );
   }
 
-  void _paginaAnterior() {
-    if (_paginaAtual == 0) {
-      _pageController.animateToPage(_totalPaginas - 1, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
-    } else {
+  void _navegarPagina(int direcao) {
+    final naPonta = direcao < 0 ? _paginaAtual == 0 : _paginaAtual == _totalPaginas - 1;
+    if (naPonta) {
+      final destino = direcao < 0 ? _totalPaginas - 1 : 0;
+      _pageController.animateToPage(destino, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+    } else if (direcao < 0) {
       _pageController.previousPage(duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
-    }
-  }
-
-  void _proximaPagina() {
-    if (_paginaAtual == _totalPaginas - 1) {
-      _pageController.animateToPage(0, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
     } else {
       _pageController.nextPage(duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
     }

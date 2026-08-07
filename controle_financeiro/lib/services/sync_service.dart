@@ -77,15 +77,14 @@ class SyncService {
           bytes: bytes,
         );
         return caminho != null;
-      } else {
-        final caminho = await FilePicker.saveFile(
-          dialogTitle: 'Salvar dados na pasta do Drive/OneDrive',
-          fileName: _nomeArquivo,
-        );
-        if (caminho == null) return false;
-        await File(caminho).writeAsString(jsonStr);
-        return true;
       }
+      final caminho = await FilePicker.saveFile(
+        dialogTitle: 'Salvar dados na pasta do Drive/OneDrive',
+        fileName: _nomeArquivo,
+      );
+      if (caminho == null) return false;
+      await File(caminho).writeAsString(jsonStr);
+      return true;
     } catch (_) {
       return false;
     }

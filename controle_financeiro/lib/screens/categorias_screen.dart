@@ -64,7 +64,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
               final tituloCompacto =
                   _tipoCompacto == TipoLancamento.entrada ? 'Categorias de entrada' : 'Categorias de saída';
 
-              return _blocoCategoriaCompacto(
+              return _blocoCategorias(
                 context,
                 titulo: tituloCompacto,
                 categorias: categoriasCompacto,
@@ -81,14 +81,14 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
       ],
     );
   }
-
-  Widget _blocoCategoriaCompacto(
+  
+  Widget _blocoCategorias(
     BuildContext context, {
     required String titulo,
     required List<Categoria> categorias,
     required TipoLancamento tipo,
     required Color cor,
-    required VoidCallback onTrocar,
+    VoidCallback? onTrocar, // se não-nulo, usa o layout "compacto" do cabeçalho
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -104,24 +104,33 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
               children: [
                 Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${categorias.length}',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cor),
+                  children: onTrocar != null
+                      ? [
+                          Text('${categorias.length}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cor)),
+                          const SizedBox(width: 8),
+                          Text(titulo, style: Theme.of(context).textTheme.titleMedium),
+                        ]
+                      : [
+                          Container(width: 8, height: 8, decoration: BoxDecoration(color: cor, shape: BoxShape.circle)),
+                          const SizedBox(width: 8),
+                          Text(titulo, style: Theme.of(context).textTheme.titleMedium),
+                        ],
+                ),
+                if (onTrocar != null)
+                  InkWell(
+                    mouseCursor: SystemMouseCursors.click,
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: onTrocar,
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(Icons.sync_alt_rounded, size: 18, color: AppColors.textSecondary),
                     ),
-                    const SizedBox(width: 8),
-                    Text(titulo, style: Theme.of(context).textTheme.titleMedium),
-                  ],
-                ),
-                InkWell(
-                  mouseCursor: SystemMouseCursors.click,
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: onTrocar,
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(Icons.sync_alt_rounded, size: 18, color: AppColors.textSecondary),
+                  )
+                else
+                  Text(
+                    '${categorias.length}',
+                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
                   ),
-                ),
               ],
             ),
           ),
@@ -141,90 +150,6 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          _botaoAdicionar(context, tipo, cor),
-        ],
-      ),
-    );
-  }
-  
-  Widget _blocoCategorias(
-    BuildContext context, {
-    required String titulo,
-    required List<Categoria> categorias,
-    required TipoLancamento tipo,
-    required Color cor,
-    }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: cor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      titulo,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ]
-                ),
-                //const Spacer(),
-                Text(
-                  '${categorias.length}',
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-
-          const SizedBox(height: 12),
-
-          Expanded(
-            child: ListView.builder(
-              itemCount: categorias.isEmpty ? 1 : categorias.length,
-              itemBuilder: (context, index) {
-                if (categorias.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Text(
-                      'Nenhuma categoria ainda.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  );
-                }
-
-                return _itemCategoria(
-                  context,
-                  categorias[index],
-                  cor,
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
           _botaoAdicionar(context, tipo, cor),
         ],
       ),

@@ -63,8 +63,16 @@ class DatePickerField extends StatelessWidget {
   }
 }
 
+String _formatar(String inteiro, String decimais) {
+  final buffer = StringBuffer();
+  for (var i = 0; i < inteiro.length; i++) {
+    if (i > 0 && (inteiro.length - i) % 3 == 0) buffer.write('.');
+    buffer.write(inteiro[i]);
+  }
+  return '${buffer.toString()},$decimais';
+}
+
 /// Formata a digitação como centavos entrando pela direita, no estilo
-/// "R$ 0,00" -> digita 1 -> "R$ 0,01" -> digita 2 -> "R$ 0,12" e assim por diante.
 class _CentavosInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
@@ -75,29 +83,17 @@ class _CentavosInputFormatter extends TextInputFormatter {
     final valorCentavos = int.parse(digitos);
     final valor = valorCentavos / 100;
     final texto = valor.toStringAsFixed(2).replaceAll('.', ',');
-    final formatado = _comSeparadorMilhar(texto);
+    final partes = texto.split(',');
+    final formatado = _formatar(partes[0], partes.length > 1 ? partes[1] : '00');
 
     return TextEditingValue(
       text: formatado,
       selection: TextSelection.collapsed(offset: formatado.length),
     );
   }
-
-  String _comSeparadorMilhar(String valorComVirgula) {
-    final partes = valorComVirgula.split(',');
-    final inteiro = partes[0];
-    final decimais = partes.length > 1 ? partes[1] : '00';
-    final buffer = StringBuffer();
-    for (var i = 0; i < inteiro.length; i++) {
-      if (i > 0 && (inteiro.length - i) % 3 == 0) buffer.write('.');
-      buffer.write(inteiro[i]);
-    }
-    return '${buffer.toString()},$decimais';
-  }
 }
 
-/// Campo de valor com o "R$" fixo antes do número, já formatado como dinheiro.
-/// [valorInicial] permite pré-preencher (usado ao editar um lançamento existente).
+/// Campo de valor com o "R$" fixo antes do número
 class CurrencyInput extends StatefulWidget {
   final ValueChanged<double> onChanged;
   final double valorInicial;
@@ -110,18 +106,12 @@ class CurrencyInput extends StatefulWidget {
 
 class CurrencyInputState extends State<CurrencyInput> {
   late final TextEditingController _controller =
-      TextEditingController(text: _formatar(widget.valorInicial));
+      TextEditingController(text: _formatarDoubleString(widget.valorInicial));
 
-  String _formatar(double v) {
+  String _formatarDoubleString(double v) {
     final texto = v.toStringAsFixed(2).replaceAll('.', ',');
     final partes = texto.split(',');
-    final buffer = StringBuffer();
-    final inteiro = partes[0];
-    for (var i = 0; i < inteiro.length; i++) {
-      if (i > 0 && (inteiro.length - i) % 3 == 0) buffer.write('.');
-      buffer.write(inteiro[i]);
-    }
-    return '${buffer.toString()},${partes[1]}';
+    return _formatar(partes[0], partes[1]);
   }
 
   double get valorAtual {
@@ -131,38 +121,6 @@ class CurrencyInputState extends State<CurrencyInput> {
 
   void limpar() {
     setState(() => _controller.text = '0,00');
-  }
-
-  void adicionarDigito(String digito) {
-    final oldValue = _controller.value;
-    final novoTexto = oldValue.text + digito;
-    final novoValue = TextEditingValue(
-      text: novoTexto,
-      selection: TextSelection.collapsed(offset: novoTexto.length),
-    );
-
-    final formatado = _CentavosInputFormatter().formatEditUpdate(oldValue, novoValue);
-
-    setState(() => _controller.value = formatado);
-    widget.onChanged(valorAtual);
-  }
-
-  void removerDigito() {
-    final oldValue = _controller.value;
-    final digitosAtuais = oldValue.text.replaceAll(RegExp(r'[^0-9]'), '');
-    final digitosReduzidos = digitosAtuais.length > 1
-        ? digitosAtuais.substring(0, digitosAtuais.length - 1)
-        : '0';
-
-    final novoValue = TextEditingValue(
-      text: digitosReduzidos,
-      selection: TextSelection.collapsed(offset: digitosReduzidos.length),
-    );
-
-    final formatado = _CentavosInputFormatter().formatEditUpdate(oldValue, novoValue);
-
-    setState(() => _controller.value = formatado);
-    widget.onChanged(valorAtual);
   }
 
   @override
