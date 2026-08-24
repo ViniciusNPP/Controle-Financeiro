@@ -33,21 +33,27 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
     if (total == 0) return ordenadas;
 
     const limite = 0.95;
-    final resultado = <MapEntry<String, double>>[];
+    final principais = <MapEntry<String, double>>[];
+    final restantes = <MapEntry<String, double>>[];
     double acumulado = 0;
-    double outros = 0;
 
     for (final entrada in ordenadas) {
       if (acumulado / total < limite) {
-        resultado.add(entrada);
+        principais.add(entrada);
         acumulado += entrada.value;
       } else {
-        outros += entrada.value;
+        restantes.add(entrada);
       }
     }
 
-    if (outros > 0) resultado.add(MapEntry('Outros', outros));
-    return resultado;
+    if (restantes.length == 1) {
+      principais.add(restantes.first);
+    } else if (restantes.length > 1) {
+      final outros = restantes.fold<double>(0, (a, e) => a + e.value);
+      principais.add(MapEntry('Outros', outros));
+    }
+
+    return principais;
   }
 
   double _anguloInicialGraus(List<MapEntry<String, double>> entradas, double total, int indice) {

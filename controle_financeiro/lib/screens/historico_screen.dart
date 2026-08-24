@@ -122,6 +122,13 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     final sugestoesCategorias = finance.categorias.map((c) => c.nome).toSet().toList()..sort();
     final lista = _filtrarEOrdenar(finance.transacoes);
 
+    DateTime? dataMinima;
+    DateTime? dataMaxima;
+    for (final t in finance.transacoes) {
+      if (dataMinima == null || t.data.isBefore(dataMinima)) dataMinima = t.data;
+      if (dataMaxima == null || t.data.isAfter(dataMaxima)) dataMaxima = t.data;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -133,6 +140,8 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
           onAdicionar: _adicionarFiltro,
           onRemover: _removerFiltro,
           onFiltroRapidoChanged: _setFiltroRapido,
+          dataMinima: dataMinima,
+          dataMaxima: dataMaxima,
         ),
         const SizedBox(height: 16),
         Row(
@@ -236,8 +245,12 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     final total = lista.fold<double>(0, (soma, t) => soma + _valorComSinal(t));
     final cor = total < 0 ? AppColors.saida : AppColors.entrada;
 
-    return Padding(
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

@@ -11,6 +11,8 @@ class MonthYearNavigator extends StatelessWidget {
   final ValueChanged<DateTime> onChanged;
   final String? rotulo;
   final bool abreviado;
+  final DateTime? dataMinima;
+  final DateTime? dataMaxima;
 
   const MonthYearNavigator({
     super.key,
@@ -19,16 +21,38 @@ class MonthYearNavigator extends StatelessWidget {
     required this.onChanged,
     this.rotulo,
     this.abreviado = false,
+    this.dataMinima,
+    this.dataMaxima,
   });
 
   Future<void> _abrirSeletor(BuildContext context) async {
     final escolhida = granularidade == GranularidadeNavegador.mes
-        ? await _mostrarSeletorMes(context, valor)
-        : await _mostrarSeletorAno(context, valor);
+        ? await _mostrarSeletorMes(context, valor, dataMinima: dataMinima, dataMaxima: dataMaxima)
+        : await _mostrarSeletorAno(context, valor, dataMinima: dataMinima, dataMaxima: dataMaxima);
     if (escolhida != null) onChanged(escolhida);
   }
 
+  bool get _podeVoltar {
+    if (dataMinima == null) return true;
+    if (granularidade == GranularidadeNavegador.ano) {
+      return valor.year > dataMinima!.year;
+    }
+    final anterior = DateTime(valor.year, valor.month - 1);
+    return !anterior.isBefore(DateTime(dataMinima!.year, dataMinima!.month));
+  }
+
+  bool get _podeAvancar {
+    if (dataMaxima == null) return true;
+    if (granularidade == GranularidadeNavegador.ano) {
+      return valor.year < dataMaxima!.year;
+    }
+    final proximo = DateTime(valor.year, valor.month + 1);
+    return !proximo.isAfter(DateTime(dataMaxima!.year, dataMaxima!.month));
+  }
+
   void _navegar(int delta) {
+    if (delta < 0 && !_podeVoltar) return;
+    if (delta > 0 && !_podeAvancar) return;
     final novo = granularidade == GranularidadeNavegador.mes
         ? DateTime(valor.year, valor.month + delta)
         : DateTime(valor.year + delta, valor.month);
@@ -64,12 +88,12 @@ class MonthYearNavigator extends StatelessWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.chevron_left_rounded, size: 20),
-                    onPressed: () => _navegar(-1),
+                    onPressed: _podeVoltar ? () => _navegar(-1) : null,
                   ),
                   Text(_texto, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                   IconButton(
                     icon: const Icon(Icons.chevron_right_rounded, size: 20),
-                    onPressed: () => _navegar(1),
+                    onPressed: _podeAvancar ? () => _navegar(1) : null,
                   ),
                 ],
               ),
@@ -81,7 +105,12 @@ class MonthYearNavigator extends StatelessWidget {
   }
 }
 
-Future<DateTime?> _mostrarSeletorAno(BuildContext context, DateTime valorAtual) {
+Future<DateTime?> _mostrarSeletorAno(
+  BuildContext context,
+  DateTime valorAtual, {
+  DateTime? dataMinima,
+  DateTime? dataMaxima,
+}) {
   return showDialog<DateTime>(
     context: context,
     builder: (context) => Dialog(
@@ -95,7 +124,13 @@ Future<DateTime?> _mostrarSeletorAno(BuildContext context, DateTime valorAtual) 
             children: [
               const Text('Selecione o ano', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
               const SizedBox(height: 16),
-              Expanded(child: _GradeAnos(valorAtual: valorAtual)),
+              Expanded(
+                child: _GradeAnos(
+                  valorAtual: valorAtual,
+                  anoMinimo: dataMinima?.year,
+                  anoMaximo: dataMaxima?.year,
+                ),
+              ),
             ],
           ),
         ),
@@ -106,7 +141,9 @@ Future<DateTime?> _mostrarSeletorAno(BuildContext context, DateTime valorAtual) 
 
 class _GradeAnos extends StatefulWidget {
   final DateTime valorAtual;
-  const _GradeAnos({required this.valorAtual});
+  final int? anoMinimo;
+  final int? anoMaximo;
+  const _GradeAnos({required this.valorAtual, this.anoMinimo, this.anoMaximo});
 
   @override
   State<_GradeAnos> createState() => _GradeAnosState();
@@ -120,7 +157,10 @@ class _GradeAnosState extends State<_GradeAnos> {
   static const _alturaLinha = (_larguraCelula / _aspectRatio) + _spacing;
   static const _alturaVisivel = 320.0 - 322.0 - 16.0 - 21.0; // altura do diálogo - padding - espaçamento - título
 
-  late final int _anoBase = DateTime.now().year - 100;
+  // Sem limites informados, mantém o comportamento original: 100 anos atrás.
+  late final int _anoBase = widget.anoMinimo ?? (DateTime.now().year - 100);
+  late final int _anoTopo = widget.anoMaximo ?? (DateTime.now().year + 1);
+  late final int _totalAnos = _anoTopo - _anoBase + 1;
   late final ScrollController _controller;
 
   @override
@@ -147,7 +187,7 @@ class _GradeAnosState extends State<_GradeAnos> {
         crossAxisSpacing: _spacing,
         childAspectRatio: _aspectRatio,
       ),
-      itemCount: 102,
+      itemCount: _totalAnos,
       itemBuilder: (context, i) {
         final ano = _anoBase + i;
         return _celulaSeletor(
@@ -160,80 +200,119 @@ class _GradeAnosState extends State<_GradeAnos> {
   }
 }
 
-Future<DateTime?> _mostrarSeletorMes(BuildContext context, DateTime valorAtual) {
+Future<DateTime?> _mostrarSeletorMes(
+  BuildContext context,
+  DateTime valorAtual, {
+  DateTime? dataMinima,
+  DateTime? dataMaxima,
+}) {
   return showDialog<DateTime>(
     context: context,
     builder: (context) {
       var anoExibido = valorAtual.year;
+
+      bool mesHabilitado(int ano, int mes) {
+        if (dataMinima != null && DateTime(ano, mes + 1, 0).isBefore(DateTime(dataMinima.year, dataMinima.month, 1))) {
+          return false;
+        }
+        if (dataMaxima != null && DateTime(ano, mes, 1).isAfter(DateTime(dataMaxima.year, dataMaxima.month + 1, 0))) {
+          return false;
+        }
+        return true;
+      }
+
       return StatefulBuilder(
-        builder: (context, setStateDialog) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: 300,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.chevron_left_rounded),
-                        onPressed: () => setStateDialog(() => anoExibido--),
-                      ),
-                      Text('$anoExibido', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right_rounded),
-                        onPressed: () => setStateDialog(() => anoExibido++),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      childAspectRatio: 1.8,
+        builder: (context, setStateDialog) {
+          final podeVoltarAno = dataMinima == null || anoExibido > dataMinima.year;
+          final podeAvancarAno = dataMaxima == null || anoExibido < dataMaxima.year;
+
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: SizedBox(
+                width: 300,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left_rounded),
+                          onPressed: podeVoltarAno ? () => setStateDialog(() => anoExibido--) : null,
+                        ),
+                        Text('$anoExibido', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right_rounded),
+                          onPressed: podeAvancarAno ? () => setStateDialog(() => anoExibido++) : null,
+                        ),
+                      ],
                     ),
-                    itemCount: 12,
-                    itemBuilder: (context, i) {
-                      final mes = i + 1;
-                      final selecionado = mes == valorAtual.month && anoExibido == valorAtual.year;
-                      return _celulaSeletor(
-                        texto: Formatters.nomesMesesAbrev[mes],
-                        selecionado: selecionado,
-                        onTap: () => Navigator.pop(context, DateTime(anoExibido, mes)),
-                      );
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        childAspectRatio: 1.8,
+                      ),
+                      itemCount: 12,
+                      itemBuilder: (context, i) {
+                        final mes = i + 1;
+                        final selecionado = mes == valorAtual.month && anoExibido == valorAtual.year;
+                        final habilitado = mesHabilitado(anoExibido, mes);
+                        return _celulaSeletor(
+                          texto: Formatters.nomesMesesAbrev[mes],
+                          selecionado: selecionado,
+                          habilitado: habilitado,
+                          onTap: habilitado ? () => Navigator.pop(context, DateTime(anoExibido, mes)) : null,
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       );
     },
   );
 }
 
-Widget _celulaSeletor({required String texto, required bool selecionado, required VoidCallback onTap}) {
+Widget _celulaSeletor({
+  required String texto,
+  required bool selecionado,
+  VoidCallback? onTap,
+  bool habilitado = true,
+}) {
+  final cor = selecionado
+      ? AppColors.primary
+      : habilitado
+          ? AppColors.disabledFill
+          : AppColors.disabledFill.withValues(alpha: 0.4);
+  final corTexto = selecionado
+      ? Colors.white
+      : habilitado
+          ? AppColors.textPrimary
+          : AppColors.textSecondary.withValues(alpha: 0.4);
+
   return MouseRegion(
-    cursor: SystemMouseCursors.click,
+    cursor: habilitado ? SystemMouseCursors.click : SystemMouseCursors.basic,
     child: GestureDetector(
       onTap: onTap,
       child: Container(
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selecionado ? AppColors.primary : AppColors.disabledFill,
+          color: cor,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
           texto,
-          style: TextStyle(fontWeight: FontWeight.w600, color: selecionado ? Colors.white : AppColors.textPrimary),
+          style: TextStyle(fontWeight: FontWeight.w600, color: corTexto),
         ),
       ),
     ),

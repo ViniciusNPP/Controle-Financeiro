@@ -12,6 +12,8 @@ class FiltroBuilder extends StatefulWidget {
   final ValueChanged<FiltroHistorico> onAdicionar;
   final ValueChanged<String> onRemover;
   final ValueChanged<FiltroHistorico?> onFiltroRapidoChanged;
+  final DateTime? dataMinima;
+  final DateTime? dataMaxima;
 
   const FiltroBuilder({
     super.key,
@@ -20,6 +22,8 @@ class FiltroBuilder extends StatefulWidget {
     required this.onAdicionar,
     required this.onRemover,
     required this.onFiltroRapidoChanged,
+    this.dataMinima,
+    this.dataMaxima,
   });
 
   @override
@@ -256,6 +260,8 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
         return MonthYearNavigator(
           granularidade: GranularidadeNavegador.mes,
           valor: _mesFiltro,
+          dataMinima: widget.dataMinima,
+          dataMaxima: widget.dataMaxima,
           onChanged: (d) {
             setState(() => _mesFiltro = DateTime(d.year, d.month));
             _emitirFiltroRapido();
@@ -265,6 +271,8 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
         return MonthYearNavigator(
           granularidade: GranularidadeNavegador.ano,
           valor: _anoFiltro,
+          dataMinima: widget.dataMinima,
+          dataMaxima: widget.dataMaxima,
           onChanged: (d) {
             setState(() => _anoFiltro = DateTime(d.year));
             _emitirFiltroRapido();
@@ -431,11 +439,17 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
           mouseCursor: SystemMouseCursors.click,
           icon: const Icon(Icons.calendar_today_rounded, size: 15),
           onPressed: () async {
+            final minima = widget.dataMinima ?? DateTime(1900);
+            final maxima = widget.dataMaxima ?? DateTime(2100);
+            var inicial = valorAtual ?? DateTime.now();
+            if (inicial.isBefore(minima)) inicial = minima;
+            if (inicial.isAfter(maxima)) inicial = maxima;
+
             final escolhida = await showDatePicker(
               context: context,
-              initialDate: valorAtual ?? DateTime.now(),
-              firstDate: DateTime(1900),
-              lastDate: DateTime(2100),
+              initialDate: inicial,
+              firstDate: minima,
+              lastDate: maxima,
               locale: const Locale('pt', 'BR'), 
               builder: (context, child) {
                 return Theme(
@@ -464,9 +478,9 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.primaryLight.withOpacity(0.12),
+        color: AppColors.primaryLight.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
