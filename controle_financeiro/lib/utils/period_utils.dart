@@ -125,6 +125,17 @@ class PeriodoUtils {
     if (agruparPorAno) return '${balde.year}';
     return _rotuloMes(balde).split('/').first;
   }
+
+  /// Dado um balde (início de mês, se `agruparPorAno` for false, ou início
+  /// de ano, se for true) devolve o intervalo [início, último dia incluído]
+  /// daquele balde específico — por exemplo, o balde de Agosto/2026 devolve
+  /// 01/08/2026 e 31/08/2026. Útil para navegação que aponta para um mês
+  /// ou ano exato (ex: duplo clique numa barra do gráfico), diferente de
+  /// FiltroPeriodo, que cobre o intervalo inteiro selecionado no seletor.
+  static (DateTime inicio, DateTime ultimoDiaIncluido) intervaloDoBalde(DateTime balde, bool agruparPorAno) {
+    final fimExclusivo = agruparPorAno ? DateTime(balde.year + 1) : primeiroDiaDoMesSeguinte(balde);
+    return (balde, fimExclusivo.subtract(const Duration(days: 1)));
+  }
 }
 
 /// Funções que somam as transações filtradas em "baldes" (mês/ano) ou por

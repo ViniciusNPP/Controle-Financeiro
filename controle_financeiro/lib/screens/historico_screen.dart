@@ -19,7 +19,16 @@ enum _ModoOrdenacao {
 }
 
 class HistoricoScreen extends StatefulWidget {
-  const HistoricoScreen({super.key});
+  /// Filtros vindos de fora (ex: long-press numa categoria do gráfico) para
+  /// serem adicionados como filtros ativos normais. Como o HomeShell usa
+  /// IndexedStack, esta tela não é recriada ao trocar de aba — por isso o
+  /// pedido é identificado por [pedidoExternoId], que muda a cada novo
+  /// long-press para o didUpdateWidget saber que é um pedido novo mesmo se
+  /// os filtros em si forem idênticos aos da vez anterior.
+  final List<FiltroHistorico>? filtrosExternos;
+  final Object? pedidoExternoId;
+
+  const HistoricoScreen({super.key, this.filtrosExternos, this.pedidoExternoId});
 
   @override
   State<HistoricoScreen> createState() => _HistoricoScreenState();
@@ -29,6 +38,36 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   final List<FiltroHistorico> _filtros = [];
   FiltroHistorico? _filtroRapido;
   _ModoOrdenacao _ordenacao = _ModoOrdenacao.dataDecrescente;
+  Object? _ultimoPedidoExternoId;
+
+  @override
+  void initState() {
+    super.initState();
+    _aplicarFiltrosExternosSeHouver();
+  }
+
+  @override
+  void didUpdateWidget(covariant HistoricoScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _aplicarFiltrosExternosSeHouver();
+  }
+
+  /// Substitui os filtros de categoria/data vindos do gráfico anterior
+  /// (se houver, identificados pelo id fixo) pelos novos, e adiciona os
+  /// atuais — só quando pedidoExternoId realmente mudou, pra não reaplicar
+  /// o mesmo pedido a cada rebuild.
+  void _aplicarFiltrosExternosSeHouver() {
+    final filtros = widget.filtrosExternos;
+    if (filtros == null || filtros.isEmpty) return;
+    if (widget.pedidoExternoId == _ultimoPedidoExternoId) return;
+    _ultimoPedidoExternoId = widget.pedidoExternoId;
+
+    setState(() {
+      final idsNovos = filtros.map((f) => f.id).toSet();
+      _filtros.removeWhere((f) => idsNovos.contains(f.id));
+      _filtros.addAll(filtros);
+    });
+  }
 
   void _adicionarFiltro(FiltroHistorico f) => setState(() => _filtros.add(f));
   void _removerFiltro(String id) => setState(() => _filtros.removeWhere((f) => f.id == id));
@@ -122,6 +161,9 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     final sugestoesCategorias = finance.categorias.map((c) => c.nome).toSet().toList()..sort();
     final lista = _filtrarEOrdenar(finance.transacoes);
 
+    // Intervalo real de datas com lançamentos, para limitar a navegação do
+    // filtro de Data ao período que realmente existe dados em vez de um
+    // range fixo arbitrário.
     DateTime? dataMinima;
     DateTime? dataMaxima;
     for (final t in finance.transacoes) {

@@ -169,7 +169,13 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
         decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12)),
         child: Row(
           children: [
-            Expanded(child: Text(c.nome, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+            Text(c.nome, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            const SizedBox(width: 8),
+            Text(
+              '${c.vezesUsada}',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+            ),
+            const Spacer(),
             const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textSecondary),
           ],
         ),

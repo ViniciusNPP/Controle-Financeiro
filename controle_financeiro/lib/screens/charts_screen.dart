@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
+import '../models/filtro_historico.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/navegacao_historico.dart';
 import '../utils/period_utils.dart';
 import '../widgets/period_selector.dart';
 import '../widgets/chart_cards.dart';
 import '../widgets/category_pie_chart.dart';
 
 class ChartsScreen extends StatefulWidget {
-  const ChartsScreen({super.key});
+  /// Chamado quando o usuário pede para ver aqueles lançamentos no Histórico.
+  final void Function(List<FiltroHistorico> filtros)? onAbrirHistorico;
+
+  const ChartsScreen({super.key, this.onAbrirHistorico});
 
   @override
   State<ChartsScreen> createState() => _ChartsScreenState();
@@ -27,40 +32,82 @@ class _ChartsScreenState extends State<ChartsScreen> {
     super.dispose();
   }
 
+  /// Monta os FiltroHistorico a partir do período inteiro atualmente selecionado nos Gráficos e dispara a navegação.
+  void _abrirHistoricoPizza(FiltroPeriodo filtro, String categoria, TipoLancamento tipo) {
+    final onAbrirHistorico = widget.onAbrirHistorico;
+    if (onAbrirHistorico == null) return;
+
+    final ultimoDiaIncluido = filtro.fimExclusivo.subtract(const Duration(days: 1));
+    onAbrirHistorico(filtrosHistoricoDoGrafico(
+      data1: filtro.inicio,
+      data2: ultimoDiaIncluido,
+      tipo: tipo,
+      categoria: categoria,
+    ));
+  }
+
+  /// Monta os FiltroHistorico a partir de um balde específico
+  void _abrirHistoricoBarra(DateTime data1, DateTime data2, TipoLancamento tipo, String? categoria) {
+    final onAbrirHistorico = widget.onAbrirHistorico;
+    if (onAbrirHistorico == null) return;
+
+    onAbrirHistorico(filtrosHistoricoDoGrafico(
+      data1: data1,
+      data2: data2,
+      tipo: tipo,
+      categoria: categoria,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final finance = context.watch<FinanceProvider>();
     final transacoes = finance.transacoes;
     final filtro = _filtro ?? PeriodoUtils.mes(DateTime.now());
 
-    final entradasPorBalde = Agregador.porBalde(transacoes, filtro, TipoLancamento.entrada);
-    final saidasPorBalde = Agregador.porBalde(transacoes, filtro, TipoLancamento.saida);
-    final saldoPorBalde = Agregador.saldoPorBalde(transacoes, filtro);
     final saidasPorCategoria = Agregador.porCategoria(transacoes, filtro, TipoLancamento.saida);
     final entradasPorCategoria = Agregador.porCategoria(transacoes, filtro, TipoLancamento.entrada);
+    final categoriasEntrada = finance.categoriasPorTipo(TipoLancamento.entrada);
+    final categoriasSaida = finance.categoriasPorTipo(TipoLancamento.saida);
 
     final graficos = [
       BarChartCard(
         titulo: 'Entradas',
-        dados: entradasPorBalde,
-        agruparPorAno: filtro.agruparPorAno,
+        transacoes: transacoes,
+        filtro: filtro,
         cor: AppColors.entrada,
+        tipo: TipoLancamento.entrada,
+        categorias: categoriasEntrada,
+        onAbrirHistorico: (data1, data2, categoria) =>
+            _abrirHistoricoBarra(data1, data2, TipoLancamento.entrada, categoria),
       ),
       BarChartCard(
         titulo: 'Saídas',
-        dados: saidasPorBalde,
-        agruparPorAno: filtro.agruparPorAno,
+        transacoes: transacoes,
+        filtro: filtro,
         cor: AppColors.saida,
+        tipo: TipoLancamento.saida,
+        categorias: categoriasSaida,
+        onAbrirHistorico: (data1, data2, categoria) =>
+            _abrirHistoricoBarra(data1, data2, TipoLancamento.saida, categoria),
       ),
       BarChartCard(
         titulo: 'Saldo',
-        dados: saldoPorBalde,
-        agruparPorAno: filtro.agruparPorAno,
+        transacoes: transacoes,
+        filtro: filtro,
         cor: AppColors.saldo,
         destaque: true,
       ),
-      CategoryPieChartCard(titulo: 'Saídas específicas', dados: saidasPorCategoria),
-      CategoryPieChartCard(titulo: 'Entradas específicas', dados: entradasPorCategoria),
+      CategoryPieChartCard(
+        titulo: 'Saídas específicas',
+        dados: saidasPorCategoria,
+        onAbrirHistorico: (categoria) => _abrirHistoricoPizza(filtro, categoria, TipoLancamento.saida),
+      ),
+      CategoryPieChartCard(
+        titulo: 'Entradas específicas',
+        dados: entradasPorCategoria,
+        onAbrirHistorico: (categoria) => _abrirHistoricoPizza(filtro, categoria, TipoLancamento.entrada),
+      ),
     ];
 
     final graficosCarrossel = [

@@ -9,11 +9,17 @@ class CategoryPieChartCard extends StatefulWidget {
   final Map<String, double> dados;
   final double? alturaFixa;
 
+  /// Chamado quando o usuário aciona long-press/clique direito numa
+  /// categoria da legenda, pedindo para ver aquele lançamentos no Histórico.
+  /// Recebe o nome exato da categoria clicada.
+  final ValueChanged<String>? onAbrirHistorico;
+
   const CategoryPieChartCard({
     super.key,
     required this.titulo,
     required this.dados,
     this.alturaFixa,
+    this.onAbrirHistorico,
   });
 
   @override
@@ -23,9 +29,17 @@ class CategoryPieChartCard extends StatefulWidget {
 class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
   int? _indiceTocado;
 
+  // Controla se os filhos de "Outros" estão visíveis na legenda/gráfico
+  bool _outrosExpandido = false;
+
+  // Nomes de categorias ocultas
+  final Set<String> _categoriasOcultas = {};
+  Map<String, double>? _ultimoDados;
+
   // variável que define o percentual mínimo de uma fatia para mostrar seu valor dentro dela.
   static const double _limiarRotuloExternoPct = 5.0;
 
+  /// Categorias principais + "Outros" agregado (se houver)
   List<MapEntry<String, double>> _entradasFiltradas() {
     final ordenadas = widget.dados.entries.where((e) => e.value > 0).toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -56,6 +70,59 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
     return principais;
   }
 
+  /// As categorias que ficaram agrupadas dentro de "Outros"
+  List<MapEntry<String, double>> _filhosDeOutros() {
+    final ordenadas = widget.dados.entries.where((e) => e.value > 0).toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final total = ordenadas.fold<double>(0, (a, e) => a + e.value);
+    if (total == 0) return [];
+
+    const limite = 0.95;
+    final restantes = <MapEntry<String, double>>[];
+    double acumulado = 0;
+
+    for (final entrada in ordenadas) {
+      if (acumulado / total < limite) {
+        acumulado += entrada.value;
+      } else {
+        restantes.add(entrada);
+      }
+    }
+
+    return restantes.length > 1 ? restantes : [];
+  }
+
+  /// Entradas que alimentam o PieChart
+  List<MapEntry<String, double>> _entradasGrafico(
+    List<MapEntry<String, double>> principaisComOutros,
+    List<MapEntry<String, double>> filhos,
+  ) {
+    if (!_outrosExpandido || filhos.isEmpty) return principaisComOutros;
+    return [
+      for (final e in principaisComOutros)
+        if (e.key != 'Outros') e,
+      ...filhos,
+    ];
+  }
+
+  /// Oculta as categorias somente se visiveisAtualmente > 2
+  bool _alternarOculta(String nome, {required int visiveisAtualmente}) {
+    if (_categoriasOcultas.contains(nome)) {
+      _categoriasOcultas.remove(nome);
+      return true;
+    }
+    if (visiveisAtualmente <= 2) return false;
+    _categoriasOcultas.add(nome);
+    return true;
+  }
+
+  /// Ponte entre _alternarOculta() e setState()
+  bool _tentarAlternarOculta(String nome, {required int visiveisAtualmente}) {
+    final aplicado = _alternarOculta(nome, visiveisAtualmente: visiveisAtualmente);
+    if (aplicado) setState(() {});
+    return aplicado;
+  }
+
   double _anguloInicialGraus(List<MapEntry<String, double>> entradas, double total, int indice) {
     var angulo = 0.0;
     for (var i = 0; i < indice; i++) {
@@ -66,14 +133,42 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
 
   @override
   Widget build(BuildContext context) {
-    final entradas = _entradasFiltradas();
-    final total = entradas.fold<double>(0, (a, e) => a + e.value);
+    // Exibi as categorias ocultas
+    if (!identical(_ultimoDados, widget.dados)) {
+      _categoriasOcultas.clear();
+      _outrosExpandido = false;
+      _ultimoDados = widget.dados;
+    }
+
+    final entradasLegenda = _entradasFiltradas();
+    final filhosOutros = _filhosDeOutros();
+    // Fecha outros na troca de período se necessário
+    if (filhosOutros.isEmpty && _outrosExpandido) _outrosExpandido = false;
+
+    // Base para o gráfico: principais + filhos (se expandido)
+    final outrosOculto = _categoriasOcultas.contains('Outros');
+    final principaisVisiveis = entradasLegenda.where((e) => !_categoriasOcultas.contains(e.key)).toList();
+    final entradasGraficoComOcultas =
+        outrosOculto ? principaisVisiveis : _entradasGrafico(principaisVisiveis, filhosOutros);
+    final entradas = entradasGraficoComOcultas.where((e) => !_categoriasOcultas.contains(e.key)).toList();
+
+    // Ordem canônica de cores
+    final ordemCores = _entradasGrafico(entradasLegenda, filhosOutros);
+    Color corDe(String nome) {
+      final i = ordemCores.indexWhere((e) => e.key == nome);
+      return AppColors.forIndex(i < 0 ? 0 : i);
+    }
+
+    // Total "real"
+    final totalReal = entradasLegenda.fold<double>(0, (a, e) => a + e.value);
+    // Total só das visíveis
+    final totalVisivel = entradas.fold<double>(0, (a, e) => a + e.value);
     final indiceTocado = _indiceTocado;
 
     // A fatia é pequena quando total fica abaixo de _limiarRotuloExternoPct
     final tocadaEhPequena = indiceTocado != null &&
-        total > 0 &&
-        (entradas[indiceTocado].value / total * 100) < _limiarRotuloExternoPct;
+        totalVisivel > 0 &&
+        (entradas[indiceTocado].value / totalVisivel * 100) < _limiarRotuloExternoPct;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -94,7 +189,7 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                 children: [
                   Text(widget.titulo, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
-                  Text(Formatters.moeda(total), style: Theme.of(context).textTheme.displayMedium),
+                  Text(Formatters.moeda(totalReal), style: Theme.of(context).textTheme.displayMedium),
                 ],
               ),
             ),
@@ -154,7 +249,7 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                                       for (var i = 0; i < entradas.length; i++)
                                         PieChartSectionData(
                                           value: entradas[i].value,
-                                          color: AppColors.forIndex(i),
+                                          color: corDe(entradas[i].key),
                                           radius: i == _indiceTocado ? raioSelecionado : raioNormal,
                                           // Se a fatia for pequena, não mostra o título dentro dela (vai pro rótulo externo).
                                           showTitle: i == _indiceTocado && !tocadaEhPequena,
@@ -174,10 +269,10 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                                     raio: raioSelecionado,
                                     distanciaRadialExtra: distanciaRadialExtra,
                                     distanciaHorizontal: distanciaHorizontal,
-                                    anguloMedioGraus: _anguloInicialGraus(entradas, total, indiceTocado) +
-                                        (entradas[indiceTocado].value / total * 360) / 2,
+                                    anguloMedioGraus: _anguloInicialGraus(entradas, totalVisivel, indiceTocado) +
+                                        (entradas[indiceTocado].value / totalVisivel * 360) / 2,
                                     texto: Formatters.moeda(entradas[indiceTocado].value),
-                                    cor: AppColors.forIndex(indiceTocado),
+                                    cor: corDe(entradas[indiceTocado].key),
                                     fontSize: fontSizeTitulo,
                                   ),
                               ],
@@ -189,36 +284,44 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                       Expanded(
                         flex: 6,
                         child: ListView.builder(
-                          itemCount: entradas.length,
+                          // Cada categoria principal (que não seja "Outros") vira 1
+                          // item; "Outros" vira 1 item + 1 por filho quando expandido.
+                          itemCount: entradasLegenda.length + (_outrosExpandido ? filhosOutros.length : 0),
                           itemBuilder: (context, i) {
-                            final pct = total == 0 ? 0.0 : (entradas[i].value / total) * 100;
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(color: AppColors.forIndex(i), shape: BoxShape.circle),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      entradas[i].key,
-                                      style: const TextStyle(fontSize: 12.5),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${pct.toStringAsFixed(0)}%',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            if (i < entradasLegenda.length) {
+                              final entrada = entradasLegenda[i];
+                              final ehOutros = entrada.key == 'Outros' && filhosOutros.isNotEmpty;
+                              return _ItemLegenda(
+                                key: ValueKey(entrada.key),
+                                nome: entrada.key,
+                                valor: entrada.value,
+                                total: totalReal,
+                                cor: corDe(entrada.key),
+                                expansivel: ehOutros,
+                                expandido: _outrosExpandido,
+                                oculta: _categoriasOcultas.contains(entrada.key),
+                                onTap: ehOutros ? () => setState(() => _outrosExpandido = !_outrosExpandido) : null,
+                                onDoubleTap: () =>
+                                    _tentarAlternarOculta(entrada.key, visiveisAtualmente: entradas.length),
+                                onAbrirHistorico: (widget.onAbrirHistorico == null || ehOutros)
+                                    ? null
+                                    : () => widget.onAbrirHistorico!(entrada.key),
+                              );
+                            }
+
+                            final filho = filhosOutros[i - entradasLegenda.length];
+                            return _ItemLegenda(
+                              key: ValueKey(filho.key),
+                              nome: filho.key,
+                              valor: filho.value,
+                              total: totalReal,
+                              cor: corDe(filho.key),
+                              indentado: true,
+                              oculta: _categoriasOcultas.contains(filho.key),
+                              onDoubleTap: () =>
+                                  _tentarAlternarOculta(filho.key, visiveisAtualmente: entradas.length),
+                              onAbrirHistorico:
+                                  widget.onAbrirHistorico == null ? null : () => widget.onAbrirHistorico!(filho.key),
                             );
                           },
                         ),
@@ -228,6 +331,137 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
           ),
         ],
       ),
+    );
+  }
+
+}
+
+class _ItemLegenda extends StatefulWidget {
+  final String nome;
+  final double valor;
+  final double total;
+  final Color cor;
+  final bool indentado;
+  final bool expansivel;
+  final bool expandido;
+  final bool oculta;
+  final VoidCallback? onTap;
+
+  /// Tenta alternar oculto/visível. Deve devolver `true` se a ação foi aplicada, ou `false` se foi recusada
+  final bool Function()? onDoubleTap;
+
+  /// Acionado por long-press (toque) ou clique direito (mouse) — pede para
+  /// abrir o Histórico já filtrado por essa categoria.
+  final VoidCallback? onAbrirHistorico;
+
+  const _ItemLegenda({
+    super.key,
+    required this.nome,
+    required this.valor,
+    required this.total,
+    required this.cor,
+    this.indentado = false,
+    this.expansivel = false,
+    this.expandido = false,
+    this.oculta = false,
+    this.onTap,
+    this.onDoubleTap,
+    this.onAbrirHistorico,
+  });
+
+  @override
+  State<_ItemLegenda> createState() => _ItemLegendaState();
+}
+
+class _ItemLegendaState extends State<_ItemLegenda> with SingleTickerProviderStateMixin {
+  static const _duracaoErro = Duration(milliseconds: 500);
+  late final AnimationController _controladorErro = AnimationController(vsync: this, duration: _duracaoErro);
+
+  @override
+  void dispose() {
+    _controladorErro.dispose();
+    super.dispose();
+  }
+
+  void _handleDoubleTap() {
+    final onDoubleTap = widget.onDoubleTap;
+    if (onDoubleTap == null) return;
+    final aplicado = onDoubleTap();
+    if (!aplicado) {
+      _controladorErro.forward(from: 0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = widget.total == 0 ? 0.0 : (widget.valor / widget.total) * 100;
+    // Categoria oculta: nome, círculo e % ficam translúcidos
+    final opacidade = widget.oculta ? 0.35 : 1.0;
+
+    final linha = AnimatedBuilder(
+      animation: _controladorErro,
+      builder: (context, child) {
+        final t = _controladorErro.value;
+        // Pisca: sobe pra vermelho na primeira metade, volta na segunda.
+        final intensidadeVermelho = t <= 0.5 ? (t / 0.5) : (1 - (t - 0.5) / 0.5);
+        final corTexto = Color.lerp(AppColors.textPrimary, Colors.red, intensidadeVermelho)!;
+        // Treme: pequena oscilação horizontal amortecida ao longo dos 500ms.
+        final tremor = math.sin(t * math.pi * 6) * (1 - t) * 4;
+
+        return Transform.translate(
+          offset: Offset(tremor, 0),
+          child: Padding(
+            padding: EdgeInsets.only(left: widget.indentado ? 18 : 0, top: 4, bottom: 4),
+            child: Opacity(
+              opacity: opacidade,
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(color: widget.cor, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.nome,
+                      style: TextStyle(fontSize: 12.5, color: corTexto),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (widget.expansivel) ...[
+                    Icon(
+                      widget.expandido ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                      size: 15,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 2),
+                  ],
+                  Text(
+                    '${pct.toStringAsFixed(0)}%',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (widget.onTap == null && widget.onDoubleTap == null && widget.onAbrirHistorico == null) return linha;
+    return InkWell(
+      mouseCursor: SystemMouseCursors.click,
+      borderRadius: BorderRadius.circular(8),
+      onTap: widget.onTap,
+      onDoubleTap: _handleDoubleTap,
+      onLongPress: widget.onAbrirHistorico,
+      onSecondaryTap: widget.onAbrirHistorico,
+      child: linha,
     );
   }
 }

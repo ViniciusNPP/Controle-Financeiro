@@ -18,19 +18,15 @@ extension CampoFiltroLabel on CampoFiltro {
   }
 }
 
-enum Operador { maior, maiorIgual, menor, menorIgual }
+enum Operador { maior, menor }
 
 extension OperadorLabel on Operador {
   String get simbolo {
     switch (this) {
       case Operador.maior:
         return '>';
-      case Operador.maiorIgual:
-        return '≥';
       case Operador.menor:
         return '<';
-      case Operador.menorIgual:
-        return '≤';
     }
   }
 
@@ -38,12 +34,8 @@ extension OperadorLabel on Operador {
     switch (this) {
       case Operador.maior:
         return 'Maior';
-      case Operador.maiorIgual:
-        return 'Maior ou igual';
       case Operador.menor:
         return 'Menor';
-      case Operador.menorIgual:
-        return 'Menor ou igual';
     }
   }
 }
@@ -111,12 +103,8 @@ class FiltroHistorico {
       switch (operador) {
         case Operador.maior:
           return cmp > 0;
-        case Operador.maiorIgual:
-          return cmp >= 0;
         case Operador.menor:
           return cmp < 0;
-        case Operador.menorIgual:
-          return cmp <= 0;
       }
     }
     if (v1 != null) return comparar(valor, v1) == 0;

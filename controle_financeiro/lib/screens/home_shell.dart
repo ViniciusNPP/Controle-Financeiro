@@ -3,6 +3,7 @@ import 'package:controle_financeiro/services/sync_service.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/filtro_historico.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/sidebar.dart';
@@ -26,6 +27,18 @@ class _HomeShellState extends State<HomeShell> {
   static const _larguraSidebar = 250.0;
   static const _quebraDesktop = 900.0;
 
+  // Pedido de navegação Gráficos -> Histórico
+  List<FiltroHistorico>? _filtrosParaHistorico;
+  int _pedidoParaHistoricoId = 0;
+
+  void _abrirHistoricoComFiltros(List<FiltroHistorico> filtros) {
+    setState(() {
+      _filtrosParaHistorico = filtros;
+      _pedidoParaHistoricoId++;
+      _aba = 2; // índice da aba Histórico, ver `telas`/`titulos` no build()
+    });
+  }
+
   void _abrirSincronizacao(BuildContext context) {
     final finance = context.read<FinanceProvider>();
     showModalBottomSheet(
@@ -39,7 +52,15 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final telas = [AddTransactionScreen(ativa: _aba == 0,), ChartsScreen(), HistoricoScreen(), CategoriasScreen()];
+    final telas = [
+      AddTransactionScreen(ativa: _aba == 0),
+      ChartsScreen(onAbrirHistorico: _abrirHistoricoComFiltros),
+      HistoricoScreen(
+        filtrosExternos: _filtrosParaHistorico,
+        pedidoExternoId: _pedidoParaHistoricoId,
+      ),
+      CategoriasScreen(),
+    ];
     final titulos = ['Adicionar lançamento', 'Gráficos', 'Histórico', 'Categorias'];
 
     final conteudo = IndexedStack(key: _conteudoKey, index: _aba, children: telas);

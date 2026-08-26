@@ -1,25 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../models/categoria.dart';
+import '../models/transacao.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 import '../utils/period_utils.dart';
 
 class BarChartCard extends StatefulWidget {
   final String titulo;
-  final Map<DateTime, double> dados;
-  final bool agruparPorAno;
+  final List<Transacao> transacoes;
+  final FiltroPeriodo filtro;
   final Color cor;
   final double? alturaFixa;
   final bool destaque;
+  final TipoLancamento? tipo;
+  final List<Categoria>? categorias;
+
+  final void Function(DateTime data1, DateTime data2, String? categoria)? onAbrirHistorico;
 
   const BarChartCard({
     super.key,
     required this.titulo,
-    required this.dados,
-    required this.agruparPorAno,
+    required this.transacoes,
+    required this.filtro,
     required this.cor,
     this.alturaFixa,
     this.destaque = false,
+    this.tipo,
+    this.categorias,
+    this.onAbrirHistorico,
   });
 
   @override
@@ -27,11 +36,78 @@ class BarChartCard extends StatefulWidget {
 }
 
 class _BarChartCardState extends State<BarChartCard> {
+  // null = "Todas" (sem filtro de categoria).
+  String? _categoriaSelecionada;
+
+  // Detecção manual de duplo clique numa barra
+  static const _janelaDuploClique = Duration(milliseconds: 350);
+  int? _ultimoIndiceTocado;
+  DateTime? _instanteUltimoToque;
+
+  bool get _temSeletor => widget.tipo != null && widget.categorias != null;
+
+  /// Soma, por balde (mês ou ano, conforme widget.filtro), as transações relevantes
+  Map<DateTime, double> _dadosAgregados() {
+    final baldes = PeriodoUtils.baldes(widget.filtro);
+    final mapa = {for (final b in baldes) b: 0.0};
+    final categoria = _categoriaSelecionada;
+
+    for (final t in widget.transacoes) {
+      if (widget.tipo != null && t.tipo != widget.tipo) continue;
+      if (!widget.filtro.contem(t.data)) continue;
+      if (categoria != null && t.categoriaNome != categoria) continue;
+
+      final chave = widget.filtro.agruparPorAno
+          ? DateTime(t.data.year)
+          : PeriodoUtils.primeiroDiaDoMes(t.data);
+      if (!mapa.containsKey(chave)) continue;
+
+      final sinal = (widget.tipo == null && t.tipo == TipoLancamento.saida) ? -1 : 1;
+      mapa[chave] = mapa[chave]! + t.valor * sinal;
+    }
+    return mapa;
+  }
+
+  void _selecionarCategoria(String? categoria) {
+    if (categoria == _categoriaSelecionada) return;
+    setState(() => _categoriaSelecionada = categoria);
+  }
+
+  /// Reconhece duplo clique comparando o índice tocado agora com o último, e o tempo decorrido com _janelaDuploClique.
+  void _registrarToqueBarra(int indice, DateTime balde) {
+    final agora = DateTime.now();
+    final ultimoIndice = _ultimoIndiceTocado;
+    final ultimoInstante = _instanteUltimoToque;
+
+    final ehDuploClique = ultimoIndice == indice &&
+        ultimoInstante != null &&
+        agora.difference(ultimoInstante) <= _janelaDuploClique;
+
+    if (ehDuploClique) {
+      _ultimoIndiceTocado = null;
+      _instanteUltimoToque = null;
+
+      final (data1, data2) = PeriodoUtils.intervaloDoBalde(balde, widget.filtro.agruparPorAno);
+      widget.onAbrirHistorico?.call(data1, data2, _categoriaSelecionada);
+      return;
+    }
+
+    _ultimoIndiceTocado = indice;
+    _instanteUltimoToque = agora;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final chaves = widget.dados.keys.toList()..sort();
-    final valores = chaves.map((k) => widget.dados[k] ?? 0).toList();
+    // Se a categoria selecionada deixou de existir volta para "Todas"
+    if (_categoriaSelecionada != null &&
+        widget.categorias != null &&
+        !widget.categorias!.any((c) => c.nome == _categoriaSelecionada)) {
+      _categoriaSelecionada = null;
+    }
+
+    final dados = _dadosAgregados();
+    final chaves = dados.keys.toList()..sort();
+    final valores = chaves.map((k) => dados[k] ?? 0).toList();
     final total = valores.fold<double>(0, (a, b) => a + b);
 
     final quantidadeBarras = valores.length;
@@ -73,7 +149,12 @@ class _BarChartCardState extends State<BarChartCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(widget.titulo, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: corTextoSecundario)),
+                  _temSeletor
+                      ? _cabecalhoComSeletor(corTextoSecundario)
+                      : Text(
+                          widget.titulo,
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: corTextoSecundario),
+                        ),
                   const SizedBox(height: 4),
                   Text(
                     Formatters.moeda(total),
@@ -121,6 +202,14 @@ class _BarChartCardState extends State<BarChartCard> {
                             ),
                           ),
                         ),
+                        touchCallback: widget.onAbrirHistorico == null
+                            ? null
+                            : (event, response) {
+                                if (event is! FlTapUpEvent) return;
+                                final indice = response?.spot?.touchedBarGroupIndex;
+                                if (indice == null || indice < 0 || indice >= chaves.length) return;
+                                _registrarToqueBarra(indice, chaves[indice]);
+                              },
                       ),
                       titlesData: FlTitlesData(
                         leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -132,7 +221,7 @@ class _BarChartCardState extends State<BarChartCard> {
                             getTitlesWidget: (value, meta) {
                               final i = value.toInt();
                               if (i < 0 || i >= quantidadeBarras) return const SizedBox.shrink();
-                              final rotulo = PeriodoUtils.rotuloBalde(chaves[i], widget.agruparPorAno);
+                              final rotulo = PeriodoUtils.rotuloBalde(chaves[i], widget.filtro.agruparPorAno);
                               return Padding(
                                 padding: const EdgeInsets.only(top: 6),
                                 child: Text(
@@ -168,5 +257,37 @@ class _BarChartCardState extends State<BarChartCard> {
     );
 
     return conteudo;
+  }
+
+  static const _valorTodas = '__todas__';
+
+  Widget _cabecalhoComSeletor(Color corTexto) {
+    final rotuloAtual = _categoriaSelecionada ?? 'Todas';
+    return PopupMenuButton<String>(
+      tooltip: '',
+      offset: const Offset(0, 28),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      constraints: const BoxConstraints(maxHeight: 280, minWidth: 160),
+      onSelected: (valor) => _selecionarCategoria(valor == _valorTodas ? null : valor),
+      itemBuilder: (context) => [
+        const PopupMenuItem<String>(value: _valorTodas, child: Text('Todas')),
+        for (final c in widget.categorias!) PopupMenuItem<String>(value: c.nome, child: Text(c.nome)),
+      ],
+      child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${widget.titulo}: $rotuloAtual',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: corTexto),
+            ),
+            const SizedBox(width: 2),
+            Icon(Icons.expand_more_rounded, size: 18, color: corTexto),
+          ],
+        ),
+      )
+      
+    );
   }
 }
