@@ -68,6 +68,7 @@ class FinanceProvider extends ChangeNotifier {
     required String categoriaId,
     required String categoriaNome,
     required double valor,
+    String? descricao,
   }) async {
     final nova = Transacao(
       id: _uuid.v4(),
@@ -76,6 +77,7 @@ class FinanceProvider extends ChangeNotifier {
       categoriaId: categoriaId,
       categoriaNome: categoriaNome,
       valor: valor,
+      descricao: descricao,
     );
 
     _dados = _dados.copyWith(

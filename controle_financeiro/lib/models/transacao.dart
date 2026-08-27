@@ -7,6 +7,7 @@ class Transacao {
   final String categoriaId;
   final String categoriaNome;
   final double valor;
+  final String? descricao;
 
   const Transacao({
     required this.id,
@@ -15,6 +16,7 @@ class Transacao {
     required this.categoriaId,
     required this.categoriaNome,
     required this.valor,
+    this.descricao,
   });
 
   Map<String, dynamic> toJson() => {
@@ -24,6 +26,7 @@ class Transacao {
         'categoriaId': categoriaId,
         'categoriaNome': categoriaNome,
         'valor': valor,
+        'descricao': descricao,
       };
 
   factory Transacao.fromJson(Map<String, dynamic> json) => Transacao(
@@ -36,5 +39,6 @@ class Transacao {
         categoriaId: json['categoriaId'] as String,
         categoriaNome: json['categoriaNome'] as String,
         valor: (json['valor'] as num).toDouble(),
+        descricao: json['descricao'] as String?,
       );
 }

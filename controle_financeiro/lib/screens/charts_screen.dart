@@ -241,7 +241,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
 
   Widget _setaCarrossel(IconData icone, VoidCallback aoTocar) {
     return Material(
-      color: Colors.black.withOpacity(0.06),
+      color: Colors.black.withValues(alpha:0.06),
       shape: const CircleBorder(),
       child: InkWell(
         mouseCursor: SystemMouseCursors.click,
@@ -249,7 +249,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
         onTap: aoTocar,
         child: Padding(
           padding: const EdgeInsets.all(6),
-          child: Icon(icone, size: 22, color: AppColors.textSecondary.withOpacity(0.8)),
+          child: Icon(icone, size: 22, color: AppColors.textSecondary.withValues(alpha:0.8)),
         ),
       ),
     );

@@ -194,7 +194,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cor.withOpacity(0.4)),
+          border: Border.all(color: cor.withValues(alpha:0.4)),
         ),
         child: Icon(Icons.add_rounded, color: cor),
       ),

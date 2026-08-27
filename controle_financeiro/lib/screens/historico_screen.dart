@@ -19,12 +19,7 @@ enum _ModoOrdenacao {
 }
 
 class HistoricoScreen extends StatefulWidget {
-  /// Filtros vindos de fora (ex: long-press numa categoria do gráfico) para
-  /// serem adicionados como filtros ativos normais. Como o HomeShell usa
-  /// IndexedStack, esta tela não é recriada ao trocar de aba — por isso o
-  /// pedido é identificado por [pedidoExternoId], que muda a cada novo
-  /// long-press para o didUpdateWidget saber que é um pedido novo mesmo se
-  /// os filtros em si forem idênticos aos da vez anterior.
+  /// Filtros vindos de fora para serem adicionados como filtros ativos normais
   final List<FiltroHistorico>? filtrosExternos;
   final Object? pedidoExternoId;
 
@@ -39,6 +34,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   FiltroHistorico? _filtroRapido;
   _ModoOrdenacao _ordenacao = _ModoOrdenacao.dataDecrescente;
   Object? _ultimoPedidoExternoId;
+  bool _filtrosAbertos = false;
 
   @override
   void initState() {
@@ -52,10 +48,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     _aplicarFiltrosExternosSeHouver();
   }
 
-  /// Substitui os filtros de categoria/data vindos do gráfico anterior
-  /// (se houver, identificados pelo id fixo) pelos novos, e adiciona os
-  /// atuais — só quando pedidoExternoId realmente mudou, pra não reaplicar
-  /// o mesmo pedido a cada rebuild.
+  /// Substitui os filtros de categoria/data vindos do gráfico anterior pelos novos
   void _aplicarFiltrosExternosSeHouver() {
     final filtros = widget.filtrosExternos;
     if (filtros == null || filtros.isEmpty) return;
@@ -161,9 +154,6 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     final sugestoesCategorias = finance.categorias.map((c) => c.nome).toSet().toList()..sort();
     final lista = _filtrarEOrdenar(finance.transacoes);
 
-    // Intervalo real de datas com lançamentos, para limitar a navegação do
-    // filtro de Data ao período que realmente existe dados em vez de um
-    // range fixo arbitrário.
     DateTime? dataMinima;
     DateTime? dataMaxima;
     for (final t in finance.transacoes) {
@@ -171,12 +161,12 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
       if (dataMaxima == null || t.data.isAfter(dataMaxima)) dataMaxima = t.data;
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Histórico', style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 16),
-        FiltroBuilder(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final filtrosSobrepostos = constraints.maxHeight < 400;
+        //print(constraints.maxHeight);
+
+        final filtroBuilder = FiltroBuilder(
           filtrosAtivos: _filtros,
           sugestoesCategorias: sugestoesCategorias,
           onAdicionar: _adicionarFiltro,
@@ -184,65 +174,148 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
           onFiltroRapidoChanged: _setFiltroRapido,
           dataMinima: dataMinima,
           dataMaxima: dataMaxima,
-        ),
-        const SizedBox(height: 16),
-        Row(
+        );
+
+        return Stack(
           children: [
-            Expanded(
-              child: Text('${lista.length} lançamento(s)', style: Theme.of(context).textTheme.bodyMedium),
-            ),
-            Tooltip(
-              message: 'Clique para mudar · botão direito para voltar',
-              child: GestureDetector(
-                onSecondaryTap: () => _mudarOrdenacao(-1),
-                child: InkWell(
-                  mouseCursor: SystemMouseCursors.click,
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => _mudarOrdenacao(1),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: AppTheme.cardDecoration(),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(_iconeOrdenacao, size: 16, color: AppColors.primary),
-                        Icon(
-                          _setaParaCima ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
-                          size: 13,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _rotuloOrdenacao,
-                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primary),
-                        ),
-                      ],
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Histórico',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 16),
+                if (!filtrosSobrepostos) filtroBuilder,
+                if (!filtrosSobrepostos) const SizedBox(height: 16),
+                if (filtrosSobrepostos) const SizedBox(height: 48),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${lista.length} lançamento(s)',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                     ),
+                    Tooltip(
+                      message: 'Clique para mudar · botão direito para voltar',
+                      child: GestureDetector(
+                        onSecondaryTap: () => _mudarOrdenacao(-1),
+                        child: InkWell(
+                          mouseCursor: SystemMouseCursors.click,
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => _mudarOrdenacao(1),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: AppTheme.cardDecoration(),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _iconeOrdenacao,
+                                  size: 16,
+                                  color: AppColors.primary,
+                                ),
+                                Icon(
+                                  _setaParaCima
+                                      ? Icons.arrow_upward_rounded
+                                      : Icons.arrow_downward_rounded,
+                                  size: 13,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  _rotuloOrdenacao,
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                _cabecalhoTabela(),
+                const Divider(height: 1, color: AppColors.border),
+                Expanded(
+                  child: lista.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Nenhum lançamento encontrado',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        )
+                      : ListView.separated(
+                          itemCount: lista.length,
+                          separatorBuilder: (_, _) =>
+                              const Divider(height: 1, color: AppColors.border),
+                          itemBuilder: (context, i) =>
+                              _linhaTabela(context, lista[i]),
+                        ),
+                ),
+                _linhaTotal(lista),
+              ],
+            ),
+            if (filtrosSobrepostos)
+              Positioned(top: 40, left: 0, child: _botaoFiltros()),
+            if (filtrosSobrepostos && _filtrosAbertos)
+              Positioned(
+                top: 84,
+                left: 0,
+                right: 0,
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(20),
+                  clipBehavior: Clip.antiAlias,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: constraints.maxHeight * 0.8,
+                    ),
+                    child: SingleChildScrollView(child: filtroBuilder),
                   ),
                 ),
               ),
-            ),
           ],
+        );
+      },
+    );
+  }
+
+  Widget _botaoFiltros() {
+    return InkWell(
+      mouseCursor: SystemMouseCursors.click,
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => setState(() => _filtrosAbertos = !_filtrosAbertos),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: AppTheme.cardDecoration(),
+        child: Text(
+          _filtrosAbertos ? 'Filtro ▴' : 'Filtro ▾',
+          style: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primary,
+          ),
         ),
-        const SizedBox(height: 10),
-        _cabecalhoTabela(),
-        const Divider(height: 1, color: AppColors.border),
-        Expanded(
-          child: lista.isEmpty
-              ? Center(child: Text('Nenhum lançamento encontrado', style: Theme.of(context).textTheme.bodyMedium))
-              : ListView.separated(
-                  itemCount: lista.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1, color: AppColors.border),
-                  itemBuilder: (context, i) => _linhaTabela(context, lista[i]),
-                ),
-        ),
-        _linhaTotal(lista),
-      ],
+      ),
     );
   }
 
   Widget _cabecalhoTabela() {
-    const estilo = TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.textSecondary);
+    const estilo = TextStyle(
+      fontSize: 11.5,
+      fontWeight: FontWeight.w700,
+      color: AppColors.textSecondary,
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
@@ -264,17 +337,31 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         child: Row(
           children: [
-            Expanded(flex: 3, child: Text(Formatters.data(t.data), style: const TextStyle(fontSize: 13.5))),
+            Expanded(
+              flex: 3,
+              child: Text(
+                Formatters.data(t.data),
+                style: const TextStyle(fontSize: 13.5),
+              ),
+            ),
             Expanded(
               flex: 4,
-              child: Text(t.categoriaNome, style: const TextStyle(fontSize: 13.5), overflow: TextOverflow.ellipsis),
+              child: Text(
+                t.categoriaNome,
+                style: const TextStyle(fontSize: 13.5),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             Expanded(
               flex: 3,
               child: Text(
                 Formatters.moeda(t.valor),
                 textAlign: TextAlign.right,
-                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: cor),
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: cor,
+                ),
               ),
             ),
           ],
@@ -296,7 +383,10 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('Total', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+          const Text(
+            'Total',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          ),
           Text(
             Formatters.moeda(total.abs()),
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cor),

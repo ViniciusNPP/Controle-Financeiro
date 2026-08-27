@@ -36,12 +36,13 @@ Aplicativo em Flutter para controlar finanças pessoais no Windows. Ele permite 
 1. Selecione a data clicando sobre o campo de data
 2. Selecione o tipo clicando sobre o texto "Entrada" ou "Saída"
 3. Selecione a categoria clicando sobre o campo de categoria que ficará disponível assim que selecionar o tipo
-4. Adicione o valor clicando no campo com o valor padrão de R$0,00
-5. Após todos os campos serem preenchidos, clique no botão Salvar lançamento.
+4. OPCIONAL: Selecione a descrição clicando sobre o campo de descrição e escreva brevemente o que é a despesa
+5. Adicione o valor clicando no campo com o valor padrão de R$0,00
+6. Após todos os campos obrigatórios serem preenchidos, clique no botão Salvar lançamento.
 
 ### 3\. Salvar, exportar e importar dados
 
-O app salva os dados automaticamente em um arquivo `dados\\\\\\\_financeiro.json`, guardado localmente no computador. Não é necessário salvar manualmente.
+O app salva os dados automaticamente em um arquivo `dados_financeiro.json`, guardado localmente no computador. Não é necessário salvar manualmente.
 
 **Para exportar:**
 
@@ -53,9 +54,9 @@ O app salva os dados automaticamente em um arquivo `dados\\\\\\\_financeiro.json
 
 1. Clique em "Sincronização"
 2. Na aba que abrir, clique no botão "Importar dados"
-3. Procure o arquivo `dados\\\\\\\_financeiro.json` e selecione-o
+3. Procure o arquivo `dados_financeiro.json` e selecione-o
 
-> ⚠️ \\\\\\\*\\\\\\\*Atenção:\\\\\\\*\\\\\\\* importar um arquivo \\\\\\\*\\\\\\\*substitui completamente\\\\\\\*\\\\\\\* os dados atuais do app pelos dados do arquivo selecionado. Essa ação não pode ser desfeita. Se quiser apenas combinar dados de dois dispositivos sem perder nada, use a opção de "Escolher pasta" descrita abaixo.
+> ⚠️ *\\\*\\\Atenção:\\\*\\\* importar um arquivo \\\*\\\*substitui completamente\\\*\\\* os dados atuais do app pelos dados do arquivo selecionado. Essa ação não pode ser desfeita. Se quiser apenas combinar dados de dois dispositivos sem perder nada, use a opção de "Escolher pasta" descrita abaixo.
 
 **Sincronização automática por pasta (opcional):**
 
@@ -67,6 +68,44 @@ No computador, também é possível escolher uma pasta (por exemplo, dentro do G
 
 * O app usa um arquivo local para armazenamento, então os dados ficam salvos no computador ou no dispositivo onde o app foi usado.
 * Para compartilhar os dados entre dispositivos, use as opções de exportar/importar, ou a sincronização automática por pasta.
+
+### 4\. Mecânicas
+
+#### Gráficos
+1. Ao clicar nos botões 'Mensal' e 'Anual' altera o tipo de filtro dos dados mostrados no gráfico
+    1.1. Mensal: Filtra os dados no período do mês escolhido na barra cinza, bimestral, trimestral, semestral e todo o período em meses que se tem lançamentos.
+    1.2. Anual: Filtra os dados no período do ano escolhido na barra cinza ou de todo o período em anos que se tem lançamentos.
+    1.3. Personalizado: Essa opção permite selecionar um período específico de tempo para filtrar os dados, no filtro 'Mensal' o período de meses e em 'Anual' o período de anos.
+2. Nos gráficos de barras ao clicar no nome deles (Exemplo: 'Entradas: Todas ▾') abrirá uma lista de categorias, permitindo que filtre os valores daquela categoria naquele período de tempo escolhido.
+3. Ao clicar duas vezes na barra em qualquer gráfico de barras, será redirecionado para a aba 'Histórico' mostrando todas as despesas daquela categoria, naquele mês ou ano daquele tipo categoria (entrada ou saída).
+4. Nos gráficos de pizza ao passar o mouse em cima de uma fatia, ou clique longo no Android, mostra o valor daquela fatia.
+5. Dois cliques na categoria na legenda oculta tal categoria no gráfico de pizza.
+6. Clique simples na categoria 'Outros' no gráfico de pizza o expande mostrando as categorias escondidas e as insere no gráfico substituindo a categoria 'Outros'.
+7. Clique longo ou toque longo no Android em qualquer categoria na legenda do gráfico de pizza redireciona para a aba 'Histórico' mostrando todas as despesas daquela categoria, naquele mês ou ano daquele tipo categoria (entrada ou saída).
+
+#### Histórico
+1. Na parte de filtros é possível aplicar um filtro de data, tipo, categoria e/ou valor preenchendo os devidos campos e logo após clicar no botão 'Adicionar filtro'.
+    1.1. Data: Seleciona um período mensal, anual ou personalizado, basta mudar o modo do filtro clicando no botão na direita acima do retângulo cinza com o texto 'Meses' ou 'Anos' ou 'Personalizado'
+    1.2. Tipo: Seleciona um dos dois tipos existentes, entradas para os débitos e saídas para as despesas.
+    1.3. Categoria: Seleciona alguma categoria existente para ser filtrada, basta começar a digitar o nome da categoria que logo aparecerá como sugestão.
+    1.4. Valor: Possível filtrar valores acima ou abaixo do colocado no campo da direita, filtrar entre os dois valores digitados nos dois campos e filtrar por valores exatamente iguais ao do campo da esquerda.
+2. Ao clicar em qualquer lançamento vai abrir uma janela mostrando todas as informações daquele lançamento, dando opções de fechar a janela (botão 'X Cancelar' ou 'X'), excluir (botão '🗑️Excluir' ou '🗑️') que abrirá uma janela de confirmação e editar (botão '✏️ Editar' ou '✏️').
+3. Ao clicar em 'Editar' você terá a permissão de editar todas as informações daquele lançamento (data, tipo, categoria, descrição e valor). Para salvar qualquer alteração clique no botão **verde** com o texto **'Salvar'** ou com o ícone **💾**. Caso queria voltar ou sair clique no botão **'Voltar'** ou **⬅** e depois **Cancelar** ou **X**, ou clique fora da janela.
+4. Ao preencher os filtros, já será aplicado um filtro rápido que não ficará após mudar o tipo de filtro ou apagar o texto escrito.
+5. Ao clicar no botão abaixo de 'Adicionar Filtro', a lista de lançamentos vai mudar baseado no que estiver escolhido
+    1.1. Data (mais recente): Ordena pela data mais próxima da atual
+    1.2. Data (mais antiga): Ordena pela data mais longe da atual
+    1.3. Maior valor: Ordena pelo valor mais alto
+    1.4. Menor valor: Ordena pelo valor mais baixo
+    1.5. Categoria (A-Z): Ordena por ordem alfabética
+    1.6. Categoria (Z-A): Ordena por ordem alfabética inversa
+
+#### Categoria
+1. Clicar no botão '+' abre uma janela para adicioar uma nova categoria do tipo das categorias exibidas acima dele (o tipo da categoria exibidos estará no nome da coluna, podendo ser 'Categoria de entrada' ou 'Categoria de saída').
+    1.1. Preenche o campo com o nome da categoria e depois clique no botão 'Adicionar' para adicionar.
+    1.2. A janela não vai fechar após adicionar, então para sair basta clicar em qualquer lugar da tela fora da janela ou no botão 'Fechar'.
+2. Clicar em uma categoria em específico vai abrir uma janela como a descrita no tópico de **Histórico do 2 ao 3**, mas com somente os campos 'Nome' e 'Tipo'
+3. Se a largura do aplicativo for pequena, ao invés de ter duas colunas terá somente uma, para trocar de coluna basta clicar no botão '⇄'.
 
 ## Licença
 

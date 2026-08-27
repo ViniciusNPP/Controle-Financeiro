@@ -9,8 +9,9 @@ import '../utils/formatters.dart';
 class DatePickerField extends StatelessWidget {
   final DateTime valor;
   final ValueChanged<DateTime> onChanged;
+  final bool compact;
 
-  const DatePickerField({super.key, required this.valor, required this.onChanged});
+  const DatePickerField({super.key, required this.valor, required this.onChanged, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +45,7 @@ class DatePickerField extends StatelessWidget {
           if (escolhida != null) onChanged(escolhida);
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 14 : 16),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(14),

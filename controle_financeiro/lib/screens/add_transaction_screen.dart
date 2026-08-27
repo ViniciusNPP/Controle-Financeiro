@@ -17,6 +17,7 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _valorKey = GlobalKey<CurrencyInputState>();
+  final _descricaoController = TextEditingController();
 
   DateTime _data = DateTime.now();
   TipoLancamento? _tipo;
@@ -26,20 +27,29 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   bool get _valido => _tipo != null && _categoria != null && _valor > 0;
 
+  @override
+  void dispose() {
+    _descricaoController.dispose();
+    super.dispose();
+  }
+
   Future<void> _salvar() async {
     if (!_valido) return;
     setState(() => _salvando = true);
 
+    final descricao = _descricaoController.text.trim();
     await context.read<FinanceProvider>().adicionarTransacao(
           data: _data,
           tipo: _tipo!,
           categoriaId: _categoria!.id,
           categoriaNome: _categoria!.nome,
           valor: _valor,
+          descricao: descricao.isEmpty ? null : descricao,
         );
 
     if (!mounted) return;
     _valorKey.currentState?.limpar();
+    _descricaoController.clear();
     setState(() {
       _tipo = null;
       _categoria = null;
@@ -109,6 +119,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   },
                 ),
                 const SizedBox(height: 20),
+                _rotulo('Descrição (opcional)'),
+                TextField(
+                  controller: _descricaoController,
+                  maxLength: 250,
+                  maxLines: 3,
+                  minLines: 1,
+                  decoration: const InputDecoration(
+                    hintText: 'Observação...',
+                  ),
+                ),
+                const SizedBox(height: 8),
                 _rotulo('Valor'),
                 CurrencyInput(
                   key: _valorKey, 

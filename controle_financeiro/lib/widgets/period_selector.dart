@@ -170,7 +170,7 @@ class _PeriodSelectorState extends State<PeriodSelector> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: selecionado ? AppColors.primaryLight.withOpacity(0.14) : Colors.transparent,
+            color: selecionado ? AppColors.primaryLight.withValues(alpha:0.14) : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: selecionado ? AppColors.primary : AppColors.border),
           ),

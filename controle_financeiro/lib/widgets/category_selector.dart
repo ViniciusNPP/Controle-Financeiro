@@ -12,12 +12,14 @@ class CategorySelector extends StatelessWidget {
   final TipoLancamento? tipo;
   final Categoria? categoriaSelecionada;
   final ValueChanged<Categoria> onSelecionar;
+  final bool compact;
 
   const CategorySelector({
     super.key,
     required this.tipo,
     required this.categoriaSelecionada,
     required this.onSelecionar,
+    this.compact = false,
   });
 
   @override
@@ -39,7 +41,7 @@ class CategorySelector extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             onTap: () => _abrirSelecao(context),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 11 : 16),
               child: Row(
                 children: [
                   const Icon(Icons.sell_outlined, size: 18, color: AppColors.textSecondary),

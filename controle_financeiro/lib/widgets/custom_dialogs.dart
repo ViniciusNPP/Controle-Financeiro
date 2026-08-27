@@ -45,59 +45,73 @@ class DetailDialogShell extends StatelessWidget {
         shortcuts: atalhosGlobais,
         child: Actions(
           actions: {
-            AceitarIntent: CallbackAction<AceitarIntent>(onInvoke: (intend) {
-              if (editando) {
-                onSalvar();
-              } else {
-                onEditar();
-              }
-              return null;
-            }),
-            DelIntent: CallbackAction<DelIntent>(onInvoke: (intent) => onExcluir(),)
+            AceitarIntent: CallbackAction<AceitarIntent>(
+              onInvoke: (intend) {
+                if (editando) {
+                  onSalvar();
+                } else {
+                  onEditar();
+                }
+                return null;
+              },
+            ),
+            DelIntent: CallbackAction<DelIntent>(
+              onInvoke: (intent) => onExcluir(),
+            ),
           },
           child: Focus(
             autofocus: true,
             child: Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(22),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(titulo, style: Theme.of(context).textTheme.headlineMedium),
-                      const SizedBox(height: 22),
-                      for (final linha in children) ...[
-                        linha,
-                        const SizedBox(height: 16),
-                      ],
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        width: double.infinity,
-                        child: Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            botaoSecundario,
-                            Wrap(
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: botoesPrincipais,
-                            ),
-                          ],
+                  constraints: BoxConstraints(
+                    maxWidth: maxWidth,
+                    maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          titulo,
+                          style: Theme.of(context).textTheme.headlineMedium,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 22),
+                        for (final linha in children) ...[
+                          linha,
+                          const SizedBox(height: 16),
+                        ],
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              botaoSecundario,
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 10,
+                                runSpacing: 10,
+                                children: botoesPrincipais,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          )
+          ),
         ),
       ),
     );
@@ -106,15 +120,34 @@ class DetailDialogShell extends StatelessWidget {
 
 /// Botão "Voltar" ou "Cancelar"
 Widget botaoSecundarioDialog({
+  required BuildContext context,
   required bool editando,
   required VoidCallback onVoltar,
   required VoidCallback onCancelar,
 }) {
+  final telaPequena = MediaQuery.sizeOf(context).width < 600;
+
   if (editando) {
+    if (telaPequena) {
+      return IconButton(
+        onPressed: onVoltar,
+        icon: const Icon(Icons.arrow_back_rounded, size: 18),
+        tooltip: 'Voltar',
+        style: estiloBotao(corForeGround: AppColors.textSecondary),
+      );
+    }
     return TextButton.icon(
       onPressed: onVoltar,
       icon: const Icon(Icons.arrow_back_rounded, size: 18),
       label: const Text('Voltar'),
+      style: estiloBotao(corForeGround: AppColors.textSecondary),
+    );
+  }
+  if (telaPequena) {
+    return IconButton(
+      onPressed: onCancelar,
+      icon: const Icon(Icons.close_rounded, size: 18),
+      tooltip: 'Cancelar',
       style: estiloBotao(corForeGround: AppColors.textSecondary),
     );
   }
@@ -128,6 +161,7 @@ Widget botaoSecundarioDialog({
 
 /// Botão "Salvar" ou botões "Excluir" + "Editar"
 List<Widget> botoesPrincipaisDialog({
+  required BuildContext context,
   required bool editando,
   required bool valido,
   required VoidCallback onSalvar,
@@ -136,29 +170,52 @@ List<Widget> botoesPrincipaisDialog({
   Color corSalvar = AppColors.entrada,
   Color corEditar = const Color(0xFF201d4d),
 }) {
+  final telaPequena = MediaQuery.sizeOf(context).width < 600;
+
   if (editando) {
     return [
-      ElevatedButton.icon(
-        onPressed: valido ? onSalvar : null,
-        icon: const Icon(Icons.save_rounded, size: 18),
-        label: const Text('Salvar'),
-        style: estiloBotao(corBackGround: corSalvar, isSide: true),
-      ),
+      telaPequena
+          ? IconButton(
+              onPressed: valido ? onSalvar : null,
+              icon: const Icon(Icons.save_rounded, size: 18),
+              tooltip: 'Salvar',
+              style: estiloBotao(corBackGround: corSalvar, isSide: true),
+            )
+          : ElevatedButton.icon(
+              onPressed: valido ? onSalvar : null,
+              icon: const Icon(Icons.save_rounded, size: 18),
+              label: const Text('Salvar'),
+              style: estiloBotao(corBackGround: corSalvar, isSide: true),
+            ),
     ];
   }
   return [
-    OutlinedButton.icon(
-      onPressed: onExcluir,
-      icon: const Icon(Icons.delete_outline_rounded, size: 18),
-      label: const Text('Excluir'),
-      style: estiloBotao(corForeGround: AppColors.saida, isSide: true),
-    ),
-    ElevatedButton.icon(
-      onPressed: onEditar,
-      icon: const Icon(Icons.edit_rounded, size: 18),
-      label: const Text('Editar'),
-      style: estiloBotao(corBackGround: corEditar, isSide: true),
-    ),
+    telaPequena
+        ? IconButton(
+            onPressed: onExcluir,
+            icon: const Icon(Icons.delete_outline_rounded, size: 18),
+            tooltip: 'Excluir',
+            style: estiloBotao(corForeGround: AppColors.saida, isSide: true),
+          )
+        : OutlinedButton.icon(
+            onPressed: onExcluir,
+            icon: const Icon(Icons.delete_outline_rounded, size: 18),
+            label: const Text('Excluir'),
+            style: estiloBotao(corForeGround: AppColors.saida, isSide: true),
+          ),
+    telaPequena
+        ? IconButton(
+            onPressed: onEditar,
+            icon: const Icon(Icons.edit_rounded, size: 18),
+            tooltip: 'Editar',
+            style: estiloBotao(corBackGround: corEditar, isSide: true),
+          )
+        : ElevatedButton.icon(
+            onPressed: onEditar,
+            icon: const Icon(Icons.edit_rounded, size: 18),
+            label: const Text('Editar'),
+            style: estiloBotao(corBackGround: corEditar, isSide: true),
+          ),
   ];
 }
 

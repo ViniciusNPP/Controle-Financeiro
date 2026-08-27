@@ -16,7 +16,8 @@ class BarChartCard extends StatefulWidget {
   final TipoLancamento? tipo;
   final List<Categoria>? categorias;
 
-  final void Function(DateTime data1, DateTime data2, String? categoria)? onAbrirHistorico;
+  final void Function(DateTime data1, DateTime data2, String? categoria)?
+  onAbrirHistorico;
 
   const BarChartCard({
     super.key,
@@ -38,6 +39,7 @@ class BarChartCard extends StatefulWidget {
 class _BarChartCardState extends State<BarChartCard> {
   // null = "Todas" (sem filtro de categoria).
   String? _categoriaSelecionada;
+  bool _seletorAberto = false;
 
   // Detecção manual de duplo clique numa barra
   static const _janelaDuploClique = Duration(milliseconds: 350);
@@ -62,7 +64,9 @@ class _BarChartCardState extends State<BarChartCard> {
           : PeriodoUtils.primeiroDiaDoMes(t.data);
       if (!mapa.containsKey(chave)) continue;
 
-      final sinal = (widget.tipo == null && t.tipo == TipoLancamento.saida) ? -1 : 1;
+      final sinal = (widget.tipo == null && t.tipo == TipoLancamento.saida)
+          ? -1
+          : 1;
       mapa[chave] = mapa[chave]! + t.valor * sinal;
     }
     return mapa;
@@ -79,7 +83,8 @@ class _BarChartCardState extends State<BarChartCard> {
     final ultimoIndice = _ultimoIndiceTocado;
     final ultimoInstante = _instanteUltimoToque;
 
-    final ehDuploClique = ultimoIndice == indice &&
+    final ehDuploClique =
+        ultimoIndice == indice &&
         ultimoInstante != null &&
         agora.difference(ultimoInstante) <= _janelaDuploClique;
 
@@ -87,7 +92,10 @@ class _BarChartCardState extends State<BarChartCard> {
       _ultimoIndiceTocado = null;
       _instanteUltimoToque = null;
 
-      final (data1, data2) = PeriodoUtils.intervaloDoBalde(balde, widget.filtro.agruparPorAno);
+      final (data1, data2) = PeriodoUtils.intervaloDoBalde(
+        balde,
+        widget.filtro.agruparPorAno,
+      );
       widget.onAbrirHistorico?.call(data1, data2, _categoriaSelecionada);
       return;
     }
@@ -112,16 +120,24 @@ class _BarChartCardState extends State<BarChartCard> {
 
     final quantidadeBarras = valores.length;
 
-    final minValor = valores.isEmpty ? 0.0 : valores.reduce((a, b) => a < b ? a : b);
-    final maxValor = valores.isEmpty ? 0.0 : valores.reduce((a, b) => a > b ? a : b);
+    final minValor = valores.isEmpty
+        ? 0.0
+        : valores.reduce((a, b) => a < b ? a : b);
+    final maxValor = valores.isEmpty
+        ? 0.0
+        : valores.reduce((a, b) => a > b ? a : b);
     final minY = minValor < 0 ? minValor * 1.2 : 0.0;
     var maxY = maxValor > 0 ? maxValor * 1.2 : 1.0;
     if (maxY <= minY) maxY = minY + 1;
 
     final corTexto = widget.destaque ? Colors.white : AppColors.textPrimary;
-    final corTextoSecundario = widget.destaque ? Colors.white.withValues(alpha: 0.75) : AppColors.textSecondary;
+    final corTextoSecundario = widget.destaque
+        ? Colors.white.withValues(alpha: 0.75)
+        : AppColors.textSecondary;
     final corBarra = widget.destaque ? Colors.white : widget.cor;
-    final corLinhaZero = widget.destaque ? Colors.white.withValues(alpha: 0.35) : Colors.grey.withValues(alpha: 0.55);
+    final corLinhaZero = widget.destaque
+        ? Colors.white.withValues(alpha: 0.35)
+        : Colors.grey.withValues(alpha: 0.55);
 
     final Widget conteudo = Container(
       padding: const EdgeInsets.all(20),
@@ -153,12 +169,18 @@ class _BarChartCardState extends State<BarChartCard> {
                       ? _cabecalhoComSeletor(corTextoSecundario)
                       : Text(
                           widget.titulo,
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: corTextoSecundario),
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: corTextoSecundario,
+                          ),
                         ),
                   const SizedBox(height: 4),
                   Text(
                     Formatters.moeda(total),
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(color: corTexto),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.displayMedium?.copyWith(color: corTexto),
                   ),
                 ],
               ),
@@ -193,40 +215,60 @@ class _BarChartCardState extends State<BarChartCard> {
                       ),
                       barTouchData: BarTouchData(
                         touchTooltipData: BarTouchTooltipData(
-                          getTooltipItem: (group, groupIndex, rod, rodIndex) => BarTooltipItem(
-                            Formatters.moeda(rod.toY),
-                            TextStyle(
-                              color: widget.destaque ? AppColors.primary : Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) =>
+                              BarTooltipItem(
+                                Formatters.moeda(rod.toY),
+                                TextStyle(
+                                  color: widget.destaque
+                                      ? AppColors.primary
+                                      : Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
                         ),
                         touchCallback: widget.onAbrirHistorico == null
                             ? null
                             : (event, response) {
                                 if (event is! FlTapUpEvent) return;
-                                final indice = response?.spot?.touchedBarGroupIndex;
-                                if (indice == null || indice < 0 || indice >= chaves.length) return;
+                                final indice =
+                                    response?.spot?.touchedBarGroupIndex;
+                                if (indice == null ||
+                                    indice < 0 ||
+                                    indice >= chaves.length)
+                                  return;
                                 _registrarToqueBarra(indice, chaves[indice]);
                               },
                       ),
                       titlesData: FlTitlesData(
-                        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        leftTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
                             getTitlesWidget: (value, meta) {
                               final i = value.toInt();
-                              if (i < 0 || i >= quantidadeBarras) return const SizedBox.shrink();
-                              final rotulo = PeriodoUtils.rotuloBalde(chaves[i], widget.filtro.agruparPorAno);
+                              if (i < 0 || i >= quantidadeBarras)
+                                return const SizedBox.shrink();
+                              final rotulo = PeriodoUtils.rotuloBalde(
+                                chaves[i],
+                                widget.filtro.agruparPorAno,
+                              );
                               return Padding(
                                 padding: const EdgeInsets.only(top: 6),
                                 child: Text(
                                   rotulo,
-                                  style: TextStyle(fontSize: 11, color: corTextoSecundario),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: corTextoSecundario,
+                                  ),
                                 ),
                               );
                             },
@@ -243,8 +285,12 @@ class _BarChartCardState extends State<BarChartCard> {
                                 color: corBarra,
                                 width: chaves.length > 8 ? 10 : 20,
                                 borderRadius: valores[i] >= 0
-                                    ? const BorderRadius.vertical(top: Radius.circular(6))
-                                    : const BorderRadius.vertical(bottom: Radius.circular(6)),
+                                    ? const BorderRadius.vertical(
+                                        top: Radius.circular(6),
+                                      )
+                                    : const BorderRadius.vertical(
+                                        bottom: Radius.circular(6),
+                                      ),
                               ),
                             ],
                           ),
@@ -268,10 +314,16 @@ class _BarChartCardState extends State<BarChartCard> {
       offset: const Offset(0, 28),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       constraints: const BoxConstraints(maxHeight: 280, minWidth: 160),
-      onSelected: (valor) => _selecionarCategoria(valor == _valorTodas ? null : valor),
+      onOpened: () => setState(() => _seletorAberto = true),
+      onCanceled: () => setState(() => _seletorAberto = false),
+      onSelected: (valor) {
+        setState(() => _seletorAberto = false);
+        _selecionarCategoria(valor == _valorTodas ? null : valor);
+      },
       itemBuilder: (context) => [
         const PopupMenuItem<String>(value: _valorTodas, child: Text('Todas')),
-        for (final c in widget.categorias!) PopupMenuItem<String>(value: c.nome, child: Text(c.nome)),
+        for (final c in widget.categorias!)
+          PopupMenuItem<String>(value: c.nome, child: Text(c.nome)),
       ],
       child: InkWell(
         mouseCursor: SystemMouseCursors.click,
@@ -279,15 +331,16 @@ class _BarChartCardState extends State<BarChartCard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${widget.titulo}: $rotuloAtual',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: corTexto),
+              '${widget.titulo}: $rotuloAtual ${_seletorAberto ? '▴' : '▾'}',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: corTexto,
+              ),
             ),
-            const SizedBox(width: 2),
-            Icon(Icons.expand_more_rounded, size: 18, color: corTexto),
           ],
         ),
-      )
-      
+      ),
     );
   }
 }

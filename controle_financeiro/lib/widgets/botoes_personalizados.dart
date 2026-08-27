@@ -22,13 +22,6 @@ ButtonStyle estiloBotao({
 }
 
 /// Mostra um diálogo de confirmação de exclusão padrão do app.
-
-/// [context] contexto da tela que está chamando o diálogo.
-/// [titulo] título do AlertDialog.
-/// [mensagem] texto explicativo mostrado ao usuário.
-/// [corBotaoExcluir] cor de fundo do botão "Excluir".
-/// [aoConfirmar] função assíncrona chamada quando o usuário confirma a exclusão.
-/// [fecharTelaAposExcluir] se true, além de fechar o diálogo, também fecha a tela atual.
 Future<void> confirmarExclusao({
   required BuildContext context,
   required String titulo,
@@ -95,7 +88,7 @@ Widget botaoSelecionavel({
         padding: const EdgeInsets.symmetric(vertical: 16),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selecionado ? cor.withOpacity(0.12) : AppColors.disabledFill,
+          color: selecionado ? cor.withValues(alpha:0.12) : AppColors.disabledFill,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: selecionado ? cor : Colors.transparent, width: 1.5),
         ),

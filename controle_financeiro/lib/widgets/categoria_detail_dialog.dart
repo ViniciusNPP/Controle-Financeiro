@@ -42,12 +42,19 @@ class _CategoriaDetailDialogState extends State<CategoriaDetailDialog> {
 
   Future<void> _salvar() async {
     if (!_valido) return;
-    final atualizada = Categoria(id: widget.categoria.id, nome: _nomeController.text.trim(), tipo: _tipo);
+    final atualizada = Categoria(
+      id: widget.categoria.id,
+      nome: _nomeController.text.trim(),
+      tipo: _tipo,
+    );
     await context.read<FinanceProvider>().editarCategoria(atualizada);
     if (!mounted) return;
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Categoria atualizada!'), behavior: SnackBarBehavior.floating),
+      const SnackBar(
+        content: Text('Categoria atualizada!'),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -67,10 +74,11 @@ class _CategoriaDetailDialogState extends State<CategoriaDetailDialog> {
     final cor = _tipo == TipoLancamento.entrada ? AppColors.entrada : AppColors.saida;
     void onVoltar() {
       setState(() {
-          _editando = false;
-          _resetarCampos();
-        });
+        _editando = false;
+        _resetarCampos();
+      });
     }
+
     void onCancelar() => Navigator.of(context).pop();
 
     void onEditar() => setState(() => _editando = true);
@@ -85,11 +93,13 @@ class _CategoriaDetailDialogState extends State<CategoriaDetailDialog> {
       onExcluir: _confirmarExclusao,
       editando: _editando,
       botaoSecundario: botaoSecundarioDialog(
+        context: context,
         editando: _editando,
         onVoltar: onVoltar,
         onCancelar: onCancelar,
       ),
       botoesPrincipais: botoesPrincipaisDialog(
+        context: context,
         editando: _editando,
         valido: _valido,
         onSalvar: _salvar,
@@ -98,13 +108,17 @@ class _CategoriaDetailDialogState extends State<CategoriaDetailDialog> {
       ),
       children: [
         LinhaDetalhe(
-        rotulo: 'Nome',
-        conteudo: _editando
+          rotulo: 'Nome',
+          conteudo: _editando
               ? TextField(
                   controller: _nomeController,
                   autofocus: true,
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(hintText: 'Nome da categoria'),
+                  decoration: const InputDecoration(
+                    hintText: 'Nome da categoria',
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
                 )
               : ValorEstatico(widget.categoria.nome),
         ),

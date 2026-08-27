@@ -30,7 +30,7 @@ class AppSidebarContent extends StatelessWidget {
                     height: 36,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
+                      color: Colors.white.withValues(alpha:0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.savings_rounded, color: Colors.white, size: 20),
@@ -75,7 +75,7 @@ class AppSidebarContent extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       child: Material(
-        color: selecionado ? Colors.white.withOpacity(0.12) : Colors.transparent,
+        color: selecionado ? Colors.white.withValues(alpha:0.12) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           canRequestFocus: false,
@@ -93,12 +93,12 @@ class AppSidebarContent extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
             child: Row(
               children: [
-                Icon(icon, color: Colors.white.withOpacity(selecionado ? 1 : 0.7), size: 20),
+                Icon(icon, color: Colors.white.withValues(alpha:selecionado ? 1 : 0.7), size: 20),
                 const SizedBox(width: 14),
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(selecionado ? 1 : 0.7),
+                    color: Colors.white.withValues(alpha:selecionado ? 1 : 0.7),
                     fontWeight: selecionado ? FontWeight.w600 : FontWeight.w500,
                     fontSize: 14.5,
                   ),
