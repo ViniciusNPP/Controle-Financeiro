@@ -99,12 +99,12 @@ class _ChartsScreenState extends State<ChartsScreen> {
         destaque: true,
       ),
       CategoryPieChartCard(
-        titulo: 'Saídas específicas',
+        titulo: 'Saídas específicas (R\$)',
         dados: saidasPorCategoria,
         onAbrirHistorico: (categoria) => _abrirHistoricoPizza(filtro, categoria, TipoLancamento.saida),
       ),
       CategoryPieChartCard(
-        titulo: 'Entradas específicas',
+        titulo: 'Entradas específicas (R\$)',
         dados: entradasPorCategoria,
         onAbrirHistorico: (categoria) => _abrirHistoricoPizza(filtro, categoria, TipoLancamento.entrada),
       ),
@@ -137,7 +137,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, restante) {
-                  const alturaMinimaGrade = 380.0; // ajuste esse número se quiser trocar
+                  const alturaMinimaGrade = 340.0; // ajuste esse número se quiser trocar
                   final alturaSuficiente = restante.maxHeight >= alturaMinimaGrade;
                   final usarGrade = larguraSuficiente && alturaSuficiente;
                   return usarGrade ? _gradeDesktop(graficos) : _carrosselMobile(graficosCarrossel);

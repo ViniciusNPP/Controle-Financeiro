@@ -223,7 +223,7 @@ class _BarChartCardState extends State<BarChartCard> {
                                       ? AppColors.primary
                                       : Colors.white,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 12,
+                                  fontSize: 10,
                                 ),
                               ),
                         ),
