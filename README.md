@@ -1,8 +1,8 @@
 # Meu Financeiro
 
-Aplicativo em Flutter para controlar finanças pessoais no Windows. Ele permite registrar receitas e despesas, organizar categorias, visualizar histórico e analisar o comportamento financeiro com gráficos.
+Aplicativo para controlar finanças pessoais no Windows e Android. Ele permite registrar receitas e despesas, organizar categorias, visualizar histórico e analisar o comportamento financeiro com gráficos.
 
-## O que o app faz
+## O que faz
 
 * Registra entradas e saídas
 * Edição e exclusão de lançamentos
@@ -13,7 +13,7 @@ Aplicativo em Flutter para controlar finanças pessoais no Windows. Ele permite 
 
 ## Como usar
 
-### 1\. Instalar o aplicativo
+### 1\. Instalação
 
 #### Windows
 
@@ -23,7 +23,7 @@ Aplicativo em Flutter para controlar finanças pessoais no Windows. Ele permite 
 
 #### Android
 
-1. Execute o arquivo "app-arm64-v8a-release.apk"
+1. Execute o arquivo "Controle-Financeiro.apk"
 2. No celular, habilite a opção "Instalar apps desconhecidos" do aplicativo em que você está instalando o app
 3. Desabilite a opção "Bloqueador automático" em Segurança e privacidade -> Bloqueador automático para o Android permitir a instalação do app
 4. Na janela que abrir, clique em "Mais detalhes"
@@ -31,7 +31,7 @@ Aplicativo em Flutter para controlar finanças pessoais no Windows. Ele permite 
 6. Clique em abrir para abrir app
 7. Pode habilitar novamente o "Bloqueador automático", não atrapalhará em nada o aplicativo depois que ele for instalado
 
-### 2\. Adicionar um lançamento
+### 2\. Adicionar lançamento
 
 1. Selecione a data clicando sobre o campo de data
 2. Selecione o tipo clicando sobre o texto "Entrada" ou "Saída"
@@ -40,9 +40,9 @@ Aplicativo em Flutter para controlar finanças pessoais no Windows. Ele permite 
 5. Adicione o valor clicando no campo com o valor padrão de R$0,00
 6. Após todos os campos obrigatórios serem preenchidos, clique no botão Salvar lançamento.
 
-### 3\. Salvar, exportar e importar dados
+### 3\. Exportar e importar dados
 
-O app salva os dados automaticamente em um arquivo `dados_financeiro.json`, guardado localmente no computador. Não é necessário salvar manualmente.
+No computador o aplicativo os dados automaticamente em um arquivo `dados_financeiro.json`, guardado localmente. Somente no celular é necessário exportar para salvar os dados no arquivo mencionado.
 
 **Para exportar:**
 
@@ -56,18 +56,16 @@ O app salva os dados automaticamente em um arquivo `dados_financeiro.json`, guar
 2. Na aba que abrir, clique no botão "Importar dados"
 3. Procure o arquivo `dados_financeiro.json` e selecione-o
 
-> ⚠️ *\\\*\\\Atenção:\\\*\\\* importar um arquivo \\\*\\\*substitui completamente\\\*\\\* os dados atuais do app pelos dados do arquivo selecionado. Essa ação não pode ser desfeita. Se quiser apenas combinar dados de dois dispositivos sem perder nada, use a opção de "Escolher pasta" descrita abaixo.
+> ⚠️ *\\*\Atenção:\\*\\* importar um arquivo \\*\\*substitui completamente\\*\\* os dados atuais do app pelos dados do arquivo selecionado. Essa ação não pode ser desfeita. Se quiser apenas combinar dados de dois dispositivos sem perder nada, use a opção de "Escolher pasta" descrita abaixo.
 
 **Sincronização automática por pasta (opcional):**
 
-Essa opção foi criada para fácil acesso do arquivo .json do computador para o celular, então se o uso for somente no computador ou no celular, não há necessidade de usar essa opção. A não ser que queira salvar em aplicativos como Google Drive e OneDrive.
-
-No computador, também é possível escolher uma pasta (por exemplo, dentro do Google Drive ou OneDrive) para que o app sincronize automaticamente a cada alteração, combinando os dados sem substituí-los. Essa opção fica disponível na mesma aba de "Sincronização", em "Escolher pasta".
+Disponível somente no computador, é usada para que o app sincronize automaticamente a cada alteração (adição, remoção e edição de lançamentos ou categorias), combinando os dados sem substituí-los. Essa opção fica disponível na mesma aba de "Sincronização", em "Escolher pasta".
 
 ## Observações importantes
 
 * O app usa um arquivo local para armazenamento, então os dados ficam salvos no computador ou no dispositivo onde o app foi usado.
-* Para compartilhar os dados entre dispositivos, use as opções de exportar/importar, ou a sincronização automática por pasta.
+* Para compartilhar os dados entre dispositivos, use as opções de exportar/importar, ou a sincronização automática por pasta no computador.
 
 ### 4\. Mecânicas
 
