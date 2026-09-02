@@ -56,7 +56,7 @@ No computador o aplicativo os dados automaticamente em um arquivo `dados_finance
 2. Na aba que abrir, clique no botão "Importar dados"
 3. Procure o arquivo `dados_financeiro.json` e selecione-o
 
-> ⚠️ *\\*\Atenção:\\*\\* importar um arquivo \\*\\*substitui completamente\\*\\* os dados atuais do app pelos dados do arquivo selecionado. Essa ação não pode ser desfeita. Se quiser apenas combinar dados de dois dispositivos sem perder nada, use a opção de "Escolher pasta" descrita abaixo.
+> ⚠️ **\Atenção:\** importar um arquivo **\substitui completamente\** os dados atuais do app pelos dados do arquivo selecionado. Essa ação não pode ser desfeita. Se quiser apenas combinar dados de dois dispositivos sem perder nada, use a opção de "Escolher pasta" descrita abaixo.
 
 **Sincronização automática por pasta (opcional):**
 
