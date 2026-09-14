@@ -47,8 +47,8 @@ class AppSidebarContent extends StatelessWidget {
               ),
             ),
             _item(context, icon: Icons.add_circle_outline_rounded, label: 'Adicionar', indice: 0),
-            _item(context, icon: Icons.bar_chart_rounded, label: 'Gráficos', indice: 1),
             _item(context, icon: Icons.history_rounded, label: 'Histórico', indice: 2),
+            _item(context, icon: Icons.bar_chart_rounded, label: 'Gráficos', indice: 1),
             _item(context, icon: Icons.sell_outlined, label: 'Categorias', indice: 3),
             const Spacer(),
             _item(

@@ -29,6 +29,9 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
   final _valorKey = GlobalKey<CurrencyInputState>();
   final _descricaoController = TextEditingController();
 
+  bool _erroCategoria = false;
+  bool _erroValor = false;
+
   bool get _valido => _categoria != null && _valor > 0;
 
   @override
@@ -55,42 +58,53 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
     _descricaoController.text = widget.transacao.descricao ?? '';
   }
 
-  Future<void> _salvar() async {
-    if (!_valido) return;
-    final descricao = _descricaoController.text.trim();
-    final atualizada = Transacao(
-      id: widget.transacao.id,
-      data: _data,
-      tipo: _tipo,
-      categoriaId: _categoria!.id,
-      categoriaNome: _categoria!.nome,
-      valor: _valor,
-      descricao: descricao.isEmpty ? null : descricao,
-    );
-    await context.read<FinanceProvider>().editarTransacao(atualizada);
-    if (!mounted) return;
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Lançamento atualizado!'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<bool> _salvar() async {
+    if (!_valido) {
+      setState(() {
+        _erroCategoria = _categoria == null;
+        _erroValor = _valor <= 0;
+      });
+      return false;
+    }
+    try {
+      final descricao = _descricaoController.text.trim();
+      final atualizada = Transacao(
+        id: widget.transacao.id,
+        data: _data,
+        tipo: _tipo,
+        categoriaId: _categoria!.id,
+        categoriaNome: _categoria!.nome,
+        valor: _valor,
+        descricao: descricao.isEmpty ? null : descricao,
+      );
+      await context.read<FinanceProvider>().editarTransacao(atualizada);
+      if (!mounted) return true;
+      Navigator.of(context).pop();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   void _confirmarExclusao() {
     confirmarExclusao(
       context: context,
       titulo: 'Excluir lançamento',
-      mensagem: 'Tem certeza que deseja excluir este lançamento? Essa ação não pode ser desfeita.',
+      mensagem:
+          'Tem certeza que deseja excluir este lançamento? Essa ação não pode ser desfeita.',
       corBotaoExcluir: AppColors.saida,
-      aoConfirmar: () => context.read<FinanceProvider>().excluirTransacao(widget.transacao.id, _categoria!.id),
+      aoConfirmar: () => context.read<FinanceProvider>().excluirTransacao(
+        widget.transacao.id,
+        _categoria!.id,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final corTipo = _tipo == TipoLancamento.entrada ? AppColors.entrada : AppColors.saida;
+    final corTipo = _tipo == TipoLancamento.entrada
+        ? AppColors.entrada
+        : AppColors.saida;
     void onVoltar() {
       setState(() {
         _editando = false;
@@ -109,7 +123,7 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
       maxWidth: 420,
       onCancelar: onCancelar,
       onVoltar: onVoltar,
-      onSalvar: _salvar,
+      onSalvar: () => _salvar(),
       onEditar: onEditar,
       onExcluir: _confirmarExclusao,
       editando: _editando,
@@ -123,9 +137,17 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
         context: context,
         editando: _editando,
         valido: _valido,
-        onSalvar: _salvar,
+        onSalvar: () => _salvar(),
         onExcluir: _confirmarExclusao,
         onEditar: () => onEditar(),
+        botaoSalvarCustom: BotaoSalvarAnimado(
+          label: 'Salvar',
+          corIdle: AppColors.entrada,
+          compacto: true,
+          telaPequena: MediaQuery.sizeOf(context).width < 600,
+          usarSucesso: false,
+          aoPressionar: _salvar,
+        ),
       ),
       children: [
         LinhaDetalhe(
@@ -155,12 +177,20 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
         ),
         LinhaDetalhe(
           rotulo: 'Categoria',
+          erro: _editando && _erroCategoria,
           conteudo: _editando
-              ? CategorySelector(
-                  tipo: _tipo,
-                  categoriaSelecionada: _categoria,
-                  onSelecionar: (c) => setState(() => _categoria = c),
-                  compact: true,
+              ? BordaComErro(
+                  erro: _erroCategoria,
+                  raioBorda: 16,
+                  child: CategorySelector(
+                    tipo: _tipo,
+                    categoriaSelecionada: _categoria,
+                    onSelecionar: (c) => setState(() {
+                      _categoria = c;
+                      _erroCategoria = false;
+                    }),
+                    compact: true,
+                  ),
                 )
               : ValorEstatico(widget.transacao.categoriaNome),
         ),
@@ -177,18 +207,28 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
                     decoration: const InputDecoration(
                       hintText: 'Observação...',
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                     ),
                   )
                 : ValorEstatico(widget.transacao.descricao ?? ''),
           ),
         LinhaDetalhe(
           rotulo: 'Valor',
+          erro: _editando && _erroValor,
           conteudo: _editando
-              ? CurrencyInput(
-                  key: _valorKey,
-                  valorInicial: widget.transacao.valor,
-                  onChanged: (v) => _valor = v,
+              ? BordaComErro(
+                  erro: _erroValor,
+                  child: CurrencyInput(
+                    key: _valorKey,
+                    valorInicial: widget.transacao.valor,
+                    onChanged: (v) => setState(() {
+                      _valor = v;
+                      _erroValor = false;
+                    }),
+                  ),
                 )
               : ValorEstatico(
                   Formatters.moeda(widget.transacao.valor),

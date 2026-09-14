@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/widgets/others_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
@@ -23,43 +24,57 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   TipoLancamento? _tipo;
   Categoria? _categoria;
   double _valor = 0;
-  bool _salvando = false;
+
+  bool _erroTipo = false;
+  bool _erroCategoria = false;
+  bool _erroValor = false;
 
   bool get _valido => _tipo != null && _categoria != null && _valor > 0;
 
   @override
   void dispose() {
+    setState(() {
+      _erroTipo = false;
+      _erroCategoria = false;
+      _erroValor = false;
+    });
     _descricaoController.dispose();
     super.dispose();
   }
 
-  Future<void> _salvar() async {
-    if (!_valido) return;
-    setState(() => _salvando = true);
+  Future<bool> _salvar() async {
+    if (!_valido) {
+      setState(() {
+        _erroTipo = _tipo == null;
+        _erroCategoria = _categoria == null;
+        _erroValor = _valor <= 0;
+      });
+      return false;
+    }
 
-    final descricao = _descricaoController.text.trim();
-    await context.read<FinanceProvider>().adicionarTransacao(
-          data: _data,
-          tipo: _tipo!,
-          categoriaId: _categoria!.id,
-          categoriaNome: _categoria!.nome,
-          valor: _valor,
-          descricao: descricao.isEmpty ? null : descricao,
-        );
+    try {
+      final descricao = _descricaoController.text.trim();
+      await context.read<FinanceProvider>().adicionarTransacao(
+        data: _data,
+        tipo: _tipo!,
+        categoriaId: _categoria!.id,
+        categoriaNome: _categoria!.nome,
+        valor: _valor,
+        descricao: descricao.isEmpty ? null : descricao,
+      );
 
-    if (!mounted) return;
-    _valorKey.currentState?.limpar();
-    _descricaoController.clear();
-    setState(() {
-      _tipo = null;
-      _categoria = null;
-      _valor = 0;
-      _salvando = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Lançamento adicionado!'), behavior: SnackBarBehavior.floating),
-    );
+      if (!mounted) return true;
+      _valorKey.currentState?.limpar();
+      _descricaoController.clear();
+      setState(() {
+        _tipo = null;
+        _categoria = null;
+        _valor = 0;
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
@@ -68,90 +83,150 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: SingleChildScrollView(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: double.infinity),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: AppTheme.cardDecoration(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Novo lançamento', style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 24),
-                _rotulo('Data'),
-                DatePickerField(valor: _data, onChanged: (d) {
-                    setState(() => _data = d);
-                  }),
-                const SizedBox(height: 20),
-                _rotulo('Tipo'),
-                Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Novo lançamento',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: AppTheme.cardDecoration(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: botaoSelecionavel(
-                        label: 'Entrada',
-                        selecionado: _tipo == TipoLancamento.entrada,
-                        cor: AppColors.entrada,
-                        onTap: () => setState(() {
-                          _tipo = TipoLancamento.entrada;
-                          _categoria = null;
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _rotulo('Data'),
+                              DatePickerField(
+                                valor: _data,
+                                onChanged: (d) {
+                                  setState(() => _data = d);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'Tipo',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: _erroTipo
+                                          ? Colors.red
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.swap_horiz,
+                                      size: 20,
+                                    ),
+                                    tooltip: 'Trocar tipo',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    mouseCursor: SystemMouseCursors.click,
+                                    onPressed: () => setState(() {
+                                      _tipo = _tipo == TipoLancamento.entrada
+                                          ? TipoLancamento.saida
+                                          : TipoLancamento.entrada;
+                                      _categoria = null;
+                                      _erroTipo = false;
+                                    }),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              BordaComErro(
+                                erro: _erroTipo,
+                                raioBorda: 16,
+                                child: botaoSelecionavel(
+                                  label: _tipo == TipoLancamento.saida
+                                      ? 'Saída'
+                                      : 'Entrada',
+                                  selecionado: _tipo != null,
+                                  cor: _tipo == TipoLancamento.saida
+                                      ? AppColors.saida
+                                      : AppColors.entrada,
+                                  onTap: () => setState(() {
+                                    _tipo = _tipo == TipoLancamento.entrada
+                                        ? TipoLancamento.saida
+                                        : TipoLancamento.entrada;
+                                    _categoria = null;
+                                    _erroTipo = false;
+                                  }),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const SizedBox(height: 20),
+                    CampoComErro(
+                      rotulo: 'Categoria',
+                      erro: _erroCategoria,
+                      raioBorda: 16,
+                      child: CategorySelector(
+                        tipo: _tipo,
+                        categoriaSelecionada: _categoria,
+                        onSelecionar: (c) {
+                          setState(() {
+                            _categoria = c;
+                            _erroCategoria = false;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _rotulo('Descrição (opcional)'),
+                    TextField(
+                      controller: _descricaoController,
+                      maxLength: 250,
+                      maxLines: 3,
+                      minLines: 1,
+                      decoration: const InputDecoration(
+                        hintText: 'Observação...',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    CampoComErro(
+                      rotulo: 'Valor',
+                      erro: _erroValor,
+                      child: CurrencyInput(
+                        key: _valorKey,
+                        onChanged: (v) => setState(() {
+                          _valor = v;
+                          _erroValor = false;
                         }),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: botaoSelecionavel(
-                        label: 'Saída',
-                        selecionado: _tipo == TipoLancamento.saida,
-                        cor: AppColors.saida,
-                        onTap: () => setState(() {
-                          _tipo = TipoLancamento.saida;
-                          _categoria = null;
-                        }),
-                      ),
+                    const SizedBox(height: 28),
+                    BotaoSalvarAnimado(
+                      label: 'Salvar lançamento',
+                      corIdle: const Color(0xFF3e3b79),
+                      aoPressionar: _salvar,
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                _rotulo('Categoria'),
-                CategorySelector(
-                  tipo: _tipo,
-                  categoriaSelecionada: _categoria,
-                  onSelecionar: (c) {
-                    setState(() => _categoria = c);
-                  },
-                ),
-                const SizedBox(height: 20),
-                _rotulo('Descrição (opcional)'),
-                TextField(
-                  controller: _descricaoController,
-                  maxLength: 250,
-                  maxLines: 3,
-                  minLines: 1,
-                  decoration: const InputDecoration(
-                    hintText: 'Observação...',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _rotulo('Valor'),
-                CurrencyInput(
-                  key: _valorKey, 
-                  onChanged: (v) => setState(() => _valor = v), 
-                ),
-                const SizedBox(height: 28),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _valido && !_salvando ? _salvar : null,
-                    style: estiloBotao(corBackGround: Color(0xFF3e3b79), isSide: true),
-                    child: _salvando
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('Salvar lançamento'),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -162,7 +237,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     padding: const EdgeInsets.only(bottom: 8),
     child: Text(
       texto,
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
+      ),
     ),
   );
 }

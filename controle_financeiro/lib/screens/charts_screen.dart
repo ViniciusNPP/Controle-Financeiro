@@ -159,11 +159,11 @@ class _ChartsScreenState extends State<ChartsScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Expanded(child: graficos[2]),
+              const SizedBox(width: espacamento),
               Expanded(child: graficos[0]),
               const SizedBox(width: espacamento),
               Expanded(child: graficos[1]),
-              const SizedBox(width: espacamento),
-              Expanded(child: graficos[2]),
             ],
           ),
         ),

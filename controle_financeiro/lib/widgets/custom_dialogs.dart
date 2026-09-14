@@ -169,24 +169,26 @@ List<Widget> botoesPrincipaisDialog({
   required VoidCallback onEditar,
   Color corSalvar = AppColors.entrada,
   Color corEditar = const Color(0xFF201d4d),
+  Widget? botaoSalvarCustom,
 }) {
   final telaPequena = MediaQuery.sizeOf(context).width < 600;
 
   if (editando) {
     return [
-      telaPequena
-          ? IconButton(
-              onPressed: valido ? onSalvar : null,
-              icon: const Icon(Icons.save_rounded, size: 18),
-              tooltip: 'Salvar',
-              style: estiloBotao(corBackGround: corSalvar, isSide: true),
-            )
-          : ElevatedButton.icon(
-              onPressed: valido ? onSalvar : null,
-              icon: const Icon(Icons.save_rounded, size: 18),
-              label: const Text('Salvar'),
-              style: estiloBotao(corBackGround: corSalvar, isSide: true),
-            ),
+      botaoSalvarCustom ??
+          (telaPequena
+              ? IconButton(
+                  onPressed: valido ? onSalvar : null,
+                  icon: const Icon(Icons.save_rounded, size: 18),
+                  tooltip: 'Salvar',
+                  style: estiloBotao(corBackGround: corSalvar, isSide: true),
+                )
+              : ElevatedButton.icon(
+                  onPressed: valido ? onSalvar : null,
+                  icon: const Icon(Icons.save_rounded, size: 18),
+                  label: const Text('Salvar'),
+                  style: estiloBotao(corBackGround: corSalvar, isSide: true),
+                )),
     ];
   }
   return [
