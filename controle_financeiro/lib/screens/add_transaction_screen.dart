@@ -120,6 +120,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
                                     'Tipo',
@@ -132,22 +133,27 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     ),
                                   ),
                                   const Spacer(),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.swap_horiz,
-                                      size: 20,
+                                  SizedBox(
+                                    height: 16,
+                                    width: 16,
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.swap_horiz,
+                                        size: 16,
+                                      ),
+                                      tooltip: 'Trocar tipo',
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      iconSize: 16,
+                                      mouseCursor: SystemMouseCursors.click,
+                                      onPressed: () => setState(() {
+                                        _tipo = _tipo == TipoLancamento.entrada
+                                            ? TipoLancamento.saida
+                                            : TipoLancamento.entrada;
+                                        _categoria = null;
+                                        _erroTipo = false;
+                                      }),
                                     ),
-                                    tooltip: 'Trocar tipo',
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    mouseCursor: SystemMouseCursors.click,
-                                    onPressed: () => setState(() {
-                                      _tipo = _tipo == TipoLancamento.entrada
-                                          ? TipoLancamento.saida
-                                          : TipoLancamento.entrada;
-                                      _categoria = null;
-                                      _erroTipo = false;
-                                    }),
                                   ),
                                 ],
                               ),

@@ -11,7 +11,12 @@ class DatePickerField extends StatelessWidget {
   final ValueChanged<DateTime> onChanged;
   final bool compact;
 
-  const DatePickerField({super.key, required this.valor, required this.onChanged, this.compact = false});
+  const DatePickerField({
+    super.key,
+    required this.valor,
+    required this.onChanged,
+    this.compact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +28,11 @@ class DatePickerField extends StatelessWidget {
             context: context,
             initialDate: valor,
             firstDate: DateTime(1900),
-            lastDate: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+            lastDate: DateTime(
+              DateTime.now().year + 1,
+              DateTime.now().month,
+              DateTime.now().day,
+            ),
             helpText: 'Escolha a data',
             cancelText: 'Cancelar',
             confirmText: 'Confirmar',
@@ -34,9 +43,7 @@ class DatePickerField extends StatelessWidget {
                   textButtonTheme: TextButtonThemeData(
                     style: estiloBotao(corForeGround: Color(0xFF2e2a6e)),
                   ),
-                  iconButtonTheme: IconButtonThemeData(
-                    style: estiloBotao(),
-                  ),
+                  iconButtonTheme: IconButtonThemeData(style: estiloBotao()),
                 ),
                 child: child!,
               );
@@ -45,7 +52,10 @@ class DatePickerField extends StatelessWidget {
           if (escolhida != null) onChanged(escolhida);
         },
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 14 : 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: compact ? 14 : 16,
+          ),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(14),
@@ -53,9 +63,22 @@ class DatePickerField extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.textSecondary),
+              const Icon(
+                Icons.calendar_today_rounded,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 12),
-              Text(Formatters.data(valor), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+              Flexible(
+                child: Text(
+                  Formatters.data(valor),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ),
@@ -76,7 +99,10 @@ String _formatar(String inteiro, String decimais) {
 /// Formata a digitação como centavos entrando pela direita, no estilo
 class _CentavosInputFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     var digitos = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (digitos.isEmpty) digitos = '0';
     if (digitos.length > 12) digitos = digitos.substring(digitos.length - 12);
@@ -85,7 +111,10 @@ class _CentavosInputFormatter extends TextInputFormatter {
     final valor = valorCentavos / 100;
     final texto = valor.toStringAsFixed(2).replaceAll('.', ',');
     final partes = texto.split(',');
-    final formatado = _formatar(partes[0], partes.length > 1 ? partes[1] : '00');
+    final formatado = _formatar(
+      partes[0],
+      partes.length > 1 ? partes[1] : '00',
+    );
 
     return TextEditingValue(
       text: formatado,
@@ -99,15 +128,20 @@ class CurrencyInput extends StatefulWidget {
   final ValueChanged<double> onChanged;
   final double valorInicial;
 
-  const CurrencyInput({super.key, required this.onChanged, this.valorInicial = 0});
+  const CurrencyInput({
+    super.key,
+    required this.onChanged,
+    this.valorInicial = 0,
+  });
 
   @override
   State<CurrencyInput> createState() => CurrencyInputState();
 }
 
 class CurrencyInputState extends State<CurrencyInput> {
-  late final TextEditingController _controller =
-      TextEditingController(text: _formatarDoubleString(widget.valorInicial));
+  late final TextEditingController _controller = TextEditingController(
+    text: _formatarDoubleString(widget.valorInicial),
+  );
 
   String _formatarDoubleString(double v) {
     final texto = v.toStringAsFixed(2).replaceAll('.', ',');
@@ -139,7 +173,11 @@ class CurrencyInputState extends State<CurrencyInput> {
       style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
       decoration: const InputDecoration(
         prefixText: 'R\$ ',
-        prefixStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+        prefixStyle: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+        ),
       ),
       onChanged: (_) => widget.onChanged(valorAtual),
     );
