@@ -33,13 +33,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   void dispose() {
-    setState(() {
-      _erroTipo = false;
-      _erroCategoria = false;
-      _erroValor = false;
-    });
     _descricaoController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant AddTransactionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.ativa && !widget.ativa) {
+      setState(() {
+        _erroTipo = false;
+        _erroCategoria = false;
+        _erroValor = false;
+      });
+    }
   }
 
   Future<bool> _salvar() async {

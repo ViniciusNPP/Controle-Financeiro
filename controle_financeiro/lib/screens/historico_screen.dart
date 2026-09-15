@@ -163,7 +163,9 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final filtrosSobrepostos = constraints.maxHeight < 400;
+        final alturaTeclado = MediaQuery.viewInsetsOf(context).bottom;
+        final alturaSemTeclado = constraints.maxHeight + alturaTeclado;
+        final filtrosSobrepostos = alturaSemTeclado < 400;
         //print(constraints.maxHeight);
 
         final filtroBuilder = FiltroBuilder(
