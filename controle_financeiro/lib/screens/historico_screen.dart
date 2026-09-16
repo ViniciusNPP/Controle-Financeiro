@@ -23,7 +23,11 @@ class HistoricoScreen extends StatefulWidget {
   final List<FiltroHistorico>? filtrosExternos;
   final Object? pedidoExternoId;
 
-  const HistoricoScreen({super.key, this.filtrosExternos, this.pedidoExternoId});
+  const HistoricoScreen({
+    super.key,
+    this.filtrosExternos,
+    this.pedidoExternoId,
+  });
 
   @override
   State<HistoricoScreen> createState() => _HistoricoScreenState();
@@ -63,18 +67,22 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   }
 
   void _adicionarFiltro(FiltroHistorico f) => setState(() => _filtros.add(f));
-  void _removerFiltro(String id) => setState(() => _filtros.removeWhere((f) => f.id == id));
-  void _setFiltroRapido(FiltroHistorico? f) => setState(() => _filtroRapido = f);
+  void _removerFiltro(String id) =>
+      setState(() => _filtros.removeWhere((f) => f.id == id));
+  void _setFiltroRapido(FiltroHistorico? f) =>
+      setState(() => _filtroRapido = f);
 
   void _mudarOrdenacao(int direcao) {
     setState(() {
       final valores = _ModoOrdenacao.values;
       final indiceAtual = valores.indexOf(_ordenacao);
-      _ordenacao = valores[(indiceAtual + direcao + valores.length) % valores.length];
+      _ordenacao =
+          valores[(indiceAtual + direcao + valores.length) % valores.length];
     });
   }
 
-  double _valorComSinal(Transacao t) => t.tipo == TipoLancamento.saida ? -t.valor : t.valor;
+  double _valorComSinal(Transacao t) =>
+      t.tipo == TipoLancamento.saida ? -t.valor : t.valor;
 
   IconData get _iconeOrdenacao {
     switch (_ordenacao) {
@@ -133,10 +141,18 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
         lista.sort((a, b) => b.data.compareTo(a.data));
         break;
       case _ModoOrdenacao.alfabeticaCrescente:
-        lista.sort((a, b) => a.categoriaNome.toLowerCase().compareTo(b.categoriaNome.toLowerCase()));
+        lista.sort(
+          (a, b) => a.categoriaNome.toLowerCase().compareTo(
+            b.categoriaNome.toLowerCase(),
+          ),
+        );
         break;
       case _ModoOrdenacao.alfabeticaDecrescente:
-        lista.sort((a, b) => b.categoriaNome.toLowerCase().compareTo(a.categoriaNome.toLowerCase()));
+        lista.sort(
+          (a, b) => b.categoriaNome.toLowerCase().compareTo(
+            a.categoriaNome.toLowerCase(),
+          ),
+        );
         break;
       case _ModoOrdenacao.maiorValor:
         lista.sort((a, b) => _valorComSinal(b).compareTo(_valorComSinal(a)));
@@ -151,7 +167,8 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   @override
   Widget build(BuildContext context) {
     final finance = context.watch<FinanceProvider>();
-    final sugestoesCategorias = finance.categorias.map((c) => c.nome).toSet().toList()..sort();
+    final sugestoesCategorias =
+        finance.categorias.map((c) => c.nome).toSet().toList()..sort();
     final lista = _filtrarEOrdenar(finance.transacoes);
 
     DateTime? dataMinima;
@@ -161,134 +178,139 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
       if (dataMaxima == null || t.data.isAfter(dataMaxima)) dataMaxima = t.data;
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final alturaTeclado = MediaQuery.viewInsetsOf(context).bottom;
-        final alturaSemTeclado = constraints.maxHeight + alturaTeclado;
-        final filtrosSobrepostos = alturaSemTeclado < 400;
-        //print(constraints.maxHeight);
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final filtrosSobrepostos = MediaQuery.sizeOf(context).height < 500;
+          //print(constraints.maxHeight);
 
-        final filtroBuilder = FiltroBuilder(
-          filtrosAtivos: _filtros,
-          sugestoesCategorias: sugestoesCategorias,
-          onAdicionar: _adicionarFiltro,
-          onRemover: _removerFiltro,
-          onFiltroRapidoChanged: _setFiltroRapido,
-          dataMinima: dataMinima,
-          dataMaxima: dataMaxima,
-        );
+          final filtroBuilder = FiltroBuilder(
+            filtrosAtivos: _filtros,
+            sugestoesCategorias: sugestoesCategorias,
+            onAdicionar: _adicionarFiltro,
+            onRemover: _removerFiltro,
+            onFiltroRapidoChanged: _setFiltroRapido,
+            dataMinima: dataMinima,
+            dataMaxima: dataMaxima,
+          );
 
-        return Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Histórico',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 16),
-                if (!filtrosSobrepostos) filtroBuilder,
-                if (!filtrosSobrepostos) const SizedBox(height: 16),
-                if (filtrosSobrepostos) const SizedBox(height: 48),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${lista.length} lançamento(s)',
-                        style: Theme.of(context).textTheme.bodyMedium,
+          return Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Histórico',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  if (!filtrosSobrepostos) filtroBuilder,
+                  if (!filtrosSobrepostos) const SizedBox(height: 16),
+                  if (filtrosSobrepostos) const SizedBox(height: 48),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${lista.length} lançamento(s)',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
                       ),
-                    ),
-                    Tooltip(
-                      message: 'Clique para mudar · botão direito para voltar',
-                      child: GestureDetector(
-                        onSecondaryTap: () => _mudarOrdenacao(-1),
-                        child: InkWell(
-                          mouseCursor: SystemMouseCursors.click,
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () => _mudarOrdenacao(1),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: AppTheme.cardDecoration(),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _iconeOrdenacao,
-                                  size: 16,
-                                  color: AppColors.primary,
-                                ),
-                                Icon(
-                                  _setaParaCima
-                                      ? Icons.arrow_upward_rounded
-                                      : Icons.arrow_downward_rounded,
-                                  size: 13,
-                                  color: AppColors.primary,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  _rotuloOrdenacao,
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
+                      Tooltip(
+                        message:
+                            'Clique para mudar · botão direito para voltar',
+                        child: GestureDetector(
+                          onSecondaryTap: () => _mudarOrdenacao(-1),
+                          child: InkWell(
+                            mouseCursor: SystemMouseCursors.click,
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => _mudarOrdenacao(1),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: AppTheme.cardDecoration(),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _iconeOrdenacao,
+                                    size: 16,
                                     color: AppColors.primary,
                                   ),
-                                ),
-                              ],
+                                  Icon(
+                                    _setaParaCima
+                                        ? Icons.arrow_upward_rounded
+                                        : Icons.arrow_downward_rounded,
+                                    size: 13,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _rotuloOrdenacao,
+                                    style: const TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                _cabecalhoTabela(),
-                const Divider(height: 1, color: AppColors.border),
-                Expanded(
-                  child: lista.isEmpty
-                      ? Center(
-                          child: Text(
-                            'Nenhum lançamento encontrado',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  _cabecalhoTabela(),
+                  const Divider(height: 1, color: AppColors.border),
+                  Expanded(
+                    child: lista.isEmpty
+                        ? Center(
+                            child: Text(
+                              'Nenhum lançamento encontrado',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount: lista.length,
+                            separatorBuilder: (_, _) => const Divider(
+                              height: 1,
+                              color: AppColors.border,
+                            ),
+                            itemBuilder: (context, i) =>
+                                _linhaTabela(context, lista[i]),
                           ),
-                        )
-                      : ListView.separated(
-                          itemCount: lista.length,
-                          separatorBuilder: (_, _) =>
-                              const Divider(height: 1, color: AppColors.border),
-                          itemBuilder: (context, i) =>
-                              _linhaTabela(context, lista[i]),
-                        ),
-                ),
-                _linhaTotal(lista),
-              ],
-            ),
-            if (filtrosSobrepostos)
-              Positioned(top: 40, left: 0, child: _botaoFiltros()),
-            if (filtrosSobrepostos && _filtrosAbertos)
-              Positioned(
-                top: 84,
-                left: 0,
-                right: 0,
-                child: Material(
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(20),
-                  clipBehavior: Clip.antiAlias,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: constraints.maxHeight * 0.8,
+                  ),
+                  _linhaTotal(lista),
+                ],
+              ),
+              if (filtrosSobrepostos)
+                Positioned(top: 40, left: 0, child: _botaoFiltros()),
+              if (filtrosSobrepostos && _filtrosAbertos)
+                Positioned(
+                  top: 84,
+                  left: 0,
+                  right: 0,
+                  child: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(20),
+                    clipBehavior: Clip.antiAlias,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: constraints.maxHeight * 0.8,
+                      ),
+                      child: SingleChildScrollView(child: filtroBuilder),
                     ),
-                    child: SingleChildScrollView(child: filtroBuilder),
                   ),
                 ),
-              ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -324,17 +346,25 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
         children: [
           Expanded(flex: 3, child: Text('DATA', style: estilo)),
           Expanded(flex: 4, child: Text('CATEGORIA', style: estilo)),
-          Expanded(flex: 3, child: Text('VALOR', style: estilo, textAlign: TextAlign.right)),
+          Expanded(
+            flex: 3,
+            child: Text('VALOR', style: estilo, textAlign: TextAlign.right),
+          ),
         ],
       ),
     );
   }
 
   Widget _linhaTabela(BuildContext context, Transacao t) {
-    final cor = t.tipo == TipoLancamento.entrada ? AppColors.entrada : AppColors.saida;
+    final cor = t.tipo == TipoLancamento.entrada
+        ? AppColors.entrada
+        : AppColors.saida;
     return InkWell(
       mouseCursor: SystemMouseCursors.click,
-      onTap: () => showDialog(context: context, builder: (_) => TransacaoDetailDialog(transacao: t)),
+      onTap: () => showDialog(
+        context: context,
+        builder: (_) => TransacaoDetailDialog(transacao: t),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         child: Row(
@@ -391,7 +421,11 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
           ),
           Text(
             Formatters.moeda(total.abs()),
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cor),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: cor,
+            ),
           ),
         ],
       ),
