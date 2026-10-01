@@ -5,16 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'storage_service.dart';
 
-/// Sincronização sem servidor: usa uma pasta local (normalmente dentro do
-/// Google Drive ou OneDrive que o usuário já tem instalado) como "banco de
-/// dados" compartilhado entre o app do computador e o do celular.
-///
-/// No Windows, a pasta escolhida é um caminho de arquivo normal, então dá
-/// pra ler/escrever nela automaticamente, sem repetir o diálogo.
-///
-/// No Android, o sistema (Storage Access Framework) não permite escrever
-/// repetidamente numa pasta sem reabrir um seletor — por isso, no Android,
-/// a sincronização é feita por ações explícitas de "Exportar" e "Importar".
+/// Sincronização
 class SyncService {
   static const _chavePasta = 'pasta_sincronizacao';
   static const _nomeArquivo = 'dados_financeiro.json';
@@ -64,8 +55,7 @@ class SyncService {
     }
   }
 
-  /// Exportação manual (usada principalmente no Android): abre a caixa de
-  /// diálogo nativa de salvar arquivo, apontando para a pasta do Drive/OneDrive.
+  /// Exportação manual
   Future<bool> exportarArquivo(DadosApp dados) async {
     try {
       final jsonStr = jsonEncode(dados.toJson());

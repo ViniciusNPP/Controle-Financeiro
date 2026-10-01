@@ -4,82 +4,93 @@ import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 
-/// Campo de data: já vem preenchido com hoje, e ao tocar abre um calendário
-/// que só permite escolher hoje ou datas anteriores (nunca datas futuras).
 class DatePickerField extends StatelessWidget {
   final DateTime valor;
   final ValueChanged<DateTime> onChanged;
   final bool compact;
+  final DateTime? firstDate;
+  final bool desativado;
 
   const DatePickerField({
     super.key,
     required this.valor,
     required this.onChanged,
     this.compact = false,
+    this.firstDate,
+    this.desativado = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () async {
-          final escolhida = await showDatePicker(
-            context: context,
-            initialDate: valor,
-            firstDate: DateTime(1900),
-            lastDate: DateTime(
-              DateTime.now().year + 1,
-              DateTime.now().month,
-              DateTime.now().day,
-            ),
-            helpText: 'Escolha a data',
-            cancelText: 'Cancelar',
-            confirmText: 'Confirmar',
-            locale: const Locale('pt', 'BR'),
-            builder: (context, child) {
-              return Theme(
-                data: Theme.of(context).copyWith(
-                  textButtonTheme: TextButtonThemeData(
-                    style: estiloBotao(corForeGround: Color(0xFF2e2a6e)),
-                  ),
-                  iconButtonTheme: IconButtonThemeData(style: estiloBotao()),
-                ),
-                child: child!,
+    final hoje = DateTime.now();
+    final primeiraData = firstDate ?? DateTime(1900);
+    final ultimaData = firstDate == null
+        ? DateTime(hoje.year + 1, hoje.month, hoje.day)
+        : DateTime(hoje.year + 100, hoje.month, hoje.day);
+
+    return IgnorePointer(
+      ignoring: desativado,
+      child: Opacity(
+        opacity: desativado ? 0.55 : 1,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () async {
+              final escolhida = await showDatePicker(
+                context: context,
+                initialDate: valor,
+                firstDate: primeiraData,
+                lastDate: ultimaData,
+                helpText: 'Escolha a data',
+                cancelText: 'Cancelar',
+                confirmText: 'Confirmar',
+                locale: const Locale('pt', 'BR'),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      textButtonTheme: TextButtonThemeData(
+                        style: estiloBotao(corForeGround: Color(0xFF2e2a6e)),
+                      ),
+                      iconButtonTheme: IconButtonThemeData(style: estiloBotao()),
+                    ),
+                    child: child!,
+                  );
+                },
               );
+              if (escolhida != null) onChanged(escolhida);
             },
-          );
-          if (escolhida != null) onChanged(escolhida);
-        },
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: compact ? 14 : 16,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.calendar_today_rounded,
-                size: 18,
-                color: AppColors.textSecondary,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: compact ? 14 : 16,
               ),
-              const SizedBox(width: 12),
-              Flexible(
-                child: Text(
-                  Formatters.data(valor),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
+              decoration: BoxDecoration(
+                color: desativado ? AppColors.disabledFill : AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today_rounded,
+                    size: 18,
+                    color: AppColors.textSecondary,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      Formatters.data(valor),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../models/categoria.dart';
+import '../models/recorrencia.dart';
 import '../models/transacao.dart';
 import '../services/storage_service.dart';
 import '../services/sync_service.dart';
@@ -69,6 +70,7 @@ class FinanceProvider extends ChangeNotifier {
     required String categoriaNome,
     required double valor,
     String? descricao,
+    RegraRecorrencia? recorrencia,
   }) async {
     final nova = Transacao(
       id: _uuid.v4(),
@@ -78,6 +80,7 @@ class FinanceProvider extends ChangeNotifier {
       categoriaNome: categoriaNome,
       valor: valor,
       descricao: descricao,
+      recorrencia: recorrencia,
     );
 
     _dados = _dados.copyWith(

@@ -1,5 +1,7 @@
+import 'package:controle_financeiro/utils/dropdown.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:controle_financeiro/widgets/month_year_navigator.dart';
+import 'package:controle_financeiro/widgets/others_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/filtro_historico.dart';
@@ -235,7 +237,13 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
       );
     }
     if (_campo == CampoFiltro.categoria) {
-      return _autocomplete(widget.sugestoesCategorias, chave: const ValueKey('autocomplete_categoria'));
+      return autocompleteEstilizado(
+        key: const ValueKey('autocomplete_categoria'),
+        opcoes: widget.sugestoesCategorias,
+        hint: 'Buscar ${_campo.rotulo.toLowerCase()}...',
+        aoCriarController: (c) => _autocompleteController = c,
+        onChanged: (_) => _emitirFiltroRapido(),
+      );
     }
 
     if (_campo == CampoFiltro.valor) {
@@ -315,68 +323,13 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
   }
 
   Widget _botaoModoData() {
-    return Tooltip(
-      message: 'Clique para mudar · botão direito para voltar',
-      child: GestureDetector(
-        onSecondaryTap: () => _mudarModoData(-1),
-        child: InkWell(
-          mouseCursor: SystemMouseCursors.click,
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => _mudarModoData(1),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: AppTheme.cardDecoration(),
-            child: Text(
-              _rotuloModoData,
-              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primary),
-            ),
-          ),
-        ),
+    return SeletorCiclico(
+      aoAvancar: () => _mudarModoData(1),
+      aoVoltar: () => _mudarModoData(-1),
+      builder: (context) => Text(
+        _rotuloModoData,
+        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primary),
       ),
-    );
-  }
-
-  Widget _autocomplete(List<String> opcoes, {required Key chave}) {
-    return Autocomplete<String>(
-      key: chave,
-      optionsBuilder: (TextEditingValue value) {
-        if (value.text.isEmpty) return opcoes;
-        return opcoes.where((o) => o.toLowerCase().contains(value.text.toLowerCase()));
-      },
-      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-        _autocompleteController = controller;
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          decoration: InputDecoration(hintText: 'Buscar ${_campo.rotulo.toLowerCase()}...'),
-          onChanged: (_) => _emitirFiltroRapido(),
-        );
-      },
-      optionsViewBuilder: (context, onSelected, options) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(14),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 220, minWidth: 220),
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                itemCount: options.length,
-                itemBuilder: (context, i) {
-                  final opcao = options.elementAt(i);
-                  return ListTile(
-                    dense: true,
-                    title: Text(opcao),
-                    onTap: () => onSelected(opcao),
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 

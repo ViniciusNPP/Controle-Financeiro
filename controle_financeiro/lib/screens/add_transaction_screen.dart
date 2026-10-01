@@ -7,6 +7,8 @@ import '../theme/app_theme.dart';
 import '../widgets/form_fields.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/botoes_personalizados.dart';
+import '../widgets/recorrencia_widgets.dart';
+import '../models/recorrencia.dart' as model;
 
 class AddTransactionScreen extends StatefulWidget {
   final bool ativa;
@@ -29,7 +31,29 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   bool _erroCategoria = false;
   bool _erroValor = false;
 
+  bool _recorrenciaAtiva = false;
+  ConfiguracaoRecorrencia? _configRecorrencia;
+
   bool get _valido => _tipo != null && _categoria != null && _valor > 0;
+
+  /// Converte a config vinda do dialog (widget de UI) para o model
+  /// persistível salvo junto da Transacao.
+  model.RegraRecorrencia? _paraRegraPersistivel(ConfiguracaoRecorrencia? c) {
+    if (c == null) return null;
+
+    final periodo = switch (c.periodo) {
+      PeriodoRecorrencia.diariamente => model.PeriodoRecorrencia.diariamente,
+      PeriodoRecorrencia.semanalmente => model.PeriodoRecorrencia.semanalmente,
+      PeriodoRecorrencia.mensalmente => model.PeriodoRecorrencia.mensalmente,
+      PeriodoRecorrencia.anualmente => model.PeriodoRecorrencia.anualmente,
+    };
+
+    return model.RegraRecorrencia(
+      periodo: periodo,
+      dataInicio: c.dataInicio,
+      dataTermino: c.dataTermino,
+    );
+  }
 
   @override
   void dispose() {
@@ -45,7 +69,40 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         _erroTipo = false;
         _erroCategoria = false;
         _erroValor = false;
+        // Saiu da aba sem salvar: desfaz a recorrência pendente.
+        _recorrenciaAtiva = false;
+        _configRecorrencia = null;
       });
+    }
+  }
+
+  Future<void> _alternarRecorrencia(bool valor) async {
+    if (!valor) {
+      setState(() {
+        _recorrenciaAtiva = false;
+        _configRecorrencia = null;
+      });
+      return;
+    }
+
+    // Ativa visualmente o switch já ao ligar, e abre o dialog em seguida.
+    setState(() => _recorrenciaAtiva = true);
+
+    final resultado = await RecorrenciaDialog.show(
+      context,
+      configuracaoInicial: _configRecorrencia,
+    );
+
+    if (!mounted) return;
+
+    if (resultado == null) {
+      // Cancelou ou fechou no X: volta pro estado desativado.
+      setState(() {
+        _recorrenciaAtiva = false;
+        _configRecorrencia = null;
+      });
+    } else {
+      setState(() => _configRecorrencia = resultado);
     }
   }
 
@@ -68,6 +125,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         categoriaNome: _categoria!.nome,
         valor: _valor,
         descricao: descricao.isEmpty ? null : descricao,
+        recorrencia: _paraRegraPersistivel(_configRecorrencia),
       );
 
       if (!mounted) return true;
@@ -77,6 +135,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         _tipo = null;
         _categoria = null;
         _valor = 0;
+        _recorrenciaAtiva = false;
+        _configRecorrencia = null;
       });
       return true;
     } catch (_) {
@@ -191,21 +251,43 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    const SizedBox(height: 20),
-                    CampoComErro(
-                      rotulo: 'Categoria',
-                      erro: _erroCategoria,
-                      raioBorda: 16,
-                      child: CategorySelector(
-                        tipo: _tipo,
-                        categoriaSelecionada: _categoria,
-                        onSelecionar: (c) {
-                          setState(() {
-                            _categoria = c;
-                            _erroCategoria = false;
-                          });
-                        },
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: CampoComErro(
+                            rotulo: 'Categoria',
+                            erro: _erroCategoria,
+                            raioBorda: 16,
+                            child: CategorySelector(
+                              tipo: _tipo,
+                              categoriaSelecionada: _categoria,
+                              onSelecionar: (c) {
+                                setState(() {
+                                  _categoria = c;
+                                  _erroCategoria = false;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _rotulo('Recorrente'),
+                            SizedBox(
+                              height: 52,
+                              child: Center(
+                                child: SwitchRecorrencia(
+                                  ativo: _recorrenciaAtiva,
+                                  onChanged: _alternarRecorrencia,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 20),
                     _rotulo('Descrição (opcional)'),

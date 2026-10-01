@@ -1,4 +1,5 @@
 import 'categoria.dart';
+import 'recorrencia.dart';
 
 class Transacao {
   final String id;
@@ -8,6 +9,7 @@ class Transacao {
   final String categoriaNome;
   final double valor;
   final String? descricao;
+  final RegraRecorrencia? recorrencia;
 
   const Transacao({
     required this.id,
@@ -17,6 +19,7 @@ class Transacao {
     required this.categoriaNome,
     required this.valor,
     this.descricao,
+    this.recorrencia,
   });
 
   Map<String, dynamic> toJson() => {
@@ -27,6 +30,7 @@ class Transacao {
         'categoriaNome': categoriaNome,
         'valor': valor,
         'descricao': descricao,
+        'recorrencia': recorrencia?.toJson(),
       };
 
   factory Transacao.fromJson(Map<String, dynamic> json) => Transacao(
@@ -40,5 +44,8 @@ class Transacao {
         categoriaNome: json['categoriaNome'] as String,
         valor: (json['valor'] as num).toDouble(),
         descricao: json['descricao'] as String?,
+        recorrencia: json['recorrencia'] == null
+            ? null
+            : RegraRecorrencia.fromJson(json['recorrencia'] as Map<String, dynamic>),
       );
 }
