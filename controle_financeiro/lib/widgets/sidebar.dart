@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class AppSidebarContent extends StatelessWidget {
-  final int abaSelecionada; // 0 = Adicionar, 1 = Gráficos, 2 = Histórico, 3 = Categorias
+  final int abaSelecionada; // 0 = Adicionar, 1 = Gráficos, 2 = Histórico, 3 = Categorias, 4 = Recorrente
   final ValueChanged<int> onSelecionar;
   final VoidCallback onSincronizar;
 
@@ -49,7 +49,8 @@ class AppSidebarContent extends StatelessWidget {
             _item(context, icon: Icons.add_circle_outline_rounded, label: 'Adicionar', indice: 0),
             _item(context, icon: Icons.history_rounded, label: 'Histórico', indice: 2),
             _item(context, icon: Icons.bar_chart_rounded, label: 'Gráficos', indice: 1),
-            _item(context, icon: Icons.sell_outlined, label: 'Categorias', indice: 3),
+            _item(context, icon: Icons.autorenew_rounded, label: 'Recorrente', indice: 3),
+            _item(context, icon: Icons.sell_outlined, label: 'Categorias', indice: 4),
             const Spacer(),
             _item(
               context,

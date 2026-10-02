@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:controle_financeiro/screens/recorrentes_screen.dart';
 import 'package:controle_financeiro/services/sync_service.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:flutter/material.dart';
@@ -59,9 +60,10 @@ class _HomeShellState extends State<HomeShell> {
         filtrosExternos: _filtrosParaHistorico,
         pedidoExternoId: _pedidoParaHistoricoId,
       ),
-      CategoriasScreen(),
+      RecorrentesScreen(),
+      CategoriasScreen()
     ];
-    final titulos = ['Adicionar lançamento', 'Gráficos', 'Histórico', 'Categorias'];
+    final titulos = ['Adicionar lançamento', 'Gráficos', 'Histórico', 'Categorias', 'Recorrente'];
 
     final conteudo = IndexedStack(key: _conteudoKey, index: _aba, children: telas);
     final sidebar = AppSidebarContent(

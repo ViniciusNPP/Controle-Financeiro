@@ -31,29 +31,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   bool _erroCategoria = false;
   bool _erroValor = false;
 
+  // Estado da recorrência
   bool _recorrenciaAtiva = false;
   ConfiguracaoRecorrencia? _configRecorrencia;
 
   bool get _valido => _tipo != null && _categoria != null && _valor > 0;
 
-  /// Converte a config vinda do dialog (widget de UI) para o model
-  /// persistível salvo junto da Transacao.
-  model.RegraRecorrencia? _paraRegraPersistivel(ConfiguracaoRecorrencia? c) {
-    if (c == null) return null;
-
-    final periodo = switch (c.periodo) {
-      PeriodoRecorrencia.diariamente => model.PeriodoRecorrencia.diariamente,
-      PeriodoRecorrencia.semanalmente => model.PeriodoRecorrencia.semanalmente,
-      PeriodoRecorrencia.mensalmente => model.PeriodoRecorrencia.mensalmente,
-      PeriodoRecorrencia.anualmente => model.PeriodoRecorrencia.anualmente,
-    };
-
-    return model.RegraRecorrencia(
-      periodo: periodo,
-      dataInicio: c.dataInicio,
-      dataTermino: c.dataTermino,
-    );
-  }
+  model.PeriodoRecorrencia _paraPeriodoModel(PeriodoRecorrencia p) => switch (p) {
+        PeriodoRecorrencia.diariamente => model.PeriodoRecorrencia.diariamente,
+        PeriodoRecorrencia.semanalmente => model.PeriodoRecorrencia.semanalmente,
+        PeriodoRecorrencia.mensalmente => model.PeriodoRecorrencia.mensalmente,
+        PeriodoRecorrencia.anualmente => model.PeriodoRecorrencia.anualmente,
+      };
 
   @override
   void dispose() {
@@ -118,15 +107,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     try {
       final descricao = _descricaoController.text.trim();
-      await context.read<FinanceProvider>().adicionarTransacao(
-        data: _data,
-        tipo: _tipo!,
-        categoriaId: _categoria!.id,
-        categoriaNome: _categoria!.nome,
-        valor: _valor,
-        descricao: descricao.isEmpty ? null : descricao,
-        recorrencia: _paraRegraPersistivel(_configRecorrencia),
-      );
+      final config = _configRecorrencia;
+
+      if (config == null) {
+        await context.read<FinanceProvider>().adicionarTransacao(
+          data: _data,
+          tipo: _tipo!,
+          categoriaId: _categoria!.id,
+          categoriaNome: _categoria!.nome,
+          valor: _valor,
+          descricao: descricao.isEmpty ? null : descricao,
+        );
+      } else {
+        await context.read<FinanceProvider>().adicionarTransacaoRecorrente(
+          data: _data,
+          tipo: _tipo!,
+          categoriaId: _categoria!.id,
+          categoriaNome: _categoria!.nome,
+          valor: _valor,
+          descricao: descricao.isEmpty ? null : descricao,
+          periodo: _paraPeriodoModel(config.periodo),
+          dataInicioRecorrencia: config.dataInicio,
+          dataTermino: config.dataTermino,
+        );
+      }
 
       if (!mounted) return true;
       _valorKey.currentState?.limpar();

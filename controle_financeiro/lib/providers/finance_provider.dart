@@ -5,6 +5,7 @@ import '../models/recorrencia.dart';
 import '../models/transacao.dart';
 import '../services/storage_service.dart';
 import '../services/sync_service.dart';
+import '../utils/recorrencia_calculator.dart';
 
 class FinanceProvider extends ChangeNotifier {
   final StorageService _storage = StorageService();
@@ -21,8 +22,7 @@ class FinanceProvider extends ChangeNotifier {
   DateTime? get ultimaSincronizacao => _ultimaSincronizacao;
   bool get carregado => _carregado;
 
-  /// Carrega os dados locais e, se houver uma pasta de sincronização
-  /// configurada (fluxo automático do desktop), mescla com o que estiver lá.
+  /// Carrega os dados locais
   Future<void> iniciar() async {
     _dados = await _storage.carregar();
 
@@ -32,8 +32,57 @@ class FinanceProvider extends ChangeNotifier {
       await _storage.salvar(_dados);
     }
 
+    await _gerarTransacoesPendentes();
+
     _carregado = true;
     notifyListeners();
+  }
+
+  /// Percorre os moldes de recorrência e gera as Transacoes pendentes em sequência
+  Future<void> _gerarTransacoesPendentes() async {
+    final hoje = DateTime.now();
+    final hojeSemHora = DateTime(hoje.year, hoje.month, hoje.day);
+
+    final novasTransacoes = <Transacao>[];
+    final recorrentesAtualizados = <LancamentoRecorrente>[];
+    var categoriasAtualizadas = _dados.categorias;
+    var houveMudanca = false;
+
+    for (final molde in _dados.recorrentes) {
+      var proxima = molde.dataRecorrencia;
+
+      while (!proxima.isAfter(hojeSemHora) &&
+          (molde.dataTermino == null || !proxima.isAfter(molde.dataTermino!))) {
+        novasTransacoes.add(
+          Transacao(
+            id: _uuid.v4(),
+            data: proxima,
+            tipo: molde.tipo,
+            categoriaId: molde.categoriaId,
+            categoriaNome: molde.categoriaNome,
+            valor: molde.valor,
+            descricao: molde.descricao,
+          ),
+        );
+        categoriasAtualizadas = [
+          for (final c in categoriasAtualizadas)
+            if (c.id == molde.categoriaId) c.copyWith(vezesUsada: c.vezesUsada + 1) else c,
+        ];
+        houveMudanca = true;
+        proxima = proximaDataRecorrencia(proxima, molde.periodo);
+      }
+
+      recorrentesAtualizados.add(molde.copyWith(dataRecorrencia: proxima));
+    }
+
+    if (!houveMudanca) return;
+
+    _dados = _dados.copyWith(
+      transacoes: [..._dados.transacoes, ...novasTransacoes],
+      categorias: categoriasAtualizadas,
+      recorrentes: recorrentesAtualizados,
+    );
+    await _storage.salvar(_dados);
   }
 
   /// Mescla dois conjuntos de dados por ID, sem duplicar e sem perder nada.
@@ -50,9 +99,16 @@ class FinanceProvider extends ChangeNotifier {
       if (!idsCategoriasLocal.contains(c.id)) categoriasMescladas.add(c);
     }
 
+    final idsRecorrentesLocal = local.recorrentes.map((r) => r.id).toSet();
+    final recorrentesMesclados = [...local.recorrentes];
+    for (final r in remoto.recorrentes) {
+      if (!idsRecorrentesLocal.contains(r.id)) recorrentesMesclados.add(r);
+    }
+
     return DadosApp(
       categorias: categoriasMescladas,
       transacoes: transacoesMescladas,
+      recorrentes: recorrentesMesclados,
     );
   }
 
@@ -70,7 +126,6 @@ class FinanceProvider extends ChangeNotifier {
     required String categoriaNome,
     required double valor,
     String? descricao,
-    RegraRecorrencia? recorrencia,
   }) async {
     final nova = Transacao(
       id: _uuid.v4(),
@@ -80,7 +135,6 @@ class FinanceProvider extends ChangeNotifier {
       categoriaNome: categoriaNome,
       valor: valor,
       descricao: descricao,
-      recorrencia: recorrencia,
     );
 
     _dados = _dados.copyWith(
@@ -89,6 +143,71 @@ class FinanceProvider extends ChangeNotifier {
         for (final c in _dados.categorias)
           if (c.id == categoriaId) c.copyWith(vezesUsada: c.vezesUsada + 1) else c,
       ],
+    );
+    await _persistirETentarSincronizar();
+  }
+
+  Future<void> adicionarTransacaoRecorrente({
+    required DateTime data,
+    required TipoLancamento tipo,
+    required String categoriaId,
+    required String categoriaNome,
+    required double valor,
+    String? descricao,
+    required PeriodoRecorrencia periodo,
+    required DateTime dataInicioRecorrencia,
+    DateTime? dataTermino,
+  }) async {
+    final hoje = DateTime.now();
+    final hojeSemHora = DateTime(hoje.year, hoje.month, hoje.day);
+    final inicioSemHora = DateTime(
+      dataInicioRecorrencia.year,
+      dataInicioRecorrencia.month,
+      dataInicioRecorrencia.day,
+    );
+    final ehHoje = !inicioSemHora.isAfter(hojeSemHora);
+
+    var transacoes = _dados.transacoes;
+    var categorias = _dados.categorias;
+
+    if (ehHoje) {
+      final novaTransacao = Transacao(
+        id: _uuid.v4(),
+        data: data,
+        tipo: tipo,
+        categoriaId: categoriaId,
+        categoriaNome: categoriaNome,
+        valor: valor,
+        descricao: descricao,
+      );
+      transacoes = [...transacoes, novaTransacao];
+      categorias = [
+        for (final c in categorias)
+          if (c.id == categoriaId) c.copyWith(vezesUsada: c.vezesUsada + 1) else c,
+      ];
+    }
+
+    final dataRecorrenciaInicial = ehHoje
+        ? proximaDataRecorrencia(inicioSemHora, periodo)
+        : inicioSemHora;
+
+    final molde = LancamentoRecorrente(
+      id: _uuid.v4(),
+      tipo: tipo,
+      categoriaId: categoriaId,
+      categoriaNome: categoriaNome,
+      valor: valor,
+      descricao: descricao,
+      periodo: periodo,
+      dataInicio: inicioSemHora,
+      dataRecorrencia: dataRecorrenciaInicial,
+      dataTermino: dataTermino,
+    );
+
+    _dados = _dados.copyWith(
+      transacoes: transacoes,
+      categorias: categorias,
+      recorrentes: [..._dados.recorrentes, molde],
     );
     await _persistirETentarSincronizar();
   }

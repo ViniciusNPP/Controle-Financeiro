@@ -3,31 +3,35 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import '../models/categoria.dart';
+import '../models/recorrencia.dart';
 import '../models/transacao.dart';
 
-/// Contêiner com tudo que o app precisa persistir: categorias e transações.
-/// É salvo como um único arquivo JSON dentro da pasta do projeto.
 class DadosApp {
   final List<Categoria> categorias;
   final List<Transacao> transacoes;
+  final List<LancamentoRecorrente> recorrentes;
 
   const DadosApp({
     required this.categorias,
     required this.transacoes,
+    this.recorrentes = const [],
   });
 
   DadosApp copyWith({
     List<Categoria>? categorias,
     List<Transacao>? transacoes,
+    List<LancamentoRecorrente>? recorrentes,
   }) =>
       DadosApp(
         categorias: categorias ?? this.categorias,
         transacoes: transacoes ?? this.transacoes,
+        recorrentes: recorrentes ?? this.recorrentes,
       );
 
   Map<String, dynamic> toJson() => {
         'categorias': categorias.map((c) => c.toJson()).toList(),
         'transacoes': transacoes.map((t) => t.toJson()).toList(),
+        'recorrentes': recorrentes.map((r) => r.toJson()).toList(),
       };
 
   factory DadosApp.fromJson(Map<String, dynamic> json) => DadosApp(
@@ -37,11 +41,17 @@ class DadosApp {
         transacoes: (json['transacoes'] as List<dynamic>? ?? [])
             .map((t) => Transacao.fromJson(t as Map<String, dynamic>))
             .toList(),
+        // Chave nova: JSON salvo por versões anteriores do app não tem essa
+        // lista, então o default de '[]' mantém a carga retrocompatível.
+        recorrentes: (json['recorrentes'] as List<dynamic>? ?? [])
+            .map((r) => LancamentoRecorrente.fromJson(r as Map<String, dynamic>))
+            .toList(),
       );
 
   factory DadosApp.vazio() => DadosApp(
         categorias: [...Categoria.padroesSaida(), ...Categoria.padroesEntrada()],
         transacoes: const [],
+        recorrentes: const [],
       );
 }
 
@@ -68,7 +78,6 @@ class StorageService {
       final conteudo = await file.readAsString();
       return DadosApp.fromJson(jsonDecode(conteudo) as Map<String, dynamic>);
     } catch (e, st) {
-      // Não engula o erro silenciosamente em dev — ajuda a diagnosticar
       print('Erro ao carregar dados: $e\n$st');
       return DadosApp.vazio();
     }
@@ -80,7 +89,7 @@ class StorageService {
       await file.writeAsString(jsonEncode(dados.toJson()));
     } catch (e, st) {
       print('Erro ao salvar dados: $e\n$st');
-      rethrow; // deixa o erro subir para quem chamou saber que falhou
+      rethrow;
     }
   }
 }
