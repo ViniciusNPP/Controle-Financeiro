@@ -22,10 +22,12 @@ class _RecorrentesScreenState extends State<RecorrentesScreen> {
   @override
   Widget build(BuildContext context) {
     final finance = context.watch<FinanceProvider>();
-    final emAndamento = finance.dados.recorrentes.where((r) => !r.finalizado).toList()
-      ..sort((a, b) => a.dataRecorrencia.compareTo(b.dataRecorrencia));
-    final finalizadas = finance.dados.recorrentes.where((r) => r.finalizado).toList()
-      ..sort((a, b) => b.dataRecorrencia.compareTo(a.dataRecorrencia));
+    final emAndamento =
+        finance.dados.recorrentes.where((r) => !r.finalizado).toList()
+          ..sort((a, b) => a.dataRecorrencia.compareTo(b.dataRecorrencia));
+    final finalizadas =
+        finance.dados.recorrentes.where((r) => r.finalizado).toList()
+          ..sort((a, b) => b.dataRecorrencia.compareTo(a.dataRecorrencia));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,16 +66,25 @@ class _RecorrentesScreenState extends State<RecorrentesScreen> {
                 );
               }
 
-              final listaCompacto = _mostrarFinalizadasCompacto ? finalizadas : emAndamento;
-              final tituloCompacto = _mostrarFinalizadasCompacto ? 'Finalizadas' : 'Em andamento';
-              final corCompacto = _mostrarFinalizadasCompacto ? AppColors.textSecondary : AppColors.entrada;
+              final listaCompacto = _mostrarFinalizadasCompacto
+                  ? finalizadas
+                  : emAndamento;
+              final tituloCompacto = _mostrarFinalizadasCompacto
+                  ? 'Finalizadas'
+                  : 'Em andamento';
+              final corCompacto = _mostrarFinalizadasCompacto
+                  ? AppColors.textSecondary
+                  : AppColors.entrada;
 
               return _blocoRecorrentes(
                 context,
                 titulo: tituloCompacto,
                 lista: listaCompacto,
                 indicadorCor: corCompacto,
-                onTrocar: () => setState(() => _mostrarFinalizadasCompacto = !_mostrarFinalizadasCompacto),
+                onTrocar: () => setState(
+                  () => _mostrarFinalizadasCompacto =
+                      !_mostrarFinalizadasCompacto,
+                ),
               );
             },
           ),
@@ -107,19 +118,32 @@ class _RecorrentesScreenState extends State<RecorrentesScreen> {
                       ? [
                           Text(
                             '${lista.length}',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: indicadorCor),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: indicadorCor,
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          Text(titulo, style: Theme.of(context).textTheme.titleMedium),
+                          Text(
+                            titulo,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
                         ]
                       : [
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: BoxDecoration(color: indicadorCor, shape: BoxShape.circle),
+                            decoration: BoxDecoration(
+                              color: indicadorCor,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          Text(titulo, style: Theme.of(context).textTheme.titleMedium),
+                          Text(
+                            titulo,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
                         ],
                 ),
                 if (onTrocar != null)
@@ -129,13 +153,21 @@ class _RecorrentesScreenState extends State<RecorrentesScreen> {
                     onTap: onTrocar,
                     child: const Padding(
                       padding: EdgeInsets.all(4),
-                      child: Icon(Icons.sync_alt_rounded, size: 18, color: AppColors.textSecondary),
+                      child: Icon(
+                        Icons.sync_alt_rounded,
+                        size: 18,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   )
                 else
                   Text(
                     '${lista.length}',
-                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
               ],
             ),
@@ -149,7 +181,10 @@ class _RecorrentesScreenState extends State<RecorrentesScreen> {
                 if (lista.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Text('Nenhuma recorrência ainda.', style: Theme.of(context).textTheme.bodyMedium),
+                    child: Text(
+                      'Nenhuma recorrência ainda.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                   );
                 }
                 return _itemRecorrente(context, lista[index]);
@@ -173,7 +208,12 @@ class _RecorrentesScreenState extends State<RecorrentesScreen> {
         children: [
           Expanded(
             flex: 3,
-            child: Text('NOME', style: estilo, overflow: TextOverflow.ellipsis, softWrap: false),
+            child: Text(
+              'NOME',
+              style: estilo,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+            ),
           ),
           Expanded(
             flex: 2,
@@ -212,27 +252,42 @@ class _RecorrentesScreenState extends State<RecorrentesScreen> {
   }
 
   Widget _itemRecorrente(BuildContext context, LancamentoRecorrente r) {
-    final cor = r.tipo == TipoLancamento.entrada ? AppColors.entrada : AppColors.saida;
-    final termino = r.dataTermino == null ? '-' : Formatters.data(r.dataTermino!);
+    final cor = r.tipo == TipoLancamento.entrada
+        ? AppColors.entrada
+        : AppColors.saida;
+    final termino = r.dataTermino == null
+        ? '-'
+        : Formatters.data(r.dataTermino!);
 
     return InkWell(
       mouseCursor: SystemMouseCursors.click,
       borderRadius: BorderRadius.circular(12),
       onTap: () => showDialog(
         context: context,
-        builder: (_) => TransacaoDetailDialog(transacao: _transacaoFake(r)),
+        builder: (_) => TransacaoDetailDialog(
+          transacao: _transacaoFake(r),
+          recorrente: true,
+        ),
       ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Row(
           children: [
             Expanded(
               flex: 3,
               child: Text(
-                r.descricao?.isNotEmpty == true ? r.descricao! : r.categoriaNome,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                r.descricao?.isNotEmpty == true
+                    ? r.descricao!
+                    : r.categoriaNome,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 overflow: TextOverflow.ellipsis,
                 softWrap: false,
               ),
@@ -262,13 +317,21 @@ class _RecorrentesScreenState extends State<RecorrentesScreen> {
               child: Text(
                 Formatters.moeda(r.valor),
                 textAlign: TextAlign.right,
-                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: cor),
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: cor,
+                ),
                 overflow: TextOverflow.ellipsis,
                 softWrap: false,
               ),
             ),
             const SizedBox(width: 2),
-            const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textSecondary),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: AppColors.textSecondary,
+            ),
           ],
         ),
       ),

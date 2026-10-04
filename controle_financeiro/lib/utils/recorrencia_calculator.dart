@@ -13,9 +13,6 @@ DateTime proximaDataRecorrencia(DateTime atual, PeriodoRecorrencia periodo) {
   }
 }
 
-/// Avança [atual] em [meses] meses, preservando o dia quando possível.
-/// Se o mês de destino não tiver esse dia, usa o último dia válido dele
-/// (ex.: 31/jan + 1 mês -> 28/fev ou 29/fev em ano bissexto).
 DateTime _navegarMeses(DateTime atual, int meses) {
   final anoDestino = atual.year + ((atual.month - 1 + meses) ~/ 12);
   final mesDestino = ((atual.month - 1 + meses) % 12) + 1;

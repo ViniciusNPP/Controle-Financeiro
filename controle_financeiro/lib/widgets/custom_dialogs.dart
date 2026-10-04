@@ -17,6 +17,9 @@ class DetailDialogShell extends StatelessWidget {
   final VoidCallback onSalvar;
   final VoidCallback onEditar;
   final VoidCallback onExcluir;
+  final List<Widget>? children2; // página 2 (opcional)
+  final int pagina;
+  final ValueChanged<int>? onPagina;
 
   const DetailDialogShell({
     super.key,
@@ -31,6 +34,9 @@ class DetailDialogShell extends StatelessWidget {
     required this.onEditar,
     required this.onExcluir,
     this.maxWidth = 420,
+    this.children2,
+    this.pagina = 0,
+    this.onPagina,
   });
 
   @override
@@ -81,8 +87,19 @@ class DetailDialogShell extends StatelessWidget {
                           titulo,
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
+                        if (children2 != null && onPagina != null) ...[
+                          const SizedBox(height: 8),
+                          PaginadorDialog(
+                            pagina: pagina,
+                            total: 2,
+                            onPagina: onPagina!,
+                          ),
+                        ],
                         const SizedBox(height: 22),
-                        for (final linha in children) ...[
+                        for (final linha
+                            in (pagina == 1 && children2 != null
+                                ? children2!
+                                : children)) ...[
                           linha,
                           const SizedBox(height: 16),
                         ],
@@ -278,6 +295,51 @@ class SeletorTipo extends StatelessWidget {
             cor: AppColors.saida,
             onTap: () => onSelecionar(TipoLancamento.saida),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Setas + bolinhas para navegar entre as páginas do diálogo.
+class PaginadorDialog extends StatelessWidget {
+  final int pagina;
+  final int total;
+  final ValueChanged<int> onPagina;
+
+  const PaginadorDialog({
+    super.key,
+    required this.pagina,
+    required this.total,
+    required this.onPagina,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          mouseCursor: SystemMouseCursors.click,
+          icon: const Icon(Icons.chevron_left_rounded),
+          color: AppColors.textSecondary,
+          onPressed: pagina > 0 ? () => onPagina(pagina - 1) : null,
+        ),
+        for (var i = 0; i < total; i++)
+          Container(
+            width: 8,
+            height: 8,
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: i == pagina ? AppColors.primary : AppColors.disabledFill,
+            ),
+          ),
+        IconButton(
+          mouseCursor: SystemMouseCursors.click,
+          icon: const Icon(Icons.chevron_right_rounded),
+          color: AppColors.textSecondary,
+          onPressed: pagina < total - 1 ? () => onPagina(pagina + 1) : null,
         ),
       ],
     );

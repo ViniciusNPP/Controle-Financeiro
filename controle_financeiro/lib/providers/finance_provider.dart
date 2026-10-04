@@ -66,7 +66,10 @@ class FinanceProvider extends ChangeNotifier {
         );
         categoriasAtualizadas = [
           for (final c in categoriasAtualizadas)
-            if (c.id == molde.categoriaId) c.copyWith(vezesUsada: c.vezesUsada + 1) else c,
+            if (c.id == molde.categoriaId)
+              c.copyWith(vezesUsada: c.vezesUsada + 1)
+            else
+              c,
         ];
         houveMudanca = true;
         proxima = proximaDataRecorrencia(proxima, molde.periodo);
@@ -141,7 +144,10 @@ class FinanceProvider extends ChangeNotifier {
       transacoes: [..._dados.transacoes, nova],
       categorias: [
         for (final c in _dados.categorias)
-          if (c.id == categoriaId) c.copyWith(vezesUsada: c.vezesUsada + 1) else c,
+          if (c.id == categoriaId)
+            c.copyWith(vezesUsada: c.vezesUsada + 1)
+          else
+            c,
       ],
     );
     await _persistirETentarSincronizar();
@@ -183,7 +189,10 @@ class FinanceProvider extends ChangeNotifier {
       transacoes = [...transacoes, novaTransacao];
       categorias = [
         for (final c in categorias)
-          if (c.id == categoriaId) c.copyWith(vezesUsada: c.vezesUsada + 1) else c,
+          if (c.id == categoriaId)
+            c.copyWith(vezesUsada: c.vezesUsada + 1)
+          else
+            c,
       ];
     }
 
@@ -234,8 +243,28 @@ class FinanceProvider extends ChangeNotifier {
       transacoes: _dados.transacoes.where((t) => t.id != id).toList(),
       categorias: [
         for (final c in _dados.categorias)
-          if (c.id == categoriaId) c.copyWith(vezesUsada: c.vezesUsada - 1) else c,
-      ]
+          if (c.id == categoriaId)
+            c.copyWith(vezesUsada: c.vezesUsada - 1)
+          else
+            c,
+      ],
+    );
+    await _persistirETentarSincronizar();
+  }
+
+  Future<void> editarRecorrente(LancamentoRecorrente atualizado) async {
+    _dados = _dados.copyWith(
+      recorrentes: [
+        for (final r in _dados.recorrentes)
+          if (r.id == atualizado.id) atualizado else r,
+      ],
+    );
+    await _persistirETentarSincronizar();
+  }
+
+  Future<void> excluirRecorrente(String id) async {
+    _dados = _dados.copyWith(
+      recorrentes: _dados.recorrentes.where((r) => r.id != id).toList(),
     );
     await _persistirETentarSincronizar();
   }
@@ -262,7 +291,9 @@ class FinanceProvider extends ChangeNotifier {
     lista.sort((a, b) {
       final porUso = b.vezesUsada.compareTo(a.vezesUsada);
       if (porUso != 0) return porUso;
-      return a.nome.toLowerCase().compareTo(b.nome.toLowerCase()); // desempate alfabético
+      return a.nome.toLowerCase().compareTo(
+        b.nome.toLowerCase(),
+      ); // desempate alfabético
     });
     return lista;
   }
