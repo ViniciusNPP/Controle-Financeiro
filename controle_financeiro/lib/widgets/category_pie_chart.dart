@@ -25,7 +25,8 @@ class CategoryPieChartCard extends StatefulWidget {
 }
 
 class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
-  int? _indiceTocado;
+  String? _categoriaFixada;
+  String? _categoriaHover; // fatia sob o mouse
 
   // Controla se os filhos de "Outros" estão visíveis na legenda/gráfico
   bool _outrosExpandido = false;
@@ -161,6 +162,7 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
       _categoriasOcultas.clear();
       _outrosExpandido = false;
       _ultimoDados = widget.dados;
+      _categoriaHover = null;
     }
 
     final entradasLegenda = _entradasFiltradas();
@@ -191,7 +193,10 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
     final totalReal = entradasLegenda.fold<double>(0, (a, e) => a + e.value);
     // Total só das visíveis
     final totalVisivel = entradas.fold<double>(0, (a, e) => a + e.value);
-    final indiceTocado = _indiceTocado;
+    // O hover tem prioridade sobre a fatia fixada enquanto o mouse estiver em cima.
+    final nomeAtivo = _categoriaHover ?? _categoriaFixada;
+    final indiceBusca = entradas.indexWhere((e) => e.key == nomeAtivo);
+    final int? indiceTocado = indiceBusca < 0 ? null : indiceBusca;
 
     // A fatia é pequena quando total fica abaixo de _limiarRotuloExternoPct
     final tocadaEhPequena =
@@ -259,7 +264,8 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                             final raioCentro = raioBase * 0.38;
                             final raioNormal = raioBase * 0.53;
                             final raioSelecionado = raioBase * 0.62;
-                            final fontSizeTitulo = (raioSelecionado * 0.10).clamp(9.0, 13.0);
+                            final fontSizeTitulo = (raioSelecionado * 0.10)
+                                .clamp(9.0, 13.0);
 
                             return Stack(
                               clipBehavior: Clip.none,
@@ -268,34 +274,42 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                                   PieChartData(
                                     sectionsSpace: 2,
                                     centerSpaceRadius: raioCentro,
-                                    pieTouchData: PieTouchData(
+                                                                        pieTouchData: PieTouchData(
                                       touchCallback: (event, response) {
-                                        final indiceBruto = response
+                                        final indice = response
                                             ?.touchedSection
                                             ?.touchedSectionIndex;
-                                        final indiceSobPonteiro =
-                                            (indiceBruto != null &&
-                                                indiceBruto >= 0)
-                                            ? indiceBruto
-                                            : null;
-                                        if (event is FlTapUpEvent) {
-                                          setState(() {
-                                            _indiceTocado =
-                                                (indiceSobPonteiro != null &&
-                                                    indiceSobPonteiro ==
-                                                        _indiceTocado)
-                                                ? null
-                                                : indiceSobPonteiro;
-                                          });
+                                        final valido =
+                                            indice != null &&
+                                            indice >= 0 &&
+                                            indice < entradas.length;
+
+                                        // Mouse passando por cima: mostra o valor temporariamente.
+                                        if (event is FlPointerHoverEvent ||
+                                            event is FlPointerEnterEvent ||
+                                            event is FlPointerExitEvent) {
+                                          final novo =
+                                              (event is FlPointerExitEvent ||
+                                                  !valido)
+                                              ? null
+                                              : entradas[indice].key;
+                                          if (novo != _categoriaHover) {
+                                            setState(() => _categoriaHover = novo);
+                                          }
                                           return;
                                         }
-                                        if (event is FlTapCancelEvent) return;
-                                        setState(() {
-                                          _indiceTocado =
-                                              event.isInterestedForInteractions
-                                              ? indiceSobPonteiro
-                                              : null;
-                                        });
+
+                                        // Clique simples: fixa/solta o valor.
+                                        if (event is FlTapUpEvent && valido) {
+                                          final nome = entradas[indice].key;
+                                          setState(() {
+                                            _categoriaHover = null;
+                                            _categoriaFixada =
+                                                _categoriaFixada == nome
+                                                ? null
+                                                : nome;
+                                          });
+                                        }
                                       },
                                     ),
                                     sections: [
@@ -303,12 +317,11 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                                         PieChartSectionData(
                                           value: entradas[i].value,
                                           color: corDe(entradas[i].key),
-                                          radius: i == _indiceTocado
+                                          radius: i == indiceTocado
                                               ? raioSelecionado
                                               : raioNormal,
-                                          // Se a fatia for pequena, não mostra o título dentro dela (vai pro rótulo externo).
                                           showTitle:
-                                              i == _indiceTocado &&
+                                              i == indiceTocado &&
                                               !tocadaEhPequena,
                                           title: Formatters.moedaIntSemSimbolo(
                                             entradas[i].value,
@@ -375,7 +388,8 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                                 cor: corDe(entrada.key),
                                 expansivel: ehOutros,
                                 expandido: _outrosExpandido,
-                                oculta: _categoriasOcultas.contains(entrada.key) ||
+                                oculta:
+                                    _categoriasOcultas.contains(entrada.key) ||
                                     (ehOutros && _outrosExpandido),
                                 onTap: ehOutros
                                     ? () => setState(
@@ -477,7 +491,7 @@ class _ItemLegendaState extends State<_ItemLegenda>
     super.dispose();
   }
 
-  void _handleDoubleTap() {
+  void _alternarOcultaComFeedback() {
     final onDoubleTap = widget.onDoubleTap;
     if (onDoubleTap == null) return;
     final aplicado = onDoubleTap();
@@ -577,8 +591,10 @@ class _ItemLegendaState extends State<_ItemLegenda>
       mouseCursor: SystemMouseCursors.click,
       borderRadius: BorderRadius.circular(8),
       onTap: widget.onTap,
-      onDoubleTap: _handleDoubleTap,
-      onLongPress: widget.onAbrirHistorico,
+      onDoubleTap: widget.onAbrirHistorico, // duplo clique abre o Histórico
+      onLongPress: widget.onDoubleTap == null
+          ? null
+          : _alternarOcultaComFeedback, // segurar oculta/mostra
       onSecondaryTap: widget.onAbrirHistorico,
       child: linha,
     );

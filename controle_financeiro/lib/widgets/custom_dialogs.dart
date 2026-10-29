@@ -3,6 +3,7 @@ import 'package:controle_financeiro/utils/app_shortcuts.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 //Widget que será reponsável por construir caixas de diálogos dos detalhes dos Lançamentos/Categorias
 class DetailDialogShell extends StatelessWidget {
@@ -17,6 +18,9 @@ class DetailDialogShell extends StatelessWidget {
   final VoidCallback onSalvar;
   final VoidCallback onEditar;
   final VoidCallback onExcluir;
+  final List<Widget>? children2; // página 2 (opcional)
+  final int pagina;
+  final ValueChanged<int>? onPagina;
 
   const DetailDialogShell({
     super.key,
@@ -31,7 +35,26 @@ class DetailDialogShell extends StatelessWidget {
     required this.onEditar,
     required this.onExcluir,
     this.maxWidth = 420,
+    this.children2,
+    this.pagina = 0,
+    this.onPagina,
   });
+
+  bool get _ehCelular =>
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
+
+  /// Arrastar para a esquerda avança a página; para a direita, volta.
+  void _aoArrastar(DragEndDetails detalhes) {
+    final onPagina = this.onPagina;
+    if (children2 == null || onPagina == null) return;
+    final velocidade = detalhes.primaryVelocity ?? 0;
+    if (velocidade < -300 && pagina < 1) {
+      onPagina(pagina + 1);
+    } else if (velocidade > 300 && pagina > 0) {
+      onPagina(pagina - 1);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,40 +95,58 @@ class DetailDialogShell extends StatelessWidget {
                     maxWidth: maxWidth,
                     maxHeight: MediaQuery.sizeOf(context).height * 0.9,
                   ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          titulo,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 22),
-                        for (final linha in children) ...[
-                          linha,
-                          const SizedBox(height: 16),
-                        ],
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Wrap(
-                            alignment: WrapAlignment.spaceBetween,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: [
-                              botaoSecundario,
-                              Wrap(
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: botoesPrincipais,
-                              ),
-                            ],
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onHorizontalDragEnd:
+                        (_ehCelular && children2 != null && onPagina != null)
+                        ? _aoArrastar
+                        : null,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            titulo,
+                            style: Theme.of(context).textTheme.headlineMedium,
                           ),
-                        ),
-                      ],
+                          if (children2 != null && onPagina != null) ...[
+                            const SizedBox(height: 8),
+                            PaginadorDialog(
+                              pagina: pagina,
+                              total: 2,
+                              onPagina: onPagina!,
+                            ),
+                          ],
+                          const SizedBox(height: 22),
+                          for (final linha
+                              in (pagina == 1 && children2 != null
+                                  ? children2!
+                                  : children)) ...[
+                            linha,
+                            const SizedBox(height: 16),
+                          ],
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            child: Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                botaoSecundario,
+                                Wrap(
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  children: botoesPrincipais,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -278,6 +319,51 @@ class SeletorTipo extends StatelessWidget {
             cor: AppColors.saida,
             onTap: () => onSelecionar(TipoLancamento.saida),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Setas + bolinhas para navegar entre as páginas do diálogo.
+class PaginadorDialog extends StatelessWidget {
+  final int pagina;
+  final int total;
+  final ValueChanged<int> onPagina;
+
+  const PaginadorDialog({
+    super.key,
+    required this.pagina,
+    required this.total,
+    required this.onPagina,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          mouseCursor: SystemMouseCursors.click,
+          icon: const Icon(Icons.chevron_left_rounded),
+          color: AppColors.textSecondary,
+          onPressed: pagina > 0 ? () => onPagina(pagina - 1) : null,
+        ),
+        for (var i = 0; i < total; i++)
+          Container(
+            width: 8,
+            height: 8,
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: i == pagina ? AppColors.primary : AppColors.disabledFill,
+            ),
+          ),
+        IconButton(
+          mouseCursor: SystemMouseCursors.click,
+          icon: const Icon(Icons.chevron_right_rounded),
+          color: AppColors.textSecondary,
+          onPressed: pagina < total - 1 ? () => onPagina(pagina + 1) : null,
         ),
       ],
     );

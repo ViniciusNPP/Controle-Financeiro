@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/utils/sidebar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
@@ -36,9 +37,12 @@ class HistoricoScreen extends StatefulWidget {
 class _HistoricoScreenState extends State<HistoricoScreen> {
   final List<FiltroHistorico> _filtros = [];
   FiltroHistorico? _filtroRapido;
+  int _resetFiltroRapido = 0;
   _ModoOrdenacao _ordenacao = _ModoOrdenacao.dataDecrescente;
   Object? _ultimoPedidoExternoId;
   bool _filtrosAbertos = false;
+  static const _larguraMaximaFiltro = 510.0; /// Largura máxima do container de filtros.
+  static const _alturaCabecalho = 40.0;
 
   @override
   void initState() {
@@ -60,15 +64,17 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     _ultimoPedidoExternoId = widget.pedidoExternoId;
 
     setState(() {
-      final idsNovos = filtros.map((f) => f.id).toSet();
-      _filtros.removeWhere((f) => idsNovos.contains(f.id));
+      _filtros.clear(); // descarta filtros antigos (de gráficos anteriores ou manuais)
       _filtros.addAll(filtros);
+      _filtroRapido = null; // descarta o filtro rápido pendente
+      _resetFiltroRapido++; // avisa o FiltroBuilder para limpar os campos
     });
   }
 
   void _adicionarFiltro(FiltroHistorico f) => setState(() => _filtros.add(f));
   void _removerFiltro(String id) =>
       setState(() => _filtros.removeWhere((f) => f.id == id));
+  void _limparTodosFiltros() => setState(() => _filtros.clear());
   void _setFiltroRapido(FiltroHistorico? f) =>
       setState(() => _filtroRapido = f);
 
@@ -164,7 +170,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     return lista;
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
     final finance = context.watch<FinanceProvider>();
     final sugestoesCategorias =
@@ -183,17 +189,18 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final filtrosSobrepostos = MediaQuery.sizeOf(context).height < 500;
-          //print(constraints.maxHeight);
+          final mostrarTitulo = sidebarVisivel(context);
 
           final filtroBuilder = FiltroBuilder(
             filtrosAtivos: _filtros,
             sugestoesCategorias: sugestoesCategorias,
             onAdicionar: _adicionarFiltro,
             onRemover: _removerFiltro,
+            onLimparTodos: _limparTodosFiltros,
             onFiltroRapidoChanged: _setFiltroRapido,
             dataMinima: dataMinima,
             dataMaxima: dataMaxima,
+            resetToken: _resetFiltroRapido,
           );
 
           return Stack(
@@ -201,14 +208,21 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Histórico',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                  SizedBox(
+                    height: _alturaCabecalho,
+                    child: Row(
+                      children: [
+                        if (mostrarTitulo)
+                          Text(
+                            'Histórico',
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                        const Spacer(),
+                        _botaoFiltros(),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  if (!filtrosSobrepostos) filtroBuilder,
-                  if (!filtrosSobrepostos) const SizedBox(height: 16),
-                  if (filtrosSobrepostos) const SizedBox(height: 48),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
@@ -288,25 +302,47 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
                   _linhaTotal(lista),
                 ],
               ),
-              if (filtrosSobrepostos)
-                Positioned(top: 40, left: 0, child: _botaoFiltros()),
-              if (filtrosSobrepostos && _filtrosAbertos)
-                Positioned(
-                  top: 84,
-                  left: 0,
-                  right: 0,
-                  child: Material(
-                    elevation: 8,
-                    borderRadius: BorderRadius.circular(20),
-                    clipBehavior: Clip.antiAlias,
+
+              // Área invisível: clicar em qualquer lugar fora do painel fecha o filtro.
+              if (_filtrosAbertos)
+                Positioned.fill(
+                  key: const ValueKey('filtro_fora'),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _filtrosAbertos = false),
+                  ),
+                ),
+
+              // Offstage mantém o FiltroBuilder montado (preserva os campos do filtro rápido).
+              Positioned(
+                key: const ValueKey('filtro_painel'),
+                top: _alturaCabecalho + 4,
+                left: 0,
+                right: 0,
+                child: Offstage(
+                  offstage: !_filtrosAbertos,
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    heightFactor: 1,
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: constraints.maxHeight * 0.8,
+                      constraints: const BoxConstraints(
+                        maxWidth: _larguraMaximaFiltro,
                       ),
-                      child: SingleChildScrollView(child: filtroBuilder),
+                      child: Material(
+                        elevation: 8,
+                        borderRadius: BorderRadius.circular(20),
+                        clipBehavior: Clip.antiAlias,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: constraints.maxHeight * 0.8,
+                          ),
+                          child: SingleChildScrollView(child: filtroBuilder),
+                        ),
+                      ),
                     ),
                   ),
                 ),
+              ),
             ],
           );
         },

@@ -99,3 +99,41 @@ class BordaComErro extends StatelessWidget {
     );
   }
 }
+
+/// Botão que cicla entre opções com clique esquerdo (avança) e clique direito (volta)
+class SeletorCiclico extends StatelessWidget {
+  final VoidCallback aoAvancar;
+  final VoidCallback aoVoltar;
+  final WidgetBuilder builder;
+  final EdgeInsetsGeometry padding;
+  final double raioBorda;
+
+  const SeletorCiclico({
+    super.key,
+    required this.aoAvancar,
+    required this.aoVoltar,
+    required this.builder,
+    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    this.raioBorda = 12,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Clique para mudar · botão direito para voltar',
+      child: GestureDetector(
+        onSecondaryTap: aoVoltar,
+        child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
+          borderRadius: BorderRadius.circular(raioBorda),
+          onTap: aoAvancar,
+          child: Container(
+            padding: padding,
+            decoration: AppTheme.cardDecoration(),
+            child: builder(context),
+          ),
+        ),
+      ),
+    );
+  }
+}

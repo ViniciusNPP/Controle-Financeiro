@@ -1,5 +1,8 @@
+import 'package:controle_financeiro/utils/dropdown.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:controle_financeiro/widgets/month_year_navigator.dart';
+import 'package:controle_financeiro/widgets/others_widgets.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/filtro_historico.dart';
@@ -11,9 +14,11 @@ class FiltroBuilder extends StatefulWidget {
   final List<String> sugestoesCategorias;
   final ValueChanged<FiltroHistorico> onAdicionar;
   final ValueChanged<String> onRemover;
+  final VoidCallback onLimparTodos;
   final ValueChanged<FiltroHistorico?> onFiltroRapidoChanged;
   final DateTime? dataMinima;
   final DateTime? dataMaxima;
+  final Object? resetToken;
 
   const FiltroBuilder({
     super.key,
@@ -21,9 +26,11 @@ class FiltroBuilder extends StatefulWidget {
     required this.sugestoesCategorias,
     required this.onAdicionar,
     required this.onRemover,
+    required this.onLimparTodos,
     required this.onFiltroRapidoChanged,
     this.dataMinima,
     this.dataMaxima,
+    this.resetToken
   });
 
   @override
@@ -38,6 +45,7 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
   final _campo2Controller = TextEditingController();
   final _data1Controller = TextEditingController();
   final _data2Controller = TextEditingController();
+  final _scrollFiltrosAtivos = ScrollController();
   TextEditingController? _autocompleteController;
   String? _tipoSelecionado;
   Operador _operador = Operador.maior;
@@ -46,13 +54,26 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
   _ModoData _modoData = _ModoData.meses;
   DateTime _mesFiltro = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime _anoFiltro = DateTime(DateTime.now().year);
+  bool _filtrosExpandidos = false; /// false = chips numa linha só; true = chips quebram linha.
 
+  @override
+  void didUpdateWidget(covariant FiltroBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.resetToken != oldWidget.resetToken) {
+      // Adia para depois do build, porque limpar o autocomplete notifica listeners.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(_limparCampos);
+      });
+    }
+  }
+  
   @override
   void dispose() {
     _campo1Controller.dispose();
     _campo2Controller.dispose();
     _data1Controller.dispose();
     _data2Controller.dispose();
+    _scrollFiltrosAtivos.dispose();
     super.dispose();
   }
 
@@ -162,13 +183,101 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
             const SizedBox(height: 14),
             const Divider(height: 1, color: AppColors.border),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [for (final f in widget.filtrosAtivos) _chipFiltroAtivo(f)],
-            ),
+            _areaFiltrosAtivos(),
+            const SizedBox(height: 8),
+            _acoesFiltrosAtivos(),
           ],
         ],
+      ),
+    );
+  }
+
+  /// Chips dos filtros aplicados
+  Widget _areaFiltrosAtivos() {
+    if (_filtrosExpandidos) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [for (final f in widget.filtrosAtivos) _chipFiltroAtivo(f)],
+      );
+    }
+
+    return ScrollConfiguration(
+      // Permite arrastar com o mouse no Windows
+      behavior: ScrollConfiguration.of(context).copyWith(
+        scrollbars: false,
+        dragDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.trackpad,
+          PointerDeviceKind.stylus,
+        },
+      ),
+      child: Scrollbar(
+        controller: _scrollFiltrosAtivos,
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          controller: _scrollFiltrosAtivos,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.only(bottom: 12), // espaço para a barra de rolagem
+          child: Row(
+            children: [
+              for (var i = 0; i < widget.filtrosAtivos.length; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                _chipFiltroAtivo(widget.filtrosAtivos[i]),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Botões pequenos abaixo dos filtros aplicados
+  Widget _acoesFiltrosAtivos() {
+    final corExpandir =
+        Theme.of(context).elevatedButtonTheme.style?.backgroundColor?.resolve({}) ?? AppColors.primary;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        _botaoPequeno(
+          tooltip: 'Remover todos os filtros',
+          corFundo: Colors.red.withValues(alpha: 0.12),
+          onTap: widget.onLimparTodos,
+          child: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
+        ),
+        const SizedBox(width: 8),
+        _botaoPequeno(
+          tooltip: _filtrosExpandidos ? 'Recolher filtros' : 'Expandir filtros',
+          corFundo: corExpandir,
+          onTap: () => setState(() => _filtrosExpandidos = !_filtrosExpandidos),
+          child: Text(
+            _filtrosExpandidos ? '▴' : '▾',
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _botaoPequeno({
+    required String tooltip,
+    required Color corFundo,
+    required VoidCallback onTap,
+    required Widget child,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: corFundo,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
+          borderRadius: BorderRadius.circular(8),
+          onTap: onTap,
+          child: SizedBox(width: 36, height: 28, child: Center(child: child)),
+        ),
       ),
     );
   }
@@ -235,7 +344,13 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
       );
     }
     if (_campo == CampoFiltro.categoria) {
-      return _autocomplete(widget.sugestoesCategorias, chave: const ValueKey('autocomplete_categoria'));
+      return autocompleteEstilizado(
+        key: const ValueKey('autocomplete_categoria'),
+        opcoes: widget.sugestoesCategorias,
+        hint: 'Buscar ${_campo.rotulo.toLowerCase()}...',
+        aoCriarController: (c) => _autocompleteController = c,
+        onChanged: (_) => _emitirFiltroRapido(),
+      );
     }
 
     if (_campo == CampoFiltro.valor) {
@@ -315,68 +430,13 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
   }
 
   Widget _botaoModoData() {
-    return Tooltip(
-      message: 'Clique para mudar · botão direito para voltar',
-      child: GestureDetector(
-        onSecondaryTap: () => _mudarModoData(-1),
-        child: InkWell(
-          mouseCursor: SystemMouseCursors.click,
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => _mudarModoData(1),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: AppTheme.cardDecoration(),
-            child: Text(
-              _rotuloModoData,
-              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primary),
-            ),
-          ),
-        ),
+    return SeletorCiclico(
+      aoAvancar: () => _mudarModoData(1),
+      aoVoltar: () => _mudarModoData(-1),
+      builder: (context) => Text(
+        _rotuloModoData,
+        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primary),
       ),
-    );
-  }
-
-  Widget _autocomplete(List<String> opcoes, {required Key chave}) {
-    return Autocomplete<String>(
-      key: chave,
-      optionsBuilder: (TextEditingValue value) {
-        if (value.text.isEmpty) return opcoes;
-        return opcoes.where((o) => o.toLowerCase().contains(value.text.toLowerCase()));
-      },
-      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-        _autocompleteController = controller;
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          decoration: InputDecoration(hintText: 'Buscar ${_campo.rotulo.toLowerCase()}...'),
-          onChanged: (_) => _emitirFiltroRapido(),
-        );
-      },
-      optionsViewBuilder: (context, onSelected, options) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(14),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 220, minWidth: 220),
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                itemCount: options.length,
-                itemBuilder: (context, i) {
-                  final opcao = options.elementAt(i);
-                  return ListTile(
-                    dense: true,
-                    title: Text(opcao),
-                    onTap: () => onSelected(opcao),
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
