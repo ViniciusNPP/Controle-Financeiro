@@ -49,7 +49,7 @@ class CategorySelector extends StatelessWidget {
                   Expanded(
                     child: Text(
                       categoriaSelecionada?.nome ??
-                          (habilitado ? 'Escolha a categoria' : 'Escolha o tipo primeiro'),
+                          (habilitado ? 'Escolha a categoria' : 'Escolha o tipo'),
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,

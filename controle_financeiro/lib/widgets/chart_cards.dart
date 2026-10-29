@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+
 import '../models/categoria.dart';
 import '../models/transacao.dart';
 import '../theme/app_theme.dart';
@@ -45,6 +46,8 @@ class _BarChartCardState extends State<BarChartCard> {
   static const _janelaDuploClique = Duration(milliseconds: 350);
   int? _ultimoIndiceTocado;
   DateTime? _instanteUltimoToque;
+  DateTime? _baldeFixado;
+  DateTime? _baldeHover; // barra sob o mouse
 
   bool get _temSeletor => widget.tipo != null && widget.categorias != null;
 
@@ -77,13 +80,15 @@ class _BarChartCardState extends State<BarChartCard> {
     setState(() => _categoriaSelecionada = categoria);
   }
 
-  /// Reconhece duplo clique comparando o índice tocado agora com o último, e o tempo decorrido com _janelaDuploClique.
+  /// Clique simples: fixa/solta o valor da barra. Duplo clique: abre o Histórico.
   void _registrarToqueBarra(int indice, DateTime balde) {
     final agora = DateTime.now();
     final ultimoIndice = _ultimoIndiceTocado;
     final ultimoInstante = _instanteUltimoToque;
 
+    // Sem onAbrirHistorico (gráfico de Saldo) não existe duplo clique.
     final ehDuploClique =
+        widget.onAbrirHistorico != null &&
         ultimoIndice == indice &&
         ultimoInstante != null &&
         agora.difference(ultimoInstante) <= _janelaDuploClique;
@@ -96,12 +101,17 @@ class _BarChartCardState extends State<BarChartCard> {
         balde,
         widget.filtro.agruparPorAno,
       );
-      widget.onAbrirHistorico?.call(data1, data2, _categoriaSelecionada);
+      widget.onAbrirHistorico!(data1, data2, _categoriaSelecionada);
       return;
     }
 
     _ultimoIndiceTocado = indice;
     _instanteUltimoToque = agora;
+    // Clicar de novo na mesma barra solta o valor; em outra barra, move a fixação.
+    setState(() {
+      _baldeHover = null; // o clique tem efeito imediato, mesmo com o mouse em cima
+      _baldeFixado = _baldeFixado == balde ? null : balde;
+    });
   }
 
   @override
@@ -119,6 +129,12 @@ class _BarChartCardState extends State<BarChartCard> {
     final total = valores.fold<double>(0, (a, b) => a + b);
 
     final quantidadeBarras = valores.length;
+
+    // Posição da barra fixada (-1 = nenhuma)
+    final posicaoFixada = _baldeFixado == null ? -1 : chaves.indexOf(_baldeFixado!);
+    if (_baldeFixado != null && posicaoFixada < 0) _baldeFixado = null;
+    
+    final posicaoHover = _baldeHover == null ? -1 : chaves.indexOf(_baldeHover!);
 
     final minValor = valores.isEmpty
         ? 0.0
@@ -214,6 +230,7 @@ class _BarChartCardState extends State<BarChartCard> {
                         ],
                       ),
                       barTouchData: BarTouchData(
+                        handleBuiltInTouches: false,
                         touchTooltipData: BarTouchTooltipData(
                           getTooltipItem: (group, groupIndex, rod, rodIndex) =>
                               BarTooltipItem(
@@ -227,18 +244,32 @@ class _BarChartCardState extends State<BarChartCard> {
                                 ),
                               ),
                         ),
-                        touchCallback: widget.onAbrirHistorico == null
-                            ? null
-                            : (event, response) {
-                                if (event is! FlTapUpEvent) return;
-                                final indice =
-                                    response?.spot?.touchedBarGroupIndex;
-                                if (indice == null ||
-                                    indice < 0 ||
-                                    indice >= chaves.length)
-                                  return;
-                                _registrarToqueBarra(indice, chaves[indice]);
-                              },
+                        touchCallback: (event, response) {
+                          final indice = response?.spot?.touchedBarGroupIndex;
+                          final valido =
+                              indice != null &&
+                              indice >= 0 &&
+                              indice < chaves.length;
+
+                          // Mouse passando por cima: mostra o valor temporariamente.
+                          if (event is FlPointerHoverEvent ||
+                              event is FlPointerEnterEvent ||
+                              event is FlPointerExitEvent) {
+                            final novo =
+                                (event is FlPointerExitEvent || !valido)
+                                ? null
+                                : chaves[indice];
+                            if (novo != _baldeHover) {
+                              setState(() => _baldeHover = novo);
+                            }
+                            return;
+                          }
+
+                          // Clique simples: fixa/solta. Duplo clique: abre o Histórico.
+                          if (event is FlTapUpEvent && valido) {
+                            _registrarToqueBarra(indice, chaves[indice]);
+                          }
+                        },
                       ),
                       titlesData: FlTitlesData(
                         leftTitles: const AxisTitles(
@@ -279,6 +310,10 @@ class _BarChartCardState extends State<BarChartCard> {
                         for (var i = 0; i < quantidadeBarras; i++)
                           BarChartGroupData(
                             x: i,
+                            showingTooltipIndicators:
+                                (i == posicaoFixada || i == posicaoHover)
+                                ? [0]
+                                : const [],
                             barRods: [
                               BarChartRodData(
                                 toY: valores[i],

@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/utils/sidebar_utils.dart';
 import 'package:controle_financeiro/widgets/others_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -153,15 +154,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Center(
       child: SingleChildScrollView(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: double.infinity),
+          constraints: const BoxConstraints(maxWidth: 580),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Novo lançamento',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 16),
+              if (sidebarVisivel(context)) ...[
+                Text(
+                  'Novo lançamento',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 16),
+              ],
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: AppTheme.cardDecoration(),

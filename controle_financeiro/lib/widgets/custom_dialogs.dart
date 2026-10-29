@@ -3,6 +3,7 @@ import 'package:controle_financeiro/utils/app_shortcuts.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 //Widget que será reponsável por construir caixas de diálogos dos detalhes dos Lançamentos/Categorias
 class DetailDialogShell extends StatelessWidget {
@@ -38,6 +39,22 @@ class DetailDialogShell extends StatelessWidget {
     this.pagina = 0,
     this.onPagina,
   });
+
+  bool get _ehCelular =>
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
+
+  /// Arrastar para a esquerda avança a página; para a direita, volta.
+  void _aoArrastar(DragEndDetails detalhes) {
+    final onPagina = this.onPagina;
+    if (children2 == null || onPagina == null) return;
+    final velocidade = detalhes.primaryVelocity ?? 0;
+    if (velocidade < -300 && pagina < 1) {
+      onPagina(pagina + 1);
+    } else if (velocidade > 300 && pagina > 0) {
+      onPagina(pagina - 1);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,51 +95,58 @@ class DetailDialogShell extends StatelessWidget {
                     maxWidth: maxWidth,
                     maxHeight: MediaQuery.sizeOf(context).height * 0.9,
                   ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          titulo,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        if (children2 != null && onPagina != null) ...[
-                          const SizedBox(height: 8),
-                          PaginadorDialog(
-                            pagina: pagina,
-                            total: 2,
-                            onPagina: onPagina!,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onHorizontalDragEnd:
+                        (_ehCelular && children2 != null && onPagina != null)
+                        ? _aoArrastar
+                        : null,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            titulo,
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                          if (children2 != null && onPagina != null) ...[
+                            const SizedBox(height: 8),
+                            PaginadorDialog(
+                              pagina: pagina,
+                              total: 2,
+                              onPagina: onPagina!,
+                            ),
+                          ],
+                          const SizedBox(height: 22),
+                          for (final linha
+                              in (pagina == 1 && children2 != null
+                                  ? children2!
+                                  : children)) ...[
+                            linha,
+                            const SizedBox(height: 16),
+                          ],
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            child: Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                botaoSecundario,
+                                Wrap(
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  children: botoesPrincipais,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
-                        const SizedBox(height: 22),
-                        for (final linha
-                            in (pagina == 1 && children2 != null
-                                ? children2!
-                                : children)) ...[
-                          linha,
-                          const SizedBox(height: 16),
-                        ],
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Wrap(
-                            alignment: WrapAlignment.spaceBetween,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: [
-                              botaoSecundario,
-                              Wrap(
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: botoesPrincipais,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),

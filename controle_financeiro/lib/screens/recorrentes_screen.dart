@@ -6,18 +6,11 @@ import '../models/transacao.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
+import '../widgets/layout_dois_containers.dart';
 import '../widgets/transacao_detail_dialog.dart';
 
-class RecorrentesScreen extends StatefulWidget {
+class RecorrentesScreen extends StatelessWidget {
   const RecorrentesScreen({super.key});
-
-  @override
-  State<RecorrentesScreen> createState() => _RecorrentesScreenState();
-}
-
-class _RecorrentesScreenState extends State<RecorrentesScreen> {
-  bool _mostrarFinalizadasCompacto = false;
-  static const _minWidth = 500.0;
 
   @override
   Widget build(BuildContext context) {
@@ -29,170 +22,25 @@ class _RecorrentesScreenState extends State<RecorrentesScreen> {
         finance.dados.recorrentes.where((r) => r.finalizado).toList()
           ..sort((a, b) => b.dataRecorrencia.compareTo(a.dataRecorrencia));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Recorrente', style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 4),
-        Text(
-          'Toque numa recorrência para editar ou excluir',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 16),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth >= _minWidth) {
-                final blocoAndamento = _blocoRecorrentes(
-                  context,
-                  titulo: 'Em andamento',
-                  lista: emAndamento,
-                  indicadorCor: AppColors.entrada,
-                );
-                final blocoFinalizadas = _blocoRecorrentes(
-                  context,
-                  titulo: 'Finalizadas',
-                  lista: finalizadas,
-                  indicadorCor: AppColors.textSecondary,
-                );
-
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: blocoAndamento),
-                    const SizedBox(width: 20),
-                    Expanded(child: blocoFinalizadas),
-                  ],
-                );
-              }
-
-              final listaCompacto = _mostrarFinalizadasCompacto
-                  ? finalizadas
-                  : emAndamento;
-              final tituloCompacto = _mostrarFinalizadasCompacto
-                  ? 'Finalizadas'
-                  : 'Em andamento';
-              final corCompacto = _mostrarFinalizadasCompacto
-                  ? AppColors.textSecondary
-                  : AppColors.entrada;
-
-              return _blocoRecorrentes(
-                context,
-                titulo: tituloCompacto,
-                lista: listaCompacto,
-                indicadorCor: corCompacto,
-                onTrocar: () => setState(
-                  () => _mostrarFinalizadasCompacto =
-                      !_mostrarFinalizadasCompacto,
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+    return TelaDuasListas(
+      titulo: 'Recorrências',
+      primeiro: _config('Em andamento', AppColors.entrada, emAndamento),
+      segundo: _config('Finalizadas', AppColors.textSecondary, finalizadas),
     );
   }
 
-  Widget _blocoRecorrentes(
-    BuildContext context, {
-    required String titulo,
-    required List<LancamentoRecorrente> lista,
-    required Color indicadorCor,
-    VoidCallback? onTrocar, // se não-nulo, usa o layout "compacto" do cabeçalho
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: onTrocar != null
-                      ? [
-                          Text(
-                            '${lista.length}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: indicadorCor,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            titulo,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ]
-                      : [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: indicadorCor,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            titulo,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ],
-                ),
-                if (onTrocar != null)
-                  InkWell(
-                    mouseCursor: SystemMouseCursors.click,
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: onTrocar,
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.sync_alt_rounded,
-                        size: 18,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  )
-                else
-                  Text(
-                    '${lista.length}',
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (lista.isNotEmpty) _cabecalhoTabela(),
-          Expanded(
-            child: ListView.builder(
-              itemCount: lista.isEmpty ? 1 : lista.length,
-              itemBuilder: (context, index) {
-                if (lista.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Text(
-                      'Nenhuma recorrência ainda.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  );
-                }
-                return _itemRecorrente(context, lista[index]);
-              },
-            ),
-          ),
-        ],
-      ),
+  ConfigBloco _config(
+    String titulo,
+    Color cor,
+    List<LancamentoRecorrente> lista,
+  ) {
+    return ConfigBloco(
+      titulo: titulo,
+      cor: cor,
+      quantidade: lista.length,
+      mensagemVazia: 'Nenhuma recorrência ainda.',
+      cabecalhoTabela: _cabecalhoTabela(),
+      itemBuilder: (context, i) => _itemRecorrente(context, lista[i]),
     );
   }
 

@@ -63,7 +63,7 @@ class _HomeShellState extends State<HomeShell> {
       RecorrentesScreen(),
       CategoriasScreen()
     ];
-    final titulos = ['Adicionar lançamento', 'Gráficos', 'Histórico', 'Categorias', 'Recorrente'];
+    final titulos = ['Adicionar lançamento', 'Gráficos', 'Histórico', 'Recorrências', 'Categorias'];
 
     final conteudo = IndexedStack(key: _conteudoKey, index: _aba, children: telas);
     final sidebar = AppSidebarContent(

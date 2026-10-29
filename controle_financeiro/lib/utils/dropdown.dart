@@ -43,6 +43,7 @@ Widget autocompleteEstilizado({
 }) {
   return Autocomplete<String>(
     key: key,
+    onSelected: (opcao) => onChanged(opcao),
     optionsBuilder: (TextEditingValue value) {
       if (value.text.isEmpty) return opcoes;
       return opcoes.where(

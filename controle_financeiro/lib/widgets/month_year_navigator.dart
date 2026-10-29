@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
+import 'package:flutter/foundation.dart';
 
 enum GranularidadeNavegador { mes, ano }
 
@@ -24,6 +25,10 @@ class MonthYearNavigator extends StatelessWidget {
     this.dataMinima,
     this.dataMaxima,
   });
+
+  bool get _mobile =>
+    defaultTargetPlatform == TargetPlatform.android ||
+    defaultTargetPlatform == TargetPlatform.iOS;
 
   Future<void> _abrirSeletor(BuildContext context) async {
     final escolhida = granularidade == GranularidadeNavegador.mes
@@ -76,10 +81,12 @@ class MonthYearNavigator extends StatelessWidget {
             child: Text(rotulo!, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           ),
         Tooltip(
-          message: 'Botão direito (ou toque longo) para escolher direto',
+          message: _mobile
+              ? 'Toque para escolher a data'
+              : 'Botão direito para escolher a data',
           child: GestureDetector(
-            onSecondaryTap: () => _abrirSeletor(context),
-            onLongPress: () => _abrirSeletor(context),
+            onTap: _mobile ? () => _abrirSeletor(context) : null,
+            onSecondaryTap: _mobile ? null : () => _abrirSeletor(context),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(color: AppColors.disabledFill, borderRadius: BorderRadius.circular(12)),

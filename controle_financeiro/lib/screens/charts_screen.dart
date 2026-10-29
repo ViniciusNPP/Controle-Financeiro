@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/utils/sidebar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
@@ -125,7 +126,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (larguraSuficiente) ...[
+            if (sidebarVisivel(context)) ...[
               Text('Gráficos', style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 16),
             ],
