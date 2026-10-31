@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:controle_financeiro/widgets/month_year_navigator.dart';
 import 'package:flutter/material.dart';
 import '../models/transacao.dart';
@@ -135,55 +136,37 @@ class _PeriodSelectorState extends State<PeriodSelector> {
     );
   }
 
-  Widget _botaoModo(String label, _ModoPeriodo modo) {
-    final selecionado = _modo == modo;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-          setState(() => _modo = modo);
-          _emitir();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          decoration: BoxDecoration(
-            color: selecionado ? AppColors.primary : AppColors.disabledFill,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selecionado ? Colors.white : AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
+    Widget _botaoModo(String label, _ModoPeriodo modo) {
+    return ChipAnimado(
+      label: label,
+      selecionado: _modo == modo,
+      onTap: () {
+        setState(() => _modo = modo);
+        _emitir();
+      },
+      fundoSelecionado: AppColors.primary,
+      fundoNormal: AppColors.disabledFill,
+      textoSelecionado: Colors.white,
+      textoNormal: AppColors.textSecondary,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      raio: 12,
     );
   }
 
   Widget _chip(String label, bool selecionado, VoidCallback onTap) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: selecionado ? AppColors.primaryLight.withValues(alpha:0.14) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: selecionado ? AppColors.primary : AppColors.border),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: selecionado ? AppColors.primary : AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
+    return ChipAnimado(
+      label: label,
+      selecionado: selecionado,
+      onTap: onTap,
+      fundoSelecionado: AppColors.primaryLight.withValues(alpha: 0.14),
+      fundoNormal: AppColors.primaryLight.withValues(alpha: 0),
+      textoSelecionado: AppColors.primary,
+      textoNormal: AppColors.textSecondary,
+      bordaSelecionada: AppColors.primary,
+      bordaNormal: AppColors.border,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      raio: 10,
+      fontSize: 13,
     );
   }
 

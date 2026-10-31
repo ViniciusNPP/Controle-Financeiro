@@ -1,5 +1,8 @@
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math';
+
 import '../models/categoria.dart';
 import '../models/recorrencia.dart';
 import '../models/transacao.dart';
@@ -8,6 +11,52 @@ import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 import '../widgets/layout_dois_containers.dart';
 import '../widgets/transacao_detail_dialog.dart';
+import '../utils/dialog_fade.dart';
+
+enum _Campo { nome, proxima, termino, valor }
+
+class _Coluna {
+  const _Coluna(
+    this.campo,
+    this.rotulo,
+    this.flex,
+    this.larguraMin,
+    this.prioridade,
+    this.alinhamento,
+  );
+
+  final _Campo campo;
+  final String rotulo;
+  final int flex;
+  final double larguraMin; // espaço mínimo para o valor não ser cortado
+  final int prioridade; // 1 = mais importante
+  final TextAlign alinhamento;
+}
+
+// Ordem de exibição. CAMPO , RÓTULO , FLEX , LARGURA MÍNIMA , PRIORIDADE , ALINHAMENTO
+const _colunas = [
+  _Coluna(_Campo.nome, 'NOME', 3, 110, 1, TextAlign.left),
+  _Coluna(_Campo.proxima, 'PRÓXIMA', 2, 80, 2, TextAlign.center),
+  _Coluna(_Campo.termino, 'TÉRMINO', 2, 80, 3, TextAlign.center),
+  _Coluna(_Campo.valor, 'VALOR', 2, 100, 1, TextAlign.right),
+];
+
+const _larguraChevron = 20.0; // SizedBox(2) + ícone de 18
+
+/// Tira as colunas de menor importância e volta quando alarga a tela
+List<_Coluna> _colunasVisiveis(double largura) {
+  final maxNivel = _colunas.map((c) => c.prioridade).reduce(max);
+  for (var nivel = maxNivel; nivel > 1; nivel--) {
+    final visiveis = _colunas.where((c) => c.prioridade <= nivel).toList();
+    final somaFlex = visiveis.fold<int>(0, (s, c) => s + c.flex);
+    final cabe = visiveis.every(
+      (c) => (largura - _larguraChevron) * c.flex / somaFlex >= c.larguraMin,
+    );
+    if (cabe) return visiveis;
+  }
+  // Nome e Valor nunca saem
+  return _colunas.where((c) => c.prioridade == 1).toList();
+}
 
 class RecorrentesScreen extends StatelessWidget {
   const RecorrentesScreen({super.key});
@@ -44,7 +93,7 @@ class RecorrentesScreen extends StatelessWidget {
     );
   }
 
-  Widget _cabecalhoTabela() {
+    Widget _cabecalhoTabela() {
     const estilo = TextStyle(
       fontSize: 11.5,
       fontWeight: FontWeight.w700,
@@ -52,49 +101,19 @@ class RecorrentesScreen extends StatelessWidget {
     );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Text(
-              'NOME',
-              style: estilo,
-              overflow: TextOverflow.ellipsis,
-              softWrap: false,
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final colunas = _colunasVisiveis(c.maxWidth);
+          return TrocaFadeThrough(
+            chave: colunas.map((col) => col.campo.name).join(','),
+            child: Row(
+              children: [
+                for (final col in colunas) _texto(col, col.rotulo, estilo),
+                const SizedBox(width: _larguraChevron),
+              ],
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              'PRÓXIMA',
-              style: estilo,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              softWrap: false,
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              'TÉRMINO',
-              style: estilo,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              softWrap: false,
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              'VALOR',
-              style: estilo,
-              textAlign: TextAlign.right,
-              overflow: TextOverflow.ellipsis,
-              softWrap: false,
-            ),
-          ),
-          const SizedBox(width: 18),
-        ],
+          );
+        },
       ),
     );
   }
@@ -103,87 +122,93 @@ class RecorrentesScreen extends StatelessWidget {
     final cor = r.tipo == TipoLancamento.entrada
         ? AppColors.entrada
         : AppColors.saida;
-    final termino = r.dataTermino == null
-        ? '-'
-        : Formatters.data(r.dataTermino!);
 
-    return InkWell(
-      mouseCursor: SystemMouseCursors.click,
-      borderRadius: BorderRadius.circular(12),
-      onTap: () => showDialog(
-        context: context,
-        builder: (_) => TransacaoDetailDialog(
-          transacao: _transacaoFake(r),
-          recorrente: true,
-        ),
-      ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        decoration: BoxDecoration(
-          color: AppColors.background,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8), // a margem saiu do Container
+      child: HoverAnimado(
+        raio: 12,
+        child: InkWell(
+          hoverColor: Colors.transparent, // o hover é do HoverAnimado
+          mouseCursor: SystemMouseCursors.click,
           borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 3,
-              child: Text(
-                r.descricao?.isNotEmpty == true
-                    ? r.descricao!
-                    : r.categoriaNome,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-                softWrap: false,
-              ),
+          onTap: () => mostrarDialogo(
+            context: context,
+            builder: (_) => TransacaoDetailDialog(
+              transacao: _transacaoFake(r),
+              recorrente: true,
             ),
-            Expanded(
-              flex: 2,
-              child: Text(
-                Formatters.data(r.dataRecorrencia),
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13.5),
-                overflow: TextOverflow.ellipsis,
-                softWrap: false,
-              ),
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(12),
             ),
-            Expanded(
-              flex: 2,
-              child: Text(
-                termino,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13.5),
-                overflow: TextOverflow.ellipsis,
-                softWrap: false,
-              ),
+            child: LayoutBuilder(
+              builder: (context, c) {
+                final colunas = _colunasVisiveis(c.maxWidth);
+                return TrocaFadeThrough(
+                  chave: colunas.map((col) => col.campo.name).join(','),
+                  child: Row(
+                    children: [
+                      for (final col in colunas) _celula(col, r, cor),
+                      const SizedBox(width: 2),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-            Expanded(
-              flex: 2,
-              child: Text(
-                Formatters.moeda(r.valor),
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  color: cor,
-                ),
-                overflow: TextOverflow.ellipsis,
-                softWrap: false,
-              ),
-            ),
-            const SizedBox(width: 2),
-            const Icon(
-              Icons.chevron_right_rounded,
-              size: 18,
-              color: AppColors.textSecondary,
-            ),
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _texto(_Coluna col, String texto, TextStyle estilo) {
+    return Expanded(
+      flex: col.flex,
+      child: Text(
+        texto,
+        textAlign: col.alinhamento,
+        style: estilo,
+        overflow: TextOverflow.ellipsis,
+        softWrap: false,
+      ),
+    );
+  }
+
+  Widget _celula(_Coluna col, LancamentoRecorrente r, Color cor) {
+    switch (col.campo) {
+      case _Campo.nome:
+        return _texto(
+          col,
+          r.descricao?.isNotEmpty == true ? r.descricao! : r.categoriaNome,
+          const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        );
+      case _Campo.proxima:
+        return _texto(
+          col,
+          Formatters.data(r.dataRecorrencia),
+          const TextStyle(fontSize: 13.5),
+        );
+      case _Campo.termino:
+        return _texto(
+          col,
+          r.dataTermino == null ? '-' : Formatters.data(r.dataTermino!),
+          const TextStyle(fontSize: 13.5),
+        );
+      case _Campo.valor:
+        return _texto(
+          col,
+          Formatters.moeda(r.valor),
+          TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: cor),
+        );
+    }
   }
 
   /// Monta uma Transacao

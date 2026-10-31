@@ -1,4 +1,5 @@
 import 'package:controle_financeiro/utils/sidebar_utils.dart';
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
@@ -25,6 +26,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
   FiltroPeriodo? _filtro;
   int _paginaAtual = 0;
   int _totalPaginas = 0;
+  String? _categoriaEntradas;
+  String? _categoriaSaidas;
   late PageController _pageController;
 
   @override
@@ -34,30 +37,45 @@ class _ChartsScreenState extends State<ChartsScreen> {
   }
 
   /// Monta os FiltroHistorico a partir do período inteiro atualmente selecionado nos Gráficos e dispara a navegação.
-  void _abrirHistoricoPizza(FiltroPeriodo filtro, String categoria, TipoLancamento tipo) {
+  void _abrirHistoricoPizza(
+    FiltroPeriodo filtro,
+    String categoria,
+    TipoLancamento tipo,
+  ) {
     final onAbrirHistorico = widget.onAbrirHistorico;
     if (onAbrirHistorico == null) return;
 
-    final ultimoDiaIncluido = filtro.fimExclusivo.subtract(const Duration(days: 1));
-    onAbrirHistorico(filtrosHistoricoDoGrafico(
-      data1: filtro.inicio,
-      data2: ultimoDiaIncluido,
-      tipo: tipo,
-      categoria: categoria,
-    ));
+    final ultimoDiaIncluido = filtro.fimExclusivo.subtract(
+      const Duration(days: 1),
+    );
+    onAbrirHistorico(
+      filtrosHistoricoDoGrafico(
+        data1: filtro.inicio,
+        data2: ultimoDiaIncluido,
+        tipo: tipo,
+        categoria: categoria,
+      ),
+    );
   }
 
   /// Monta os FiltroHistorico a partir de um balde específico
-  void _abrirHistoricoBarra(DateTime data1, DateTime data2, TipoLancamento tipo, String? categoria) {
+  void _abrirHistoricoBarra(
+    DateTime data1,
+    DateTime data2,
+    TipoLancamento tipo,
+    String? categoria,
+  ) {
     final onAbrirHistorico = widget.onAbrirHistorico;
     if (onAbrirHistorico == null) return;
 
-    onAbrirHistorico(filtrosHistoricoDoGrafico(
-      data1: data1,
-      data2: data2,
-      tipo: tipo,
-      categoria: categoria,
-    ));
+    onAbrirHistorico(
+      filtrosHistoricoDoGrafico(
+        data1: data1,
+        data2: data2,
+        tipo: tipo,
+        categoria: categoria,
+      ),
+    );
   }
 
   @override
@@ -66,8 +84,16 @@ class _ChartsScreenState extends State<ChartsScreen> {
     final transacoes = finance.transacoes;
     final filtro = _filtro ?? PeriodoUtils.mes(DateTime.now());
 
-    final saidasPorCategoria = Agregador.porCategoria(transacoes, filtro, TipoLancamento.saida);
-    final entradasPorCategoria = Agregador.porCategoria(transacoes, filtro, TipoLancamento.entrada);
+    final saidasPorCategoria = Agregador.porCategoria(
+      transacoes,
+      filtro,
+      TipoLancamento.saida,
+    );
+    final entradasPorCategoria = Agregador.porCategoria(
+      transacoes,
+      filtro,
+      TipoLancamento.entrada,
+    );
     final categoriasEntrada = finance.categoriasPorTipo(TipoLancamento.entrada);
     final categoriasSaida = finance.categoriasPorTipo(TipoLancamento.saida);
 
@@ -79,8 +105,14 @@ class _ChartsScreenState extends State<ChartsScreen> {
         cor: AppColors.entrada,
         tipo: TipoLancamento.entrada,
         categorias: categoriasEntrada,
-        onAbrirHistorico: (data1, data2, categoria) =>
-            _abrirHistoricoBarra(data1, data2, TipoLancamento.entrada, categoria),
+        onAbrirHistorico: (data1, data2, categoria) => _abrirHistoricoBarra(
+          data1,
+          data2,
+          TipoLancamento.entrada,
+          categoria,
+        ),
+        categoriaInicial: _categoriaEntradas,
+        onCategoriaChanged: (c) => _categoriaEntradas = c,
       ),
       BarChartCard(
         titulo: 'Saídas',
@@ -91,6 +123,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
         categorias: categoriasSaida,
         onAbrirHistorico: (data1, data2, categoria) =>
             _abrirHistoricoBarra(data1, data2, TipoLancamento.saida, categoria),
+        categoriaInicial: _categoriaSaidas,
+        onCategoriaChanged: (c) => _categoriaSaidas = c,
       ),
       BarChartCard(
         titulo: 'Saldo',
@@ -102,12 +136,14 @@ class _ChartsScreenState extends State<ChartsScreen> {
       CategoryPieChartCard(
         titulo: 'Saídas específicas (R\$)',
         dados: saidasPorCategoria,
-        onAbrirHistorico: (categoria) => _abrirHistoricoPizza(filtro, categoria, TipoLancamento.saida),
+        onAbrirHistorico: (categoria) =>
+            _abrirHistoricoPizza(filtro, categoria, TipoLancamento.saida),
       ),
       CategoryPieChartCard(
         titulo: 'Entradas específicas (R\$)',
         dados: entradasPorCategoria,
-        onAbrirHistorico: (categoria) => _abrirHistoricoPizza(filtro, categoria, TipoLancamento.entrada),
+        onAbrirHistorico: (categoria) =>
+            _abrirHistoricoPizza(filtro, categoria, TipoLancamento.entrada),
       ),
     ];
 
@@ -118,7 +154,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
       graficos[3], // Saídas específicas
       graficos[4], // Entradas específicas
     ];
-    
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final larguraSuficiente = constraints.maxWidth >= 500;
@@ -127,7 +163,10 @@ class _ChartsScreenState extends State<ChartsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (sidebarVisivel(context)) ...[
-              Text('Gráficos', style: Theme.of(context).textTheme.headlineMedium),
+              Text(
+                'Gráficos',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
               const SizedBox(height: 16),
             ],
             PeriodSelector(
@@ -138,10 +177,23 @@ class _ChartsScreenState extends State<ChartsScreen> {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, restante) {
-                  const alturaMinimaGrade = 340.0; // ajuste esse número se quiser trocar
-                  final alturaSuficiente = restante.maxHeight >= alturaMinimaGrade;
+                  const alturaMinimaGrade = 340.0;
+                  final alturaSuficiente =
+                      restante.maxHeight >= alturaMinimaGrade;
                   final usarGrade = larguraSuficiente && alturaSuficiente;
-                  return usarGrade ? _gradeDesktop(graficos) : _carrosselMobile(graficosCarrossel);
+                  return TrocaFadeThrough(
+                    // Fade ao trocar grade ↔ carrossel ou ao mudar o período.
+                    chave: Object.hash(
+                      usarGrade,
+                      filtro.inicio,
+                      filtro.fimExclusivo,
+                      filtro.agruparPorAno,
+                    ),
+                    expandir: true,
+                    child: usarGrade
+                        ? _gradeDesktop(graficos)
+                        : _carrosselMobile(graficosCarrossel),
+                  );
                 },
               ),
             ),
@@ -187,7 +239,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
   Widget _carrosselMobile(List<Widget> graficos) {
     _pageController = PageController(initialPage: _paginaAtual);
     _totalPaginas = graficos.length;
-    
+
     return Column(
       children: [
         Expanded(
@@ -200,10 +252,28 @@ class _ChartsScreenState extends State<ChartsScreen> {
                   _paginaAtual = i;
                   // print("Página atual: $_paginaAtual");
                 }),
-                children: [for (final g in graficos) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: g)],
+                children: [
+                  for (final g in graficos)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: g,
+                    ),
+                ],
               ),
-              Positioned(left: 0, child: _setaCarrossel(Icons.chevron_left_rounded, () => _navegarPagina(-1))),
-              Positioned(right: 0, child: _setaCarrossel(Icons.chevron_right_rounded, () => _navegarPagina(1))),
+              Positioned(
+                left: 0,
+                child: _setaCarrossel(
+                  Icons.chevron_left_rounded,
+                  () => _navegarPagina(-1),
+                ),
+              ),
+              Positioned(
+                right: 0,
+                child: _setaCarrossel(
+                  Icons.chevron_right_rounded,
+                  () => _navegarPagina(1),
+                ),
+              ),
             ],
           ),
         ),
@@ -217,7 +287,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
                 width: _paginaAtual == i ? 20 : 6,
                 height: 6,
                 decoration: BoxDecoration(
-                  color: _paginaAtual == i ? AppColors.primary : AppColors.border,
+                  color: _paginaAtual == i
+                      ? AppColors.primary
+                      : AppColors.border,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -229,28 +301,49 @@ class _ChartsScreenState extends State<ChartsScreen> {
   }
 
   void _navegarPagina(int direcao) {
-    final naPonta = direcao < 0 ? _paginaAtual == 0 : _paginaAtual == _totalPaginas - 1;
+    final naPonta = direcao < 0
+        ? _paginaAtual == 0
+        : _paginaAtual == _totalPaginas - 1;
     if (naPonta) {
       final destino = direcao < 0 ? _totalPaginas - 1 : 0;
-      _pageController.animateToPage(destino, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+      _pageController.animateToPage(
+        destino,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
     } else if (direcao < 0) {
-      _pageController.previousPage(duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
     } else {
-      _pageController.nextPage(duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
     }
   }
 
   Widget _setaCarrossel(IconData icone, VoidCallback aoTocar) {
-    return Material(
-      color: Colors.black.withValues(alpha:0.06),
-      shape: const CircleBorder(),
-      child: InkWell(
-        mouseCursor: SystemMouseCursors.click,
-        customBorder: const CircleBorder(),
-        onTap: aoTocar,
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(icone, size: 22, color: AppColors.textSecondary.withValues(alpha:0.8)),
+    return HoverAnimado(
+      raio: 20,
+      escala: 1.12,
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.06),
+        shape: const CircleBorder(),
+        child: InkWell(
+          hoverColor: Colors.transparent,
+          mouseCursor: SystemMouseCursors.click,
+          customBorder: const CircleBorder(),
+          onTap: aoTocar,
+          child: Padding(
+            padding: const EdgeInsets.all(6),
+            child: Icon(
+              icone,
+              size: 22,
+              color: AppColors.textSecondary.withValues(alpha: 0.8),
+            ),
+          ),
         ),
       ),
     );

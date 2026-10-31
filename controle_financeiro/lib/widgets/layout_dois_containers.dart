@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../utils/sidebar_utils.dart';
@@ -9,8 +10,12 @@ class ConfigBloco {
   final int quantidade;
   final IndexedWidgetBuilder itemBuilder;
   final String mensagemVazia;
-  final Widget? cabecalhoTabela;  /// Aparece acima da lista, só quando há itens
-  final Widget? rodape;  /// Fixo abaixo da lista
+  final Widget? cabecalhoTabela;
+
+  /// Aparece acima da lista, só quando há itens
+  final Widget? rodape;
+
+  /// Fixo abaixo da lista
 
   const ConfigBloco({
     required this.titulo,
@@ -42,10 +47,18 @@ class TelaDuasListas extends StatefulWidget {
 
 class _TelaDuasListasState extends State<TelaDuasListas> {
   bool _mostrarSegundoCompacto = false;
-  static const _minWidth = 500.0; /// Largura abaixo da qual passa para o modo compacto
-  static const _larguraMaximaBloco = double.infinity; /// Largura máxima de cada container
-  static const _alturaMaximaBloco = double.infinity; /// Altura máxima de cada container
-  static const _espacoEntreBlocos = 48.0; /// Espaço entre os dois containers
+  static const _minWidth = 500.0;
+
+  /// Largura abaixo da qual passa para o modo compacto
+  static const _larguraMaximaBloco = double.infinity;
+
+  /// Largura máxima de cada container
+  static const _alturaMaximaBloco = double.infinity;
+
+  /// Altura máxima de cada container
+  static const _espacoEntreBlocos = 48.0;
+
+  /// Espaço entre os dois containers
 
   Widget _limitar(Widget bloco) => ConstrainedBox(
     constraints: const BoxConstraints(
@@ -61,35 +74,54 @@ class _TelaDuasListasState extends State<TelaDuasListas> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (sidebarVisivel(context)) ...[
-          Text(widget.titulo, style: Theme.of(context).textTheme.headlineMedium),
+          Text(
+            widget.titulo,
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
           const SizedBox(height: 16),
         ],
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
               if (constraints.maxWidth >= _minWidth) {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Flexible(child: _limitar(_bloco(context, widget.primeiro))),
-                    const SizedBox(width: _espacoEntreBlocos),
-                    Flexible(child: _limitar(_bloco(context, widget.segundo))),
-                  ],
+                return TrocaFadeThrough(
+                  chave: 'duas_colunas',
+                  expandir: true,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Flexible(
+                        child: _limitar(_bloco(context, widget.primeiro)),
+                      ),
+                      const SizedBox(width: _espacoEntreBlocos),
+                      Flexible(
+                        child: _limitar(_bloco(context, widget.segundo)),
+                      ),
+                    ],
+                  ),
                 );
               }
 
               final atual = _mostrarSegundoCompacto
                   ? widget.segundo
                   : widget.primeiro;
-              return Align(
-                alignment: Alignment.topCenter,
-                child: _limitar(
-                  _bloco(
-                    context,
-                    atual,
-                    onTrocar: () => setState(
-                      () => _mostrarSegundoCompacto = !_mostrarSegundoCompacto,
+              return TrocaFadeThrough(
+                // Também faz fade ao trocar de lista no modo compacto.
+                chave: _mostrarSegundoCompacto
+                    ? 'compacto_segundo'
+                    : 'compacto_primeiro',
+                expandir: true,
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: _limitar(
+                    _bloco(
+                      context,
+                      atual,
+                      onTrocar: () => setState(
+                        () =>
+                            _mostrarSegundoCompacto = !_mostrarSegundoCompacto,
+                      ),
                     ),
                   ),
                 ),
@@ -155,16 +187,21 @@ class _TelaDuasListasState extends State<TelaDuasListas> {
                         ],
                 ),
                 if (onTrocar != null)
-                  InkWell(
-                    mouseCursor: SystemMouseCursors.click,
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: onTrocar,
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.sync_alt_rounded,
-                        size: 18,
-                        color: AppColors.textSecondary,
+                  HoverAnimado(
+                    raio: 20,
+                    escala: 1.12,
+                    child: InkWell(
+                      hoverColor: Colors.transparent,
+                      mouseCursor: SystemMouseCursors.click,
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: onTrocar,
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.sync_alt_rounded,
+                          size: 18,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   )

@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +12,8 @@ class AdicionarCategoriaDialog extends StatefulWidget {
   const AdicionarCategoriaDialog({super.key, required this.tipo});
 
   @override
-  State<AdicionarCategoriaDialog> createState() => _AdicionarCategoriaDialogState();
+  State<AdicionarCategoriaDialog> createState() =>
+      _AdicionarCategoriaDialogState();
 }
 
 class _AdicionarCategoriaDialogState extends State<AdicionarCategoriaDialog> {
@@ -45,8 +47,12 @@ class _AdicionarCategoriaDialogState extends State<AdicionarCategoriaDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final cor = widget.tipo == TipoLancamento.entrada ? AppColors.entrada : AppColors.saida;
-    final tipoLabel = widget.tipo == TipoLancamento.entrada ? 'entrada' : 'saída';
+    final cor = widget.tipo == TipoLancamento.entrada
+        ? AppColors.entrada
+        : AppColors.saida;
+    final tipoLabel = widget.tipo == TipoLancamento.entrada
+        ? 'entrada'
+        : 'saída';
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -73,12 +79,20 @@ class _AdicionarCategoriaDialogState extends State<AdicionarCategoriaDialog> {
                       padding: const EdgeInsets.only(top: 12),
                       child: Row(
                         children: [
-                          Icon(Icons.check_circle_rounded, size: 16, color: cor),
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 16,
+                            color: cor,
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               _mensagem!,
-                              style: TextStyle(color: cor, fontWeight: FontWeight.w600, fontSize: 13),
+                              style: TextStyle(
+                                color: cor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
@@ -89,16 +103,20 @@ class _AdicionarCategoriaDialogState extends State<AdicionarCategoriaDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          style: estiloBotao(corForeGround: Color(0xFF3e3b79)),
-          child: const Text('Fechar'),
+        ToqueElastico(
+          child: TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: estiloBotao(corForeGround: Color(0xFF3e3b79)),
+            child: const Text('Fechar'),
+          ),
         ),
-        ElevatedButton.icon(
-          onPressed: _salvando ? null : _adicionar,
-          icon: const Icon(Icons.add_rounded, size: 18),
-          label: const Text('Adicionar'),
-          style: estiloBotao(corBackGround: Color(0xFF3e3b79), isSide: true),
+        ToqueElastico(
+          child: ElevatedButton.icon(
+            onPressed: _salvando ? null : _adicionar,
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Adicionar'),
+            style: estiloBotao(corBackGround: Color(0xFF3e3b79), isSide: true),
+          ),
         ),
       ],
     );

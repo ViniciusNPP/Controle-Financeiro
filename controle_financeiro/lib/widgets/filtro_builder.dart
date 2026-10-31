@@ -2,6 +2,7 @@ import 'package:controle_financeiro/utils/dropdown.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:controle_financeiro/widgets/month_year_navigator.dart';
 import 'package:controle_financeiro/widgets/others_widgets.dart';
+import 'animacoes_base.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,7 +31,7 @@ class FiltroBuilder extends StatefulWidget {
     required this.onFiltroRapidoChanged,
     this.dataMinima,
     this.dataMaxima,
-    this.resetToken
+    this.resetToken,
   });
 
   @override
@@ -54,7 +55,9 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
   _ModoData _modoData = _ModoData.meses;
   DateTime _mesFiltro = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime _anoFiltro = DateTime(DateTime.now().year);
-  bool _filtrosExpandidos = false; /// false = chips numa linha só; true = chips quebram linha.
+  bool _filtrosExpandidos = false;
+
+  /// false = chips numa linha só; true = chips quebram linha.
 
   @override
   void didUpdateWidget(covariant FiltroBuilder oldWidget) {
@@ -66,7 +69,7 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
       });
     }
   }
-  
+
   @override
   void dispose() {
     _campo1Controller.dispose();
@@ -109,21 +112,49 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
       final n1 = _parseNumero(_campo1Controller.text);
       final n2 = _parseNumero(_campo2Controller.text);
       if (n1 == null && n2 == null) return null;
-      return FiltroHistorico(id: id, campo: _campo, numero1: n1, numero2: n2, operador: _operador);
+      return FiltroHistorico(
+        id: id,
+        campo: _campo,
+        numero1: n1,
+        numero2: n2,
+        operador: _operador,
+      );
     }
 
     switch (_modoData) {
       case _ModoData.meses:
         final inicio = DateTime(_mesFiltro.year, _mesFiltro.month, 1);
-        final fim = DateTime(_mesFiltro.year, _mesFiltro.month + 1, 0); // último dia do mês
-        return FiltroHistorico(id: id, campo: _campo, data1: inicio, data2: fim, operador: _operador);
+        final fim = DateTime(
+          _mesFiltro.year,
+          _mesFiltro.month + 1,
+          0,
+        ); // último dia do mês
+        return FiltroHistorico(
+          id: id,
+          campo: _campo,
+          data1: inicio,
+          data2: fim,
+          operador: _operador,
+        );
       case _ModoData.anos:
         final inicio = DateTime(_anoFiltro.year, 1, 1);
         final fim = DateTime(_anoFiltro.year, 12, 31);
-        return FiltroHistorico(id: id, campo: _campo, data1: inicio, data2: fim, operador: _operador);
+        return FiltroHistorico(
+          id: id,
+          campo: _campo,
+          data1: inicio,
+          data2: fim,
+          operador: _operador,
+        );
       case _ModoData.personalizado:
         if (_data1 == null && _data2 == null) return null;
-        return FiltroHistorico(id: id, campo: _campo, data1: _data1, data2: _data2, operador: _operador);
+        return FiltroHistorico(
+          id: id,
+          campo: _campo,
+          data1: _data1,
+          data2: _data2,
+          operador: _operador,
+        );
     }
   }
 
@@ -132,7 +163,9 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
   }
 
   void _adicionar() {
-    final novo = _construirFiltro(id: 'f${DateTime.now().microsecondsSinceEpoch}');
+    final novo = _construirFiltro(
+      id: 'f${DateTime.now().microsecondsSinceEpoch}',
+    );
     if (novo == null) return;
     widget.onAdicionar(novo);
     setState(_limparCampos);
@@ -219,7 +252,9 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
         child: SingleChildScrollView(
           controller: _scrollFiltrosAtivos,
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.only(bottom: 12), // espaço para a barra de rolagem
+          padding: const EdgeInsets.only(
+            bottom: 12,
+          ), // espaço para a barra de rolagem
           child: Row(
             children: [
               for (var i = 0; i < widget.filtrosAtivos.length; i++) ...[
@@ -236,7 +271,10 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
   /// Botões pequenos abaixo dos filtros aplicados
   Widget _acoesFiltrosAtivos() {
     final corExpandir =
-        Theme.of(context).elevatedButtonTheme.style?.backgroundColor?.resolve({}) ?? AppColors.primary;
+        Theme.of(
+          context,
+        ).elevatedButtonTheme.style?.backgroundColor?.resolve({}) ??
+        AppColors.primary;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -245,7 +283,11 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
           tooltip: 'Remover todos os filtros',
           corFundo: Colors.red.withValues(alpha: 0.12),
           onTap: widget.onLimparTodos,
-          child: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
+          child: const Icon(
+            Icons.delete_outline_rounded,
+            size: 18,
+            color: Colors.red,
+          ),
         ),
         const SizedBox(width: 8),
         _botaoPequeno(
@@ -254,7 +296,11 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
           onTap: () => setState(() => _filtrosExpandidos = !_filtrosExpandidos),
           child: Text(
             _filtrosExpandidos ? '▴' : '▾',
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
           ),
         ),
       ],
@@ -267,49 +313,47 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
     required VoidCallback onTap,
     required Widget child,
   }) {
+    final escuro =
+        Color.alphaBlend(corFundo, Colors.white).computeLuminance() < 0.4;
     return Tooltip(
       message: tooltip,
-      child: Material(
-        color: corFundo,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          mouseCursor: SystemMouseCursors.click,
+      child: HoverAnimado(
+        tom: escuro ? TomHover.escuro : TomHover.claro,
+        raio: 8,
+        escala: 1.08,
+        child: Material(
+          color: corFundo,
           borderRadius: BorderRadius.circular(8),
-          onTap: onTap,
-          child: SizedBox(width: 36, height: 28, child: Center(child: child)),
+          child: InkWell(
+            hoverColor: Colors.transparent,
+            mouseCursor: SystemMouseCursors.click,
+            borderRadius: BorderRadius.circular(8),
+            onTap: onTap,
+            child: SizedBox(width: 36, height: 28, child: Center(child: child)),
+          ),
         ),
       ),
     );
   }
 
   Widget _chipCampo(CampoFiltro c) {
-    final selecionado = _campo == c;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-           setState(() {
-            _campo = c;
-            _limparCampos();
-          });
-          _emitirFiltroRapido();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: selecionado ? AppColors.primary : AppColors.disabledFill,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            c.rotulo,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: selecionado ? Colors.white : AppColors.textSecondary,
-            ),
-          ),
-        ),
-      ),
+    return ChipAnimado(
+      label: c.rotulo,
+      selecionado: _campo == c,
+      onTap: () {
+        setState(() {
+          _campo = c;
+          _limparCampos();
+        });
+        _emitirFiltroRapido();
+      },
+      fundoSelecionado: AppColors.primary,
+      fundoNormal: AppColors.disabledFill,
+      textoSelecionado: Colors.white,
+      textoNormal: AppColors.textSecondary,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      raio: 10,
+      fontSize: 13,
     );
   }
 
@@ -358,7 +402,10 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
         campo1: TextField(
           controller: _campo1Controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(hintText: 'Igual a R\$', isDense: true),
+          decoration: const InputDecoration(
+            hintText: 'Igual a R\$',
+            isDense: true,
+          ),
           onChanged: (_) => _emitirFiltroRapido(),
         ),
         campo2: TextField(
@@ -435,7 +482,11 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
       aoVoltar: () => _mudarModoData(-1),
       builder: (context) => Text(
         _rotuloModoData,
-        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primary),
+        style: const TextStyle(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primary,
+        ),
       ),
     );
   }
@@ -446,7 +497,9 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
     List<Operador>? operadoresPermitidos,
   }) {
     final operadores = operadoresPermitidos ?? Operador.values;
-    final valorDropdown = operadores.contains(_operador) ? _operador : operadores.first;
+    final valorDropdown = operadores.contains(_operador)
+        ? _operador
+        : operadores.first;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -454,14 +507,23 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
         const SizedBox(width: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(color: AppColors.disabledFill, borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+            color: AppColors.disabledFill,
+            borderRadius: BorderRadius.circular(10),
+          ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<Operador>(
               value: valorDropdown,
               isDense: true,
               items: [
                 for (final o in operadores)
-                  DropdownMenuItem(value: o, child: Text(' ${o.simbolo} ', style: const TextStyle(fontWeight: FontWeight.w700))),
+                  DropdownMenuItem(
+                    value: o,
+                    child: Text(
+                      ' ${o.simbolo} ',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
               ],
               onChanged: (o) {
                 setState(() => _operador = o ?? operadores.first);
@@ -487,7 +549,11 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
     return DateTime(a, m, d);
   }
 
-  Widget _campoData(TextEditingController controller, DateTime? valorAtual, ValueChanged<DateTime?> onChanged) {
+  Widget _campoData(
+    TextEditingController controller,
+    DateTime? valorAtual,
+    ValueChanged<DateTime?> onChanged,
+  ) {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
@@ -510,12 +576,14 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
               initialDate: inicial,
               firstDate: minima,
               lastDate: maxima,
-              locale: const Locale('pt', 'BR'), 
+              locale: const Locale('pt', 'BR'),
               builder: (context, child) {
                 return Theme(
                   data: Theme.of(context).copyWith(
                     textButtonTheme: TextButtonThemeData(
-                      style: estiloBotao(corForeGround: const Color(0xFF2e2a6e)),
+                      style: estiloBotao(
+                        corForeGround: const Color(0xFF2e2a6e),
+                      ),
                     ),
                     iconButtonTheme: IconButtonThemeData(style: estiloBotao()),
                   ),
@@ -545,13 +613,29 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(_rotuloFiltro(f), style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primary)),
+          Text(
+            _rotuloFiltro(f),
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
           const SizedBox(width: 6),
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
+          HoverAnimado(
+            raio: 10,
+            escala: 1.25,
+            corHover: AppColors.primary.withValues(alpha: 0.15),
             child: GestureDetector(
               onTap: () => widget.onRemover(f.id),
-              child: const Icon(Icons.close_rounded, size: 15, color: AppColors.primary),
+              child: const Padding(
+                padding: EdgeInsets.all(2),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 15,
+                  color: AppColors.primary,
+                ),
+              ),
             ),
           ),
         ],
@@ -569,13 +653,15 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
         if (f.numero1 != null && f.numero2 != null) {
           return 'Valor entre ${Formatters.moeda(f.numero1!)} e ${Formatters.moeda(f.numero2!)}';
         }
-        if (f.numero2 != null) return 'Valor ${f.operador.simbolo} ${Formatters.moeda(f.numero2!)}';
+        if (f.numero2 != null)
+          return 'Valor ${f.operador.simbolo} ${Formatters.moeda(f.numero2!)}';
         return 'Valor = ${Formatters.moeda(f.numero1 ?? 0)}';
       case CampoFiltro.data:
         if (f.data1 != null && f.data2 != null) {
           return 'Data entre ${Formatters.data(f.data1!)} e ${Formatters.data(f.data2!)}';
         }
-        if (f.data2 != null) return 'Data ${f.operador.simbolo} ${Formatters.data(f.data2!)}';
+        if (f.data2 != null)
+          return 'Data ${f.operador.simbolo} ${Formatters.data(f.data2!)}';
         return 'Data = ${Formatters.data(f.data1 ?? DateTime.now())}';
     }
   }
@@ -584,7 +670,10 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
 /// Formata a digitação da data automaticamente
 class _DataInputFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     var digitos = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (digitos.length > 8) digitos = digitos.substring(0, 8);
 

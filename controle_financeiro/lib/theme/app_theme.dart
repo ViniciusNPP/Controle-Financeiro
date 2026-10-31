@@ -94,9 +94,18 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        bodyLarge: GoogleFonts.inter(fontSize: 15, color: AppColors.textPrimary),
-        bodyMedium: GoogleFonts.inter(fontSize: 13.5, color: AppColors.textSecondary),
-        labelLarge: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+        bodyLarge: GoogleFonts.inter(
+          fontSize: 15,
+          color: AppColors.textPrimary,
+        ),
+        bodyMedium: GoogleFonts.inter(
+          fontSize: 13.5,
+          color: AppColors.textSecondary,
+        ),
+        labelLarge: GoogleFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
@@ -115,8 +124,13 @@ class AppTheme {
           disabledBackgroundColor: AppColors.disabledFill,
           disabledForegroundColor: AppColors.textSecondary,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
           elevation: 0,
         ),
       ),
@@ -125,14 +139,23 @@ class AppTheme {
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        hoverColor: Colors.black.withValues(alpha: 0.04),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.border),
@@ -152,8 +175,43 @@ class AppTheme {
   /// Usado em vez do CardTheme do Flutter para evitar depender de uma API
   /// que muda de nome entre versões — aplique isso num Container comum.
   static BoxDecoration cardDecoration({Color? color}) => BoxDecoration(
-        color: color ?? AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-      );
+    color: color ?? AppColors.surface,
+    borderRadius: BorderRadius.circular(20),
+    border: Border.all(color: AppColors.border),
+  );
+}
+
+/// Durações e curvas de animação do app (vamos acrescentando aqui).
+class AppMotion {
+  AppMotion._();
+
+  static const Duration transicaoAba = Duration(milliseconds: 300);
+
+  static const Duration fade = Duration(milliseconds: 200);
+  static const Duration fadeThrough = Duration(milliseconds: 300);
+
+  /// Estilo de fade padrão para dialogs e seletores
+  static const AnimationStyle estiloFade = AnimationStyle(
+    duration: fade,
+    reverseDuration: fade,
+  );
+
+  // Botões
+  static const Duration pressionar = Duration(milliseconds: 90);
+  static const Duration soltar = Duration(milliseconds: 600);
+  static const Duration revelacaoCor = Duration(milliseconds: 450);
+
+  // Dropdown / menus
+  static const Duration dropdownAbrir = Duration(milliseconds: 200);
+  static const Duration dropdownFechar = Duration(milliseconds: 160);
+  static const Curve curvaAbrir = Curves.easeOut;
+  static const Curve curvaFechar = Curves.ease;
+  static const AnimationStyle estiloDropdown = AnimationStyle(
+    curve: curvaAbrir,
+    reverseCurve: curvaFechar,
+    duration: dropdownAbrir,
+    reverseDuration: dropdownFechar,
+  );
+
+  static const Duration hover = Duration(milliseconds: 180);
 }

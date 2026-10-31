@@ -1,4 +1,5 @@
 import 'package:controle_financeiro/theme/app_theme.dart';
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 
 class LinhaDetalhe extends StatelessWidget {
@@ -117,20 +118,25 @@ class SeletorCiclico extends StatelessWidget {
     this.raioBorda = 12,
   });
 
-  @override
+    @override
   Widget build(BuildContext context) {
     return Tooltip(
       message: 'Clique para mudar · botão direito para voltar',
       child: GestureDetector(
         onSecondaryTap: aoVoltar,
-        child: InkWell(
-          mouseCursor: SystemMouseCursors.click,
-          borderRadius: BorderRadius.circular(raioBorda),
-          onTap: aoAvancar,
-          child: Container(
-            padding: padding,
-            decoration: AppTheme.cardDecoration(),
-            child: builder(context),
+        child: HoverAnimado(
+          raio: 20, // mesmo raio do cardDecoration
+          escala: 1.04,
+          child: InkWell(
+            hoverColor: Colors.transparent,
+            mouseCursor: SystemMouseCursors.click,
+            borderRadius: BorderRadius.circular(raioBorda),
+            onTap: aoAvancar,
+            child: Container(
+              padding: padding,
+              decoration: AppTheme.cardDecoration(),
+              child: builder(context),
+            ),
           ),
         ),
       ),

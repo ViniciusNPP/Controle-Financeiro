@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
@@ -50,7 +51,7 @@ class AppSidebarContent extends StatelessWidget {
             _item(context, icon: Icons.history_rounded, label: 'Histórico', indice: 2),
             _item(context, icon: Icons.bar_chart_rounded, label: 'Gráficos', indice: 1),
             _item(context, icon: Icons.sell_outlined, label: 'Categorias', indice: 4),
-            _item(context, icon: Icons.autorenew_rounded, label: 'Recorrente', indice: 3),
+            _item(context, icon: Icons.autorenew_rounded, label: 'Recorrências', indice: 3),
             const Spacer(),
             _item(
               context,
@@ -65,7 +66,7 @@ class AppSidebarContent extends StatelessWidget {
     );
   }
 
-  Widget _item(
+    Widget _item(
     BuildContext context, {
     required IconData icon,
     required String label,
@@ -75,36 +76,42 @@ class AppSidebarContent extends StatelessWidget {
     final selecionado = indice >= 0 && indice == abaSelecionada;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-      child: Material(
-        color: selecionado ? Colors.white.withValues(alpha:0.12) : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          canRequestFocus: false,
-          mouseCursor: SystemMouseCursors.click,
+      child: HoverAnimado(
+        tom: TomHover.escuro,
+        raio: 12,
+        escala: 1.02,
+        child: Material(
+          color: selecionado ? Colors.white.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            if (onTapExtra != null) {
-              onTapExtra();
-            } else {
-              onSelecionar(indice);
-              if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-            child: Row(
-              children: [
-                Icon(icon, color: Colors.white.withValues(alpha:selecionado ? 1 : 0.7), size: 20),
-                const SizedBox(width: 14),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha:selecionado ? 1 : 0.7),
-                    fontWeight: selecionado ? FontWeight.w600 : FontWeight.w500,
-                    fontSize: 14.5,
+          child: InkWell(
+            hoverColor: Colors.transparent, // o hover é do HoverAnimado
+            canRequestFocus: false,
+            mouseCursor: SystemMouseCursors.click,
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              if (onTapExtra != null) {
+                onTapExtra();
+              } else {
+                onSelecionar(indice);
+                if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+              child: Row(
+                children: [
+                  Icon(icon, color: Colors.white.withValues(alpha: selecionado ? 1 : 0.7), size: 20),
+                  const SizedBox(width: 14),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: selecionado ? 1 : 0.7),
+                      fontWeight: selecionado ? FontWeight.w600 : FontWeight.w500,
+                      fontSize: 14.5,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

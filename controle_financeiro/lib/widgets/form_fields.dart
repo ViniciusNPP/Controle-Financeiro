@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,8 +33,8 @@ class DatePickerField extends StatelessWidget {
       ignoring: desativado,
       child: Opacity(
         opacity: desativado ? 0.55 : 1,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
+        child: HoverAnimado(
+          raio: 14,
           child: GestureDetector(
             onTap: () async {
               final escolhida = await showDatePicker(
@@ -139,10 +140,14 @@ class CurrencyInput extends StatefulWidget {
   final ValueChanged<double> onChanged;
   final double valorInicial;
 
+  /// Controller opcional, criado por quem usa o campo
+  final TextEditingController? controller;
+
   const CurrencyInput({
     super.key,
     required this.onChanged,
     this.valorInicial = 0,
+    this.controller,
   });
 
   @override
@@ -150,9 +155,9 @@ class CurrencyInput extends StatefulWidget {
 }
 
 class CurrencyInputState extends State<CurrencyInput> {
-  late final TextEditingController _controller = TextEditingController(
-    text: _formatarDoubleString(widget.valorInicial),
-  );
+  late final TextEditingController _controller =
+      widget.controller ??
+      TextEditingController(text: _formatarDoubleString(widget.valorInicial));
 
   String _formatarDoubleString(double v) {
     final texto = v.toStringAsFixed(2).replaceAll('.', ',');
@@ -171,7 +176,8 @@ class CurrencyInputState extends State<CurrencyInput> {
 
   @override
   void dispose() {
-    _controller.dispose();
+    // Só descarta se o controller foi criado aqui dentro.
+    if (widget.controller == null) _controller.dispose();
     super.dispose();
   }
 

@@ -8,6 +8,9 @@ import '../models/filtro_historico.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/sidebar.dart';
+import '../widgets/abas_animadas.dart';
+import '../utils/dialog_fade.dart';
+
 import 'add_transaction_screen.dart';
 import 'categorias_screen.dart';
 import 'charts_screen.dart';
@@ -27,6 +30,7 @@ class _HomeShellState extends State<HomeShell> {
 
   static const _larguraSidebar = 250.0;
   static const _quebraDesktop = 900.0;
+  static const _posicaoNaSidebar = [0, 2, 1, 4, 3]; // Posição de cada aba na sidebar
 
   // Pedido de navegação Gráficos -> Histórico
   List<FiltroHistorico>? _filtrosParaHistorico;
@@ -65,7 +69,12 @@ class _HomeShellState extends State<HomeShell> {
     ];
     final titulos = ['Adicionar lançamento', 'Gráficos', 'Histórico', 'Recorrências', 'Categorias'];
 
-    final conteudo = IndexedStack(key: _conteudoKey, index: _aba, children: telas);
+    final conteudo = AbasAnimadas(
+      key: _conteudoKey,
+      index: _aba,
+      posicoes: _posicaoNaSidebar,
+      children: telas,
+    );
     final sidebar = AppSidebarContent(
       abaSelecionada: _aba,
       onSelecionar: (i) => setState(() => _aba = i),
@@ -173,7 +182,7 @@ class _SincronizacaoSheetState extends State<_SincronizacaoSheet> {
     } on FormatoInvalidoException catch (e) {
       if (!mounted) return;
       setState(() => _carregando = false);
-      showDialog(
+      mostrarDialogo(
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),

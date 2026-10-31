@@ -1,4 +1,5 @@
 import 'package:controle_financeiro/utils/sidebar_utils.dart';
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
@@ -9,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 import '../widgets/filtro_builder.dart';
 import '../widgets/transacao_detail_dialog.dart';
+import '../utils/dialog_fade.dart';
 
 enum _ModoOrdenacao {
   dataDecrescente,
@@ -41,7 +43,10 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   _ModoOrdenacao _ordenacao = _ModoOrdenacao.dataDecrescente;
   Object? _ultimoPedidoExternoId;
   bool _filtrosAbertos = false;
-  static const _larguraMaximaFiltro = 510.0; /// Largura máxima do container de filtros.
+  bool _painelNaTela = false;
+  static const _larguraMaximaFiltro = 510.0;
+
+  /// Largura máxima do container de filtros.
   static const _alturaCabecalho = 40.0;
 
   @override
@@ -64,7 +69,8 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     _ultimoPedidoExternoId = widget.pedidoExternoId;
 
     setState(() {
-      _filtros.clear(); // descarta filtros antigos (de gráficos anteriores ou manuais)
+      _filtros
+          .clear(); // descarta filtros antigos (de gráficos anteriores ou manuais)
       _filtros.addAll(filtros);
       _filtroRapido = null; // descarta o filtro rápido pendente
       _resetFiltroRapido++; // avisa o FiltroBuilder para limpar os campos
@@ -77,6 +83,13 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   void _limparTodosFiltros() => setState(() => _filtros.clear());
   void _setFiltroRapido(FiltroHistorico? f) =>
       setState(() => _filtroRapido = f);
+
+  void _definirFiltrosAbertos(bool abrir) {
+    setState(() {
+      _filtrosAbertos = abrir;
+      if (abrir) _painelNaTela = true;
+    });
+  }
 
   void _mudarOrdenacao(int direcao) {
     setState(() {
@@ -170,7 +183,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     return lista;
   }
 
-    @override
+  @override
   Widget build(BuildContext context) {
     final finance = context.watch<FinanceProvider>();
     final sugestoesCategorias =
@@ -180,7 +193,8 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     DateTime? dataMinima;
     DateTime? dataMaxima;
     for (final t in finance.transacoes) {
-      if (dataMinima == null || t.data.isBefore(dataMinima)) dataMinima = t.data;
+      if (dataMinima == null || t.data.isBefore(dataMinima))
+        dataMinima = t.data;
       if (dataMaxima == null || t.data.isAfter(dataMaxima)) dataMaxima = t.data;
     }
 
@@ -236,41 +250,47 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
                             'Clique para mudar · botão direito para voltar',
                         child: GestureDetector(
                           onSecondaryTap: () => _mudarOrdenacao(-1),
-                          child: InkWell(
-                            mouseCursor: SystemMouseCursors.click,
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () => _mudarOrdenacao(1),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: AppTheme.cardDecoration(),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _iconeOrdenacao,
-                                    size: 16,
-                                    color: AppColors.primary,
-                                  ),
-                                  Icon(
-                                    _setaParaCima
-                                        ? Icons.arrow_upward_rounded
-                                        : Icons.arrow_downward_rounded,
-                                    size: 13,
-                                    color: AppColors.primary,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _rotuloOrdenacao,
-                                    style: const TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w600,
+                          child: HoverAnimado(
+                            // ← novo
+                            raio: 20,
+                            escala: 1.04,
+                            child: InkWell(
+                              hoverColor: Colors.transparent, // ← novo
+                              mouseCursor: SystemMouseCursors.click,
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () => _mudarOrdenacao(1),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: AppTheme.cardDecoration(),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _iconeOrdenacao,
+                                      size: 16,
                                       color: AppColors.primary,
                                     ),
-                                  ),
-                                ],
+                                    Icon(
+                                      _setaParaCima
+                                          ? Icons.arrow_upward_rounded
+                                          : Icons.arrow_downward_rounded,
+                                      size: 13,
+                                      color: AppColors.primary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _rotuloOrdenacao,
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -282,22 +302,27 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
                   _cabecalhoTabela(),
                   const Divider(height: 1, color: AppColors.border),
                   Expanded(
-                    child: lista.isEmpty
-                        ? Center(
-                            child: Text(
-                              'Nenhum lançamento encontrado',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                    child: TrocaFadeThrough(
+                      // Muda quando o resultado muda (filtros, ordem ou dados).
+                      chave: Object.hashAll(lista.map((t) => t.id)),
+                      expandir: true,
+                      child: lista.isEmpty
+                          ? Center(
+                              child: Text(
+                                'Nenhum lançamento encontrado',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            )
+                          : ListView.separated(
+                              itemCount: lista.length,
+                              separatorBuilder: (_, _) => const Divider(
+                                height: 1,
+                                color: AppColors.border,
+                              ),
+                              itemBuilder: (context, i) =>
+                                  _linhaTabela(context, lista[i]),
                             ),
-                          )
-                        : ListView.separated(
-                            itemCount: lista.length,
-                            separatorBuilder: (_, _) => const Divider(
-                              height: 1,
-                              color: AppColors.border,
-                            ),
-                            itemBuilder: (context, i) =>
-                                _linhaTabela(context, lista[i]),
-                          ),
+                    ),
                   ),
                   _linhaTotal(lista),
                 ],
@@ -313,30 +338,45 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
                   ),
                 ),
 
-              // Offstage mantém o FiltroBuilder montado (preserva os campos do filtro rápido).
+              // Fade ao abrir/fechar. Continua montado (preserva os campos do
+              // filtro rápido) e só sai da tela depois do fade de saída.
               Positioned(
                 key: const ValueKey('filtro_painel'),
                 top: _alturaCabecalho + 4,
                 left: 0,
                 right: 0,
                 child: Offstage(
-                  offstage: !_filtrosAbertos,
-                  child: Align(
-                    alignment: Alignment.topRight,
-                    heightFactor: 1,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: _larguraMaximaFiltro,
-                      ),
-                      child: Material(
-                        elevation: 8,
-                        borderRadius: BorderRadius.circular(20),
-                        clipBehavior: Clip.antiAlias,
+                  offstage: !_painelNaTela,
+                  child: IgnorePointer(
+                    ignoring: !_filtrosAbertos,
+                    child: AnimatedOpacity(
+                      opacity: _filtrosAbertos ? 1 : 0,
+                      duration: AppMotion.fade,
+                      onEnd: () {
+                        if (!_filtrosAbertos && _painelNaTela) {
+                          setState(() => _painelNaTela = false);
+                        }
+                      },
+                      child: Align(
+                        alignment: Alignment.topRight,
+                        heightFactor: 1,
                         child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: constraints.maxHeight * 0.8,
+                          constraints: const BoxConstraints(
+                            maxWidth: _larguraMaximaFiltro,
                           ),
-                          child: SingleChildScrollView(child: filtroBuilder),
+                          child: Material(
+                            elevation: 8,
+                            borderRadius: BorderRadius.circular(20),
+                            clipBehavior: Clip.antiAlias,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxHeight: constraints.maxHeight * 0.8,
+                              ),
+                              child: SingleChildScrollView(
+                                child: filtroBuilder,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -351,19 +391,24 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   }
 
   Widget _botaoFiltros() {
-    return InkWell(
-      mouseCursor: SystemMouseCursors.click,
-      borderRadius: BorderRadius.circular(12),
-      onTap: () => setState(() => _filtrosAbertos = !_filtrosAbertos),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: AppTheme.cardDecoration(),
-        child: Text(
-          _filtrosAbertos ? 'Filtro ▴' : 'Filtro ▾',
-          style: const TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
+    return HoverAnimado(
+      raio: 20,
+      escala: 1.04,
+      child: InkWell(
+        hoverColor: Colors.transparent,
+        mouseCursor: SystemMouseCursors.click,
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _definirFiltrosAbertos(!_filtrosAbertos),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: AppTheme.cardDecoration(),
+          child: Text(
+            _filtrosAbertos ? 'Filtro ▴' : 'Filtro ▾',
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
           ),
         ),
       ),
@@ -397,7 +442,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
         : AppColors.saida;
     return InkWell(
       mouseCursor: SystemMouseCursors.click,
-      onTap: () => showDialog(
+      onTap: () => mostrarDialogo(
         context: context,
         builder: (_) => TransacaoDetailDialog(transacao: t),
       ),

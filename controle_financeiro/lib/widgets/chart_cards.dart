@@ -16,6 +16,8 @@ class BarChartCard extends StatefulWidget {
   final bool destaque;
   final TipoLancamento? tipo;
   final List<Categoria>? categorias;
+  final String? categoriaInicial;
+  final ValueChanged<String?>? onCategoriaChanged;
 
   final void Function(DateTime data1, DateTime data2, String? categoria)?
   onAbrirHistorico;
@@ -31,6 +33,8 @@ class BarChartCard extends StatefulWidget {
     this.tipo,
     this.categorias,
     this.onAbrirHistorico,
+    this.categoriaInicial,
+    this.onCategoriaChanged,
   });
 
   @override
@@ -39,7 +43,7 @@ class BarChartCard extends StatefulWidget {
 
 class _BarChartCardState extends State<BarChartCard> {
   // null = "Todas" (sem filtro de categoria).
-  String? _categoriaSelecionada;
+  late String? _categoriaSelecionada = widget.categoriaInicial;
   bool _seletorAberto = false;
 
   // Detecção manual de duplo clique numa barra
@@ -78,6 +82,7 @@ class _BarChartCardState extends State<BarChartCard> {
   void _selecionarCategoria(String? categoria) {
     if (categoria == _categoriaSelecionada) return;
     setState(() => _categoriaSelecionada = categoria);
+    widget.onCategoriaChanged?.call(categoria);
   }
 
   /// Clique simples: fixa/solta o valor da barra. Duplo clique: abre o Histórico.
@@ -346,6 +351,7 @@ class _BarChartCardState extends State<BarChartCard> {
     final rotuloAtual = _categoriaSelecionada ?? 'Todas';
     return PopupMenuButton<String>(
       tooltip: '',
+      popUpAnimationStyle: AppMotion.estiloDropdown,
       offset: const Offset(0, 28),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       constraints: const BoxConstraints(maxHeight: 280, minWidth: 160),

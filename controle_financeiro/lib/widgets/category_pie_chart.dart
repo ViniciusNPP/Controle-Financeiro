@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../theme/app_theme.dart';
@@ -274,7 +275,7 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                                   PieChartData(
                                     sectionsSpace: 2,
                                     centerSpaceRadius: raioCentro,
-                                                                        pieTouchData: PieTouchData(
+                                    pieTouchData: PieTouchData(
                                       touchCallback: (event, response) {
                                         final indice = response
                                             ?.touchedSection
@@ -294,7 +295,9 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                                               ? null
                                               : entradas[indice].key;
                                           if (novo != _categoriaHover) {
-                                            setState(() => _categoriaHover = novo);
+                                            setState(
+                                              () => _categoriaHover = novo,
+                                            );
                                           }
                                           return;
                                         }
@@ -587,16 +590,20 @@ class _ItemLegendaState extends State<_ItemLegenda>
         widget.onAbrirHistorico == null) {
       return linha;
     }
-    return InkWell(
-      mouseCursor: SystemMouseCursors.click,
-      borderRadius: BorderRadius.circular(8),
-      onTap: widget.onTap,
-      onDoubleTap: widget.onAbrirHistorico, // duplo clique abre o Histórico
-      onLongPress: widget.onDoubleTap == null
-          ? null
-          : _alternarOcultaComFeedback, // segurar oculta/mostra
-      onSecondaryTap: widget.onAbrirHistorico,
-      child: linha,
+    return HoverAnimado(
+      raio: 8,
+      child: InkWell(
+        hoverColor: Colors.transparent,
+        mouseCursor: SystemMouseCursors.click,
+        borderRadius: BorderRadius.circular(8),
+        onTap: widget.onTap,
+        onDoubleTap: widget.onAbrirHistorico,
+        onLongPress: widget.onDoubleTap == null
+            ? null
+            : _alternarOcultaComFeedback,
+        onSecondaryTap: widget.onAbrirHistorico,
+        child: linha,
+      ),
     );
   }
 }

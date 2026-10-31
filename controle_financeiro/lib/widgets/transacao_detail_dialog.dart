@@ -40,7 +40,6 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
   late TipoLancamento _tipo;
   Categoria? _categoria;
   double _valor = 0;
-  final _valorKey = GlobalKey<CurrencyInputState>();
   final _descricaoController = TextEditingController();
 
   // Página 2 (só recorrência)
@@ -300,7 +299,6 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
               ? BordaComErro(
                   erro: _erroValor,
                   child: CurrencyInput(
-                    key: _valorKey,
                     valorInicial: _valor,
                     onChanged: (v) => setState(() {
                       _valor = v;

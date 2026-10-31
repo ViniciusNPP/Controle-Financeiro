@@ -1,3 +1,5 @@
+import 'package:controle_financeiro/utils/dialog_fade.dart';
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
@@ -36,29 +38,47 @@ class CategorySelector extends StatelessWidget {
         ignoring: !habilitado,
         child: Opacity(
           opacity: habilitado ? 1 : 0.55,
-          child: InkWell(
-            mouseCursor: habilitado ? SystemMouseCursors.click : null,
-            borderRadius: BorderRadius.circular(14),
-            onTap: () => _abrirSelecao(context),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 11 : 16),
-              child: Row(
-                children: [
-                  const Icon(Icons.sell_outlined, size: 18, color: AppColors.textSecondary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      categoriaSelecionada?.nome ??
-                          (habilitado ? 'Escolha a categoria' : 'Escolha o tipo'),
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: categoriaSelecionada != null ? AppColors.textPrimary : AppColors.textSecondary,
+          child: HoverAnimado(
+            raio: 14,
+            child: InkWell(
+              hoverColor: Colors.transparent,
+              mouseCursor: habilitado ? SystemMouseCursors.click : null,
+              borderRadius: BorderRadius.circular(14),
+              onTap: () => _abrirSelecao(context),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: compact ? 11 : 16,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.sell_outlined,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        categoriaSelecionada?.nome ??
+                            (habilitado
+                                ? 'Escolha a categoria'
+                                : 'Escolha o tipo'),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: categoriaSelecionada != null
+                              ? AppColors.textPrimary
+                              : AppColors.textSecondary,
+                        ),
                       ),
                     ),
-                  ),
-                  const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
-                ],
+                    const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textSecondary,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -67,17 +87,14 @@ class CategorySelector extends StatelessWidget {
     );
   }
 
-  List<Categoria> categoriasPorUso(
-    BuildContext context,
-    TipoLancamento tipo,
-  ) {
+  List<Categoria> categoriasPorUso(BuildContext context, TipoLancamento tipo) {
     final provider = context.read<FinanceProvider>();
     final categorias = provider.categoriasPorTipo(tipo);
 
     categorias.map((categoria) {
-      final vezes = provider.transacoes.where(
-        (t) => t.categoriaNome == categoria.nome,
-      ).length;
+      final vezes = provider.transacoes
+          .where((t) => t.categoriaNome == categoria.nome)
+          .length;
 
       return categoria.copyWith(vezesUsada: vezes);
     }).toList();
@@ -85,15 +102,18 @@ class CategorySelector extends StatelessWidget {
     categorias.sort((a, b) => b.vezesUsada.compareTo(a.vezesUsada));
     return categorias;
   }
-  
+
   void _abrirSelecao(BuildContext context) async {
     if (tipo == null) return;
     final categorias = categoriasPorUso(context, tipo!);
 
     final resultado = await showModalBottomSheet<Categoria>(
       context: context,
+      sheetAnimationStyle: AppMotion.estiloDropdown,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) {
         return SafeArea(
           child: Padding(
@@ -104,14 +124,20 @@ class CategorySelector extends StatelessWidget {
                 Container(
                   width: 40,
                   height: 4,
-                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Text('Categoria', style: Theme.of(context).textTheme.titleLarge),
+                    child: Text(
+                      'Categoria',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -123,19 +149,31 @@ class CategorySelector extends StatelessWidget {
                         ListTile(
                           title: Text(c.nome),
                           trailing: categoriaSelecionada?.id == c.id
-                              ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  color: AppColors.primary,
+                                )
                               : null,
                           onTap: () => Navigator.of(ctx).pop(c),
                         ),
                       ListTile(
-                        leading: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
+                        leading: const Icon(
+                          Icons.add_circle_outline_rounded,
+                          color: AppColors.primary,
+                        ),
                         title: const Text(
                           'Nova categoria',
-                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         onTap: () async {
                           Navigator.of(ctx).pop();
-                          final nova = await _dialogNovaCategoria(context, tipo!);
+                          final nova = await _dialogNovaCategoria(
+                            context,
+                            tipo!,
+                          );
                           if (nova != null) onSelecionar(nova);
                         },
                       ),
@@ -152,11 +190,14 @@ class CategorySelector extends StatelessWidget {
     if (resultado != null) onSelecionar(resultado);
   }
 
-  Future<Categoria?> _dialogNovaCategoria(BuildContext context, TipoLancamento tipo) async {
+  Future<Categoria?> _dialogNovaCategoria(
+    BuildContext context,
+    TipoLancamento tipo,
+  ) async {
     final controller = TextEditingController();
     final provider = context.read<FinanceProvider>();
 
-    return showDialog<Categoria>(
+    return mostrarDialogo<Categoria>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -170,7 +211,7 @@ class CategorySelector extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             style: estiloBotao(corForeGround: Color(0xFF3e3b79)),
-            child: const Text('Cancelar')
+            child: const Text('Cancelar'),
           ),
           ElevatedButton(
             onPressed: () async {

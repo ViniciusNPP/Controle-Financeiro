@@ -1,8 +1,10 @@
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../utils/dropdown.dart';
 import '../widgets/form_fields.dart';
+import '../utils/dialog_fade.dart';
 
 const double _larguraMinimaDesktop = 600;
 
@@ -23,8 +25,10 @@ class SwitchRecorrencia extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
+    return HoverAnimado(
+      tom: ativo ? TomHover.escuro : TomHover.claro,
+      raio: _altura / 2,
+      escala: 1.08,
       child: GestureDetector(
         onTap: () => onChanged(!ativo),
         child: AnimatedContainer(
@@ -112,7 +116,7 @@ class RecorrenciaDialog extends StatefulWidget {
     BuildContext context, {
     ConfiguracaoRecorrencia? configuracaoInicial,
   }) {
-    return showDialog<ConfiguracaoRecorrencia>(
+    return mostrarDialogo<ConfiguracaoRecorrencia>(
       context: context,
       builder: (_) =>
           RecorrenciaDialog(configuracaoInicial: configuracaoInicial),

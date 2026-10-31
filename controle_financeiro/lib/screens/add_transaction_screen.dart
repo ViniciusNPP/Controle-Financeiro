@@ -1,4 +1,5 @@
 import 'package:controle_financeiro/utils/sidebar_utils.dart';
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:controle_financeiro/widgets/others_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -35,7 +36,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   // ==========================================================================
   // ESTADO E LÓGICA COMPARTILHADOS (desktop + mobile)
   // ==========================================================================
-  final _valorKey = GlobalKey<CurrencyInputState>();
+  final _valorController = TextEditingController(text: '0,00');
   final _descricaoController = TextEditingController();
 
   DateTime _data = DateTime.now();
@@ -102,6 +103,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void dispose() {
     _descricaoController.dispose();
+    _valorController.dispose();
     super.dispose();
   }
 
@@ -139,7 +141,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   /// Botão "Limpar" (desktop): volta a tela ao estado inicial.
   void _limpar() {
-    _valorKey.currentState?.limpar();
+    _valorController.text = '0,00';
     _descricaoController.clear();
     setState(() {
       _data = DateTime.now();
@@ -191,7 +193,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
 
       if (!mounted) return true;
-      _valorKey.currentState?.limpar();
+      _valorController.text = '0,00';
       _descricaoController.clear();
       setState(() {
         _tipo = null;
@@ -257,7 +259,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     rotulo: 'Valor',
     erro: _erroValor,
     child: CurrencyInput(
-      key: _valorKey,
+      controller: _valorController,
       onChanged: (v) => setState(() {
         _valor = v;
         _erroValor = false;
@@ -345,7 +347,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     ],
   );
 
-  @override
+    @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, c) {
@@ -357,27 +359,34 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         final desktop =
             sidebarVisivel(context) && c.maxHeight >= alturaNecessaria;
 
-        // MOBILE: comportamento original (altura natural, centralizado).
-        if (!desktop) {
-          return Center(
-            child: SingleChildScrollView(child: _buildMobile(context)),
-          );
-        }
+        // Cada layout tem a sua chave
+        final chaveLayout = !desktop
+            ? 'mobile'
+            : (largo ? 'desktop_largo' : 'desktop_compacto');
 
+        // MOBILE: altura natural, centralizado.
         // DESKTOP: card ocupa a altura disponível.
-        return Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: _kLarguraMaxCardDesktop,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: _kMargemVerticalCard,
-              ),
-              child: _buildDesktop(context, largo),
-            ),
-          ),
+        final Widget layout = !desktop
+            ? Center(child: SingleChildScrollView(child: _buildMobile(context)))
+            : Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: _kLarguraMaxCardDesktop,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: _kMargemVerticalCard,
+                    ),
+                    child: _buildDesktop(context, largo),
+                  ),
+                ),
+              );
+
+        return TrocaFadeThrough(
+          chave: chaveLayout,
+          expandir: true,
+          child: layout,
         );
       },
     );
@@ -479,24 +488,26 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     children: [
       SizedBox(
         height: 48,
-        child: TextButton.icon(
-          onPressed: _limpar,
-          icon: const Icon(Icons.restart_alt_rounded, size: 18),
-          label: const Text('Limpar'),
-          style:
-              estiloBotao(
-                corForeGround: AppColors.textSecondary,
-                corBackGround: AppColors.disabledFill,
-              ).copyWith(
-                shape: WidgetStatePropertyAll(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+        child: ToqueElastico(
+          child: TextButton.icon(
+            onPressed: _limpar,
+            icon: const Icon(Icons.restart_alt_rounded, size: 18),
+            label: const Text('Limpar'),
+            style:
+                estiloBotao(
+                  corForeGround: AppColors.textSecondary,
+                  corBackGround: AppColors.disabledFill,
+                ).copyWith(
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  padding: const WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 20),
                   ),
                 ),
-                padding: const WidgetStatePropertyAll(
-                  EdgeInsets.symmetric(horizontal: 20),
-                ),
-              ),
+          ),
         ),
       ),
       const SizedBox(width: 12),
@@ -545,8 +556,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final cor = entrada ? AppColors.entrada : AppColors.saida;
     final corConteudo = sel ? cor : AppColors.textSecondary;
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
+    return HoverAnimado(
+      raio: 14,
+      escala: 1.03,
       child: GestureDetector(
         onTap: () => _selecionarTipo(t),
         child: AnimatedContainer(
@@ -888,11 +900,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 const SizedBox(height: 8),
                 _campoValor(),
                 const SizedBox(height: 28),
-                BotaoSalvarAnimado(
-                  label: 'Salvar lançamento',
-                  corIdle: const Color(0xFF3e3b79),
-                  aoPressionar: _salvar,
-                ),
+                _botoesDesktop(),
               ],
             ),
           ),
