@@ -137,6 +137,11 @@ class MonthYearNavigator extends StatelessWidget {
                 ],
               ),
             ),
+            onHorizontalDragEnd: (d) {
+              final v = d.primaryVelocity ?? 0;
+              if (v.abs() < 200) return;
+              _navegar(v < 0 ? 1 : -1); // arrastar p/ esquerda avança
+            },
           ),
         ),
       ],
@@ -294,6 +299,15 @@ Future<DateTime?> _mostrarSeletorMes(
           final podeAvancarAno =
               dataMaxima == null || anoExibido < dataMaxima.year;
 
+          void mudarAno(int delta) {
+            if (delta < 0 && !podeVoltarAno) return;
+            if (delta > 0 && !podeAvancarAno) return;
+            setStateDialog(() {
+              anoReverso = delta < 0;
+              anoExibido += delta;
+            });
+          }
+
           Widget transicaoAno(Widget filho) => PageTransitionSwitcher(
             reverse: anoReverso,
             duration: AppMotion.transicaoAba,
@@ -351,12 +365,7 @@ Future<DateTime?> _mostrarSeletorMes(
                       children: [
                         IconButton(
                           icon: const Icon(Icons.chevron_left_rounded),
-                          onPressed: podeVoltarAno
-                              ? () => setStateDialog(() {
-                                  anoReverso = true;
-                                  anoExibido--;
-                                })
-                              : null,
+                          onPressed: podeVoltarAno ? () => mudarAno(-1) : null,
                         ),
                         transicaoAno(
                           Text(
@@ -370,17 +379,20 @@ Future<DateTime?> _mostrarSeletorMes(
                         ),
                         IconButton(
                           icon: const Icon(Icons.chevron_right_rounded),
-                          onPressed: podeAvancarAno
-                              ? () => setStateDialog(() {
-                                  anoReverso = false;
-                                  anoExibido++;
-                                })
-                              : null,
+                          onPressed: podeAvancarAno ? () => mudarAno(1) : null,
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    transicaoAno(gradeMeses(anoExibido)),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onHorizontalDragEnd: (d) {
+                        final v = d.primaryVelocity ?? 0;
+                        if (v.abs() < 200) return;
+                        mudarAno(v < 0 ? 1 : -1);
+                      },
+                      child: transicaoAno(gradeMeses(anoExibido)),
+                    ),
                   ],
                 ),
               ),

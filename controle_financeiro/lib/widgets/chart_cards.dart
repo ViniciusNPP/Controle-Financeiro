@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -114,7 +115,8 @@ class _BarChartCardState extends State<BarChartCard> {
     _instanteUltimoToque = agora;
     // Clicar de novo na mesma barra solta o valor; em outra barra, move a fixação.
     setState(() {
-      _baldeHover = null; // o clique tem efeito imediato, mesmo com o mouse em cima
+      _baldeHover =
+          null; // o clique tem efeito imediato, mesmo com o mouse em cima
       _baldeFixado = _baldeFixado == balde ? null : balde;
     });
   }
@@ -136,10 +138,14 @@ class _BarChartCardState extends State<BarChartCard> {
     final quantidadeBarras = valores.length;
 
     // Posição da barra fixada (-1 = nenhuma)
-    final posicaoFixada = _baldeFixado == null ? -1 : chaves.indexOf(_baldeFixado!);
+    final posicaoFixada = _baldeFixado == null
+        ? -1
+        : chaves.indexOf(_baldeFixado!);
     if (_baldeFixado != null && posicaoFixada < 0) _baldeFixado = null;
-    
-    final posicaoHover = _baldeHover == null ? -1 : chaves.indexOf(_baldeHover!);
+
+    final posicaoHover = _baldeHover == null
+        ? -1
+        : chaves.indexOf(_baldeHover!);
 
     final minValor = valores.isEmpty
         ? 0.0
@@ -159,6 +165,18 @@ class _BarChartCardState extends State<BarChartCard> {
     final corLinhaZero = widget.destaque
         ? Colors.white.withValues(alpha: 0.35)
         : Colors.grey.withValues(alpha: 0.55);
+
+    final chaveFade = Object.hash(
+      widget.filtro.inicio,
+      widget.filtro.fimExclusivo,
+      widget.filtro.agruparPorAno,
+      _categoriaSelecionada,
+    );
+    final larguraBarra = chaves.length > 8 ? 10.0 : 20.0;
+    // Barra branca (Saldo) não tem como clarear, então escurece um pouco.
+    final corBarraHover = widget.destaque
+        ? Colors.white.withValues(alpha: 0.8)
+        : Color.lerp(corBarra, Colors.white, 0.2)!;
 
     final Widget conteudo = Container(
       padding: const EdgeInsets.all(20),
@@ -197,11 +215,14 @@ class _BarChartCardState extends State<BarChartCard> {
                           ),
                         ),
                   const SizedBox(height: 4),
-                  Text(
-                    Formatters.moeda(total),
-                    style: Theme.of(
-                      context,
-                    ).textTheme.displayMedium?.copyWith(color: corTexto),
+                  TrocaFade(
+                    chave: chaveFade,
+                    child: Text(
+                      Formatters.moeda(total),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.displayMedium?.copyWith(color: corTexto),
+                    ),
                   ),
                 ],
               ),
@@ -236,6 +257,10 @@ class _BarChartCardState extends State<BarChartCard> {
                       ),
                       barTouchData: BarTouchData(
                         handleBuiltInTouches: false,
+                        mouseCursorResolver: (event, response) =>
+                            response?.spot == null
+                            ? MouseCursor.defer
+                            : SystemMouseCursors.click,
                         touchTooltipData: BarTouchTooltipData(
                           getTooltipItem: (group, groupIndex, rod, rodIndex) =>
                               BarTooltipItem(
@@ -322,8 +347,12 @@ class _BarChartCardState extends State<BarChartCard> {
                             barRods: [
                               BarChartRodData(
                                 toY: valores[i],
-                                color: corBarra,
-                                width: chaves.length > 8 ? 10 : 20,
+                                color: i == posicaoHover
+                                    ? corBarraHover
+                                    : corBarra,
+                                width: i == posicaoHover
+                                    ? larguraBarra * 1.2
+                                    : larguraBarra,
                                 borderRadius: valores[i] >= 0
                                     ? const BorderRadius.vertical(
                                         top: Radius.circular(6),
@@ -336,6 +365,8 @@ class _BarChartCardState extends State<BarChartCard> {
                           ),
                       ],
                     ),
+                    duration: AppMotion.hover,
+                    curve: Curves.ease,
                   ),
           ),
         ],

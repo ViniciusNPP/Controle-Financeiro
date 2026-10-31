@@ -10,7 +10,7 @@ import 'botoes_personalizados.dart';
 /// Campo de categoria. Fica visualmente "apagado" e não clicável enquanto
 /// nenhum tipo (Entrada/Saída) foi escolhido. Quando habilitado, mostra só
 /// as categorias daquele tipo, mais a opção de criar uma categoria nova.
-class CategorySelector extends StatelessWidget {
+class CategorySelector extends StatefulWidget {
   final TipoLancamento? tipo;
   final Categoria? categoriaSelecionada;
   final ValueChanged<Categoria> onSelecionar;
@@ -25,67 +25,16 @@ class CategorySelector extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final habilitado = tipo != null;
+  State<CategorySelector> createState() => _CategorySelectorState();
+}
 
-    return Container(
-      decoration: BoxDecoration(
-        color: habilitado ? AppColors.surface : AppColors.disabledFill,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: IgnorePointer(
-        ignoring: !habilitado,
-        child: Opacity(
-          opacity: habilitado ? 1 : 0.55,
-          child: HoverAnimado(
-            raio: 14,
-            child: InkWell(
-              hoverColor: Colors.transparent,
-              mouseCursor: habilitado ? SystemMouseCursors.click : null,
-              borderRadius: BorderRadius.circular(14),
-              onTap: () => _abrirSelecao(context),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: compact ? 11 : 16,
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.sell_outlined,
-                      size: 18,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        categoriaSelecionada?.nome ??
-                            (habilitado
-                                ? 'Escolha a categoria'
-                                : 'Escolha o tipo'),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: categoriaSelecionada != null
-                              ? AppColors.textPrimary
-                              : AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+class _CategorySelectorState extends State<CategorySelector> {
+  // Valor do item "Nova categoria" (os demais usam o índice na lista).
+  static const int _novaCategoria = -1;
+
+  bool _aberto = false;
+  // Guardada quando o menu abre, para o índice escolhido apontar pra mesma lista.
+  List<Categoria> _opcoes = const [];
 
   List<Categoria> categoriasPorUso(BuildContext context, TipoLancamento tipo) {
     final provider = context.read<FinanceProvider>();
@@ -103,91 +52,174 @@ class CategorySelector extends StatelessWidget {
     return categorias;
   }
 
-  void _abrirSelecao(BuildContext context) async {
-    if (tipo == null) return;
-    final categorias = categoriasPorUso(context, tipo!);
+  Future<void> _aoSelecionar(int valor) async {
+    setState(() => _aberto = false);
 
-    final resultado = await showModalBottomSheet<Categoria>(
-      context: context,
-      sheetAnimationStyle: AppMotion.estiloDropdown,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+    if (valor == _novaCategoria) {
+      // O menu já fechou; agora abre o pop-up de criação.
+      final nova = await _dialogNovaCategoria(context, widget.tipo!);
+      if (nova != null && mounted) widget.onSelecionar(nova);
+      return;
+    }
+    widget.onSelecionar(_opcoes[valor]);
+  }
+
+  List<PopupMenuEntry<int>> _itens(BuildContext context) {
+    _opcoes = categoriasPorUso(context, widget.tipo!);
+    final selecionadaId = widget.categoriaSelecionada?.id;
+
+    return [
+      for (var i = 0; i < _opcoes.length; i++)
+        PopupMenuItem<int>(
+          value: i,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _opcoes[i].nome,
+                  overflow: TextOverflow.ellipsis,
+                  style: _opcoes[i].id == selecionadaId
+                      ? const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        )
+                      : null,
                 ),
-                const SizedBox(height: 16),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Categoria',
-                      style: Theme.of(context).textTheme.titleLarge,
+              ),
+              if (_opcoes[i].id == selecionadaId)
+                const Icon(
+                  Icons.check_rounded,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+            ],
+          ),
+        ),
+      const PopupMenuDivider(),
+      // Item destacado: ao tocar, o menu fecha e abre o pop-up.
+      PopupMenuItem<int>(
+        value: _novaCategoria,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.add_circle_outline_rounded,
+                size: 20,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: 10),
+              Text(
+                'Nova categoria',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final habilitado = widget.tipo != null;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final restricao = constraints.hasBoundedWidth
+            ? BoxConstraints(
+                minWidth: constraints.maxWidth,
+                maxWidth: constraints.maxWidth,
+                maxHeight: 280,
+              )
+            : const BoxConstraints(minWidth: 160, maxHeight: 280);
+
+        return Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: habilitado ? AppColors.surface : AppColors.disabledFill,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: IgnorePointer(
+            ignoring: !habilitado,
+            child: Opacity(
+              opacity: habilitado ? 1 : 0.55,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: PopupMenuButton<int>(
+                  enabled: habilitado,
+                  tooltip: '',
+                  popUpAnimationStyle: AppMotion.estiloDropdown,
+                  position: PopupMenuPosition.under,
+                  offset: const Offset(0, 4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  constraints: restricao,
+                  onOpened: () => setState(() => _aberto = true),
+                  onCanceled: () => setState(() => _aberto = false),
+                  onSelected: _aoSelecionar,
+                  itemBuilder: _itens,
+                  child: HoverAnimado(
+                    raio: 14,
+                    cursor: SystemMouseCursors.click,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: widget.compact ? 11 : 16,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.sell_outlined,
+                            size: 18,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              widget.categoriaSelecionada?.nome ??
+                                  (habilitado
+                                      ? 'Escolha a categoria'
+                                      : 'Escolha o tipo'),
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: widget.categoriaSelecionada != null
+                                    ? AppColors.textPrimary
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                          AnimatedRotation(
+                            turns: _aberto ? 0.5 : 0,
+                            duration: AppMotion.fade,
+                            child: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Flexible(
-                  child: ListView(
-                    shrinkWrap: true,
-                    children: [
-                      for (final c in categorias)
-                        ListTile(
-                          title: Text(c.nome),
-                          trailing: categoriaSelecionada?.id == c.id
-                              ? const Icon(
-                                  Icons.check_rounded,
-                                  color: AppColors.primary,
-                                )
-                              : null,
-                          onTap: () => Navigator.of(ctx).pop(c),
-                        ),
-                      ListTile(
-                        leading: const Icon(
-                          Icons.add_circle_outline_rounded,
-                          color: AppColors.primary,
-                        ),
-                        title: const Text(
-                          'Nova categoria',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        onTap: () async {
-                          Navigator.of(ctx).pop();
-                          final nova = await _dialogNovaCategoria(
-                            context,
-                            tipo!,
-                          );
-                          if (nova != null) onSelecionar(nova);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );
       },
     );
-
-    if (resultado != null) onSelecionar(resultado);
   }
 
   Future<Categoria?> _dialogNovaCategoria(

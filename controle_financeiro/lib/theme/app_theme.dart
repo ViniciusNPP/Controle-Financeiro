@@ -214,4 +214,5 @@ class AppMotion {
   );
 
   static const Duration hover = Duration(milliseconds: 180);
+  static const Duration contagem = Duration(milliseconds: 350);
 }

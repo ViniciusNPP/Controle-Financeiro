@@ -390,3 +390,36 @@ class _HoverAnimadoState extends State<HoverAnimado> {
     );
   }
 }
+
+/// Fade normal (cross-fade) quando [chave] muda.
+class TrocaFade extends StatelessWidget {
+  final Object chave;
+  final Widget child;
+  final bool ativo;
+  final bool expandir;
+  final AlignmentGeometry alinhamento;
+  final Duration duracao;
+
+  const TrocaFade({
+    super.key,
+    required this.chave,
+    required this.child,
+    this.ativo = true,
+    this.expandir = false,
+    this.alinhamento = Alignment.centerLeft,
+    this.duracao = AppMotion.fade,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: ativo ? duracao : Duration.zero,
+      layoutBuilder: (atual, anteriores) => Stack(
+        alignment: alinhamento,
+        fit: expandir ? StackFit.expand : StackFit.loose,
+        children: [...anteriores, if (atual != null) atual],
+      ),
+      child: KeyedSubtree(key: ValueKey(chave), child: child),
+    );
+  }
+}

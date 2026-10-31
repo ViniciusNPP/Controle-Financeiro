@@ -39,7 +39,8 @@ Widget _listaOpcoes({
   );
 }
 
-/// Campo de texto com autocomplete
+/// Campo de texto com autocomplete. Usa overlay próprio (e não o Autocomplete
+/// do Flutter) porque ele remove a lista na hora, sem dar chance de animar o fechamento.
 Widget autocompleteEstilizado({
   Key? key,
   required List<String> opcoes,
@@ -47,27 +48,166 @@ Widget autocompleteEstilizado({
   ValueChanged<TextEditingController>? aoCriarController,
   required ValueChanged<String> onChanged,
 }) {
-  return Autocomplete<String>(
+  return _AutocompleteEstilizado(
     key: key,
-    onSelected: (opcao) => onChanged(opcao),
-    optionsBuilder: (TextEditingValue value) {
-      if (value.text.isEmpty) return opcoes;
-      return opcoes.where(
-        (o) => o.toLowerCase().contains(value.text.toLowerCase()),
-      );
-    },
-    fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-      aoCriarController?.call(controller);
-      return TextField(
-        controller: controller,
-        focusNode: focusNode,
-        decoration: InputDecoration(hintText: hint),
-        onChanged: onChanged,
-      );
-    },
-    optionsViewBuilder: (context, onSelected, options) =>
-        _OpcoesAnimadas(opcoes: options.toList(), onSelected: onSelected),
+    opcoes: opcoes,
+    hint: hint,
+    aoCriarController: aoCriarController,
+    onChanged: onChanged,
   );
+}
+
+class _AutocompleteEstilizado extends StatefulWidget {
+  final List<String> opcoes;
+  final String hint;
+  final ValueChanged<TextEditingController>? aoCriarController;
+  final ValueChanged<String> onChanged;
+
+  const _AutocompleteEstilizado({
+    super.key,
+    required this.opcoes,
+    required this.hint,
+    required this.aoCriarController,
+    required this.onChanged,
+  });
+
+  @override
+  State<_AutocompleteEstilizado> createState() =>
+      _AutocompleteEstilizadoState();
+}
+
+class _AutocompleteEstilizadoState extends State<_AutocompleteEstilizado>
+    with SingleTickerProviderStateMixin {
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+  final _layerLink = LayerLink();
+  OverlayEntry? _overlay;
+
+  late final AnimationController _animController;
+  late final Animation<double> _curva;
+
+  String? _ultimaSelecao;
+  // Guarda a última lista exibida para ela não "encolher" durante o fade de saída.
+  List<String> _opcoesExibidas = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _animController =
+        AnimationController(
+          vsync: this,
+          duration: AppMotion.dropdownAbrir,
+          reverseDuration: AppMotion.dropdownFechar,
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.dismissed) _removerOverlay();
+        });
+    _curva = CurvedAnimation(
+      parent: _animController,
+      curve: AppMotion.curvaAbrir,
+      reverseCurve: AppMotion.curvaFechar,
+    );
+    _controller.addListener(_atualizar);
+    _focusNode.addListener(_atualizar);
+    widget.aoCriarController?.call(_controller);
+  }
+
+  List<String> get _filtradas {
+    final t = _controller.text.toLowerCase();
+    if (t.isEmpty) return widget.opcoes;
+    return widget.opcoes.where((o) => o.toLowerCase().contains(t)).toList();
+  }
+
+  void _atualizar() {
+    if (!mounted) return;
+    final filtradas = _filtradas;
+    final mostrar =
+        _focusNode.hasFocus &&
+        _controller.text != _ultimaSelecao &&
+        filtradas.isNotEmpty;
+    if (mostrar) {
+      _opcoesExibidas = filtradas;
+      _abrir();
+    } else {
+      _fechar();
+    }
+    _overlay?.markNeedsBuild();
+  }
+
+  void _abrir() {
+    if (_overlay == null) {
+      final box = context.findRenderObject() as RenderBox;
+      final largura = box.size.width;
+      final altura = box.size.height;
+
+      _overlay = OverlayEntry(
+        builder: (_) => Positioned(
+          width: largura,
+          child: CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            offset: Offset(0, altura + 4),
+            // Clicar na lista não conta como "clicar fora" do campo.
+            child: TextFieldTapRegion(
+              child: _listaOpcoes(
+                opcoes: _opcoesExibidas,
+                animacao: _curva,
+                onSelected: _selecionar,
+              ),
+            ),
+          ),
+        ),
+      );
+      Overlay.of(context).insert(_overlay!);
+    }
+    _animController.forward();
+  }
+
+  void _fechar() {
+    if (_overlay == null) return;
+    _animController.reverse();
+  }
+
+  void _removerOverlay() {
+    _overlay?.remove();
+    _overlay = null;
+  }
+
+  void _selecionar(String opcao) {
+    _ultimaSelecao = opcao;
+    _controller.value = TextEditingValue(
+      text: opcao,
+      selection: TextSelection.collapsed(offset: opcao.length),
+    );
+    widget.onChanged(opcao);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_atualizar);
+    _focusNode.removeListener(_atualizar);
+    _removerOverlay();
+    _animController.dispose();
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: TextField(
+        controller: _controller,
+        focusNode: _focusNode,
+        decoration: InputDecoration(hintText: widget.hint),
+        onChanged: (texto) {
+          _ultimaSelecao = null;
+          widget.onChanged(texto);
+        },
+        onTapOutside: (_) => _focusNode.unfocus(),
+      ),
+    );
+  }
 }
 
 /// Dropdown personalizado
@@ -76,12 +216,14 @@ Widget dropdownEstilizado({
   required String? valorSelecionado,
   required ValueChanged<String> onSelecionar,
   String hint = 'Selecione...',
+  bool compacto = false,
 }) {
   return _DropdownEstilizado(
     opcoes: opcoes,
     valorSelecionado: valorSelecionado,
     onSelecionar: onSelecionar,
     hint: hint,
+    compacto: compacto,
   );
 }
 
@@ -90,125 +232,111 @@ class _DropdownEstilizado extends StatefulWidget {
   final String? valorSelecionado;
   final ValueChanged<String> onSelecionar;
   final String hint;
+  final bool compacto;
 
   const _DropdownEstilizado({
     required this.opcoes,
     required this.valorSelecionado,
     required this.onSelecionar,
     required this.hint,
+    required this.compacto,
   });
 
   @override
   State<_DropdownEstilizado> createState() => _DropdownEstilizadoState();
 }
 
-class _DropdownEstilizadoState extends State<_DropdownEstilizado>
-    with SingleTickerProviderStateMixin {
-  final _layerLink = LayerLink();
-  OverlayEntry? _overlay;
-
-  late final AnimationController _controller;
-  late final Animation<double> _curva;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: AppMotion.dropdownAbrir,
-      reverseDuration: AppMotion.dropdownFechar,
-    )..addStatusListener((status) {
-        // O menu só sai da tela quando a animação de fechar termina.
-        if (status == AnimationStatus.dismissed) _removerOverlay();
-      });
-    _curva = CurvedAnimation(
-      parent: _controller,
-      curve: AppMotion.curvaAbrir, // abrir: easeOut
-      reverseCurve: AppMotion.curvaFechar, // fechar: ease
-    );
-  }
-
-  bool get _aberto =>
-      _overlay != null && _controller.status != AnimationStatus.reverse;
-
-  void _alternar() => _aberto ? _fechar() : _abrir();
-
-  void _abrir() {
-    if (_overlay == null) {
-      final renderBox = context.findRenderObject() as RenderBox;
-      final tamanho = renderBox.size;
-
-      _overlay = OverlayEntry(
-        builder: (_) => Positioned(
-          width: tamanho.width,
-          child: CompositedTransformFollower(
-            link: _layerLink,
-            showWhenUnlinked: false,
-            offset: Offset(0, tamanho.height + 4),
-            child: _listaOpcoes(
-              opcoes: widget.opcoes,
-              animacao: _curva,
-              onSelected: (opcao) {
-                widget.onSelecionar(opcao);
-                _fechar();
-              },
-            ),
-          ),
-        ),
-      );
-      Overlay.of(context).insert(_overlay!);
-    }
-    _controller.forward();
-  }
-
-  void _fechar() {
-    if (_overlay == null) return;
-    _controller.reverse();
-  }
-
-  void _removerOverlay() {
-    _overlay?.remove();
-    _overlay = null;
-  }
-
-  @override
-  void dispose() {
-    _removerOverlay();
-    _controller.dispose();
-    super.dispose();
-  }
+class _DropdownEstilizadoState extends State<_DropdownEstilizado> {
+  bool _aberto = false;
 
   @override
   Widget build(BuildContext context) {
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: HoverAnimado(
-        raio: 14,
-        child: GestureDetector(
-          onTap: _alternar,
-          child: InputDecorator(
-            decoration: InputDecoration(hintText: widget.hint),
-            child: Row(
-              children: [
-                Expanded(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final restricao = constraints.hasBoundedWidth
+            ? BoxConstraints(
+                minWidth: constraints.maxWidth,
+                maxWidth: constraints.maxWidth,
+                maxHeight: 280,
+              )
+            : const BoxConstraints(minWidth: 160, maxHeight: 280);
+
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: PopupMenuButton<String>(
+            tooltip: '',
+            popUpAnimationStyle: AppMotion.estiloDropdown,
+            position: PopupMenuPosition.under,
+            offset: const Offset(0, 4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            constraints: restricao,
+            onOpened: () => setState(() => _aberto = true),
+            onCanceled: () => setState(() => _aberto = false),
+            onSelected: (valor) {
+              setState(() => _aberto = false);
+              widget.onSelecionar(valor);
+            },
+            itemBuilder: (context) => [
+              for (final o in widget.opcoes)
+                PopupMenuItem<String>(
+                  value: o,
                   child: Text(
-                    widget.valorSelecionado ?? widget.hint,
-                    style: TextStyle(
-                      color: widget.valorSelecionado != null
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
-                    ),
+                    o,
+                    style: o == widget.valorSelecionado
+                        ? const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          )
+                        : null,
                   ),
                 ),
-                const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.textSecondary,
+            ],
+            child: HoverAnimado(
+              raio: 14,
+              cursor: SystemMouseCursors.click,
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  hintText: widget.hint,
+                  isDense: widget.compacto,
+                  contentPadding: widget.compacto
+                      ? const EdgeInsets.symmetric(horizontal: 12, vertical: 14)
+                      : null,
                 ),
-              ],
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.valorSelecionado ?? widget.hint,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: widget.compacto ? 13 : null,
+                          fontWeight: widget.compacto ? FontWeight.w600 : null,
+                          color: widget.valorSelecionado == null
+                              ? AppColors.textSecondary
+                              : (widget.compacto
+                                    ? AppColors.primary
+                                    : AppColors.textPrimary),
+                        ),
+                      ),
+                    ),
+                    AnimatedRotation(
+                      turns: _aberto ? 0.5 : 0,
+                      duration: AppMotion.fade,
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: widget.compacto ? 20 : 24,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -231,45 +359,4 @@ class _TransicaoMenu extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Lista do autocomplete com animação easeOut.
-class _OpcoesAnimadas extends StatefulWidget {
-  final List<String> opcoes;
-  final ValueChanged<String> onSelected;
-
-  const _OpcoesAnimadas({required this.opcoes, required this.onSelected});
-
-  @override
-  State<_OpcoesAnimadas> createState() => _OpcoesAnimadasState();
-}
-
-class _OpcoesAnimadasState extends State<_OpcoesAnimadas>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _curva;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: AppMotion.dropdownAbrir,
-    );
-    _curva = CurvedAnimation(parent: _controller, curve: AppMotion.curvaAbrir);
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => _listaOpcoes(
-    opcoes: widget.opcoes,
-    onSelected: widget.onSelected,
-    animacao: _curva,
-  );
 }

@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show mapEquals;
 
 class CategoryPieChartCard extends StatefulWidget {
   final String titulo;
@@ -35,6 +36,7 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
   // Nomes de categorias ocultas
   final Set<String> _categoriasOcultas = {};
   Map<String, double>? _ultimoDados;
+  int _geracao = 0; // incrementa quando os dados mudam de verdade
 
   // variável que define o percentual mínimo de uma fatia para mostrar seu valor dentro dela.
   static const double _limiarRotuloExternoPct = 10.0;
@@ -159,15 +161,19 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
   @override
   Widget build(BuildContext context) {
     // Exibi as categorias ocultas
-    if (!identical(_ultimoDados, widget.dados)) {
+    if (!mapEquals(_ultimoDados, widget.dados)) {
       _categoriasOcultas.clear();
       _outrosExpandido = false;
-      _ultimoDados = widget.dados;
       _categoriaHover = null;
+      _ultimoDados = Map.of(widget.dados);
+      _geracao++;
     }
 
     final entradasLegenda = _entradasFiltradas();
     final filhosOutros = _filhosDeOutros();
+    final fadeAtivo =
+        entradasLegenda.length > 1; // Com só 1 categoria não anima o fade.
+
     // Fecha outros na troca de período se necessário
     if (filhosOutros.isEmpty && _outrosExpandido) _outrosExpandido = false;
 
@@ -228,9 +234,18 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    Formatters.moedaInt(totalReal),
-                    style: Theme.of(context).textTheme.displayMedium,
+                  TrocaFade(
+                    chave: _geracao,
+                    ativo: fadeAtivo,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(end: totalVisivel),
+                      duration: AppMotion.contagem,
+                      curve: Curves.easeOut,
+                      builder: (context, valor, _) => Text(
+                        Formatters.moedaInt(valor),
+                        style: Theme.of(context).textTheme.displayMedium,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -371,67 +386,76 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                       const SizedBox(width: 30),
                       Expanded(
                         flex: 6,
-                        child: ListView.builder(
-                          // Cada categoria principal (que não seja "Outros") vira 1
-                          // item; "Outros" vira 1 item + 1 por filho quando expandido.
-                          itemCount:
-                              entradasLegenda.length +
-                              (_outrosExpandido ? filhosOutros.length : 0),
-                          itemBuilder: (context, i) {
-                            if (i < entradasLegenda.length) {
-                              final entrada = entradasLegenda[i];
-                              final ehOutros =
-                                  entrada.key == 'Outros' &&
-                                  filhosOutros.isNotEmpty;
+                        child: TrocaFade(
+                          chave: _geracao,
+                          ativo: fadeAtivo,
+                          expandir: true,
+                          child: ListView.builder(
+                            // Cada categoria principal (que não seja "Outros") vira 1
+                            // item; "Outros" vira 1 item + 1 por filho quando expandido.
+                            itemCount:
+                                entradasLegenda.length +
+                                (_outrosExpandido ? filhosOutros.length : 0),
+                            itemBuilder: (context, i) {
+                              if (i < entradasLegenda.length) {
+                                final entrada = entradasLegenda[i];
+                                final ehOutros =
+                                    entrada.key == 'Outros' &&
+                                    filhosOutros.isNotEmpty;
+                                return _ItemLegenda(
+                                  key: ValueKey(entrada.key),
+                                  nome: entrada.key,
+                                  valor: entrada.value,
+                                  total: totalReal,
+                                  cor: corDe(entrada.key),
+                                  expansivel: ehOutros,
+                                  expandido: _outrosExpandido,
+                                  oculta:
+                                      _categoriasOcultas.contains(
+                                        entrada.key,
+                                      ) ||
+                                      (ehOutros && _outrosExpandido),
+                                  onTap: ehOutros
+                                      ? () => setState(
+                                          () => _outrosExpandido =
+                                              !_outrosExpandido,
+                                        )
+                                      : null,
+                                  onDoubleTap: () => _tentarAlternarOculta(
+                                    entrada.key,
+                                    visiveisAtualmente: entradas.length,
+                                  ),
+                                  onAbrirHistorico:
+                                      (widget.onAbrirHistorico == null ||
+                                          ehOutros)
+                                      ? null
+                                      : () => widget.onAbrirHistorico!(
+                                          entrada.key,
+                                        ),
+                                );
+                              }
+
+                              final filho =
+                                  filhosOutros[i - entradasLegenda.length];
                               return _ItemLegenda(
-                                key: ValueKey(entrada.key),
-                                nome: entrada.key,
-                                valor: entrada.value,
+                                key: ValueKey(filho.key),
+                                nome: filho.key,
+                                valor: filho.value,
                                 total: totalReal,
-                                cor: corDe(entrada.key),
-                                expansivel: ehOutros,
-                                expandido: _outrosExpandido,
-                                oculta:
-                                    _categoriasOcultas.contains(entrada.key) ||
-                                    (ehOutros && _outrosExpandido),
-                                onTap: ehOutros
-                                    ? () => setState(
-                                        () => _outrosExpandido =
-                                            !_outrosExpandido,
-                                      )
-                                    : null,
+                                cor: corDe(filho.key),
+                                indentado: true,
+                                oculta: _categoriasOcultas.contains(filho.key),
                                 onDoubleTap: () => _tentarAlternarOculta(
-                                  entrada.key,
+                                  filho.key,
                                   visiveisAtualmente: entradas.length,
                                 ),
                                 onAbrirHistorico:
-                                    (widget.onAbrirHistorico == null ||
-                                        ehOutros)
+                                    widget.onAbrirHistorico == null
                                     ? null
-                                    : () =>
-                                          widget.onAbrirHistorico!(entrada.key),
+                                    : () => widget.onAbrirHistorico!(filho.key),
                               );
-                            }
-
-                            final filho =
-                                filhosOutros[i - entradasLegenda.length];
-                            return _ItemLegenda(
-                              key: ValueKey(filho.key),
-                              nome: filho.key,
-                              valor: filho.value,
-                              total: totalReal,
-                              cor: corDe(filho.key),
-                              indentado: true,
-                              oculta: _categoriasOcultas.contains(filho.key),
-                              onDoubleTap: () => _tentarAlternarOculta(
-                                filho.key,
-                                visiveisAtualmente: entradas.length,
-                              ),
-                              onAbrirHistorico: widget.onAbrirHistorico == null
-                                  ? null
-                                  : () => widget.onAbrirHistorico!(filho.key),
-                            );
-                          },
+                            },
+                          ),
                         ),
                       ),
                     ],

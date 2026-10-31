@@ -1,3 +1,4 @@
+import 'package:controle_financeiro/utils/dropdown.dart';
 import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:controle_financeiro/widgets/month_year_navigator.dart';
 import 'package:flutter/material.dart';
@@ -262,34 +263,22 @@ class _PeriodSelectorState extends State<PeriodSelector> {
   }
 
   Widget _dropdownGranularidade<T>({
-    required T valor,
-    required Map<T, String> rotulos,
-    required ValueChanged<T> onChanged,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+  required T valor,
+  required Map<T, String> rotulos,
+  required ValueChanged<T> onChanged,
+}) {
+  return SizedBox(
+    width: double.infinity,
+    child: dropdownEstilizado(
+      compacto: true,
+      opcoes: rotulos.values.toList(),
+      valorSelecionado: rotulos[valor],
+      onSelecionar: (label) => onChanged(
+        rotulos.entries.firstWhere((e) => e.value == label).key,
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: valor,
-          isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary),
-          items: [
-            for (final entrada in rotulos.entries)
-              DropdownMenuItem<T>(value: entrada.key, child: Text(entrada.value)),
-          ],
-          onChanged: (v) {
-            if (v != null) onChanged(v);
-          },
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 
   void _setGran({_GranMensal? mensal, _GranAnual? anual}) {
   setState(() {

@@ -181,19 +181,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
                   final alturaSuficiente =
                       restante.maxHeight >= alturaMinimaGrade;
                   final usarGrade = larguraSuficiente && alturaSuficiente;
-                  return TrocaFadeThrough(
-                    // Fade ao trocar grade ↔ carrossel ou ao mudar o período.
-                    chave: Object.hash(
-                      usarGrade,
-                      filtro.inicio,
-                      filtro.fimExclusivo,
-                      filtro.agruparPorAno,
-                    ),
-                    expandir: true,
-                    child: usarGrade
-                        ? _gradeDesktop(graficos)
-                        : _carrosselMobile(graficosCarrossel),
-                  );
+                  return usarGrade
+                      ? _gradeDesktop(graficos)
+                      : _carrosselMobile(graficosCarrossel);
                 },
               ),
             ),
