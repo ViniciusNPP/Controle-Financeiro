@@ -366,6 +366,9 @@ Future<DateTime?> _mostrarSeletorMes(
                         IconButton(
                           icon: const Icon(Icons.chevron_left_rounded),
                           onPressed: podeVoltarAno ? () => mudarAno(-1) : null,
+                          mouseCursor: podeVoltarAno
+                              ? SystemMouseCursors.click
+                              : SystemMouseCursors.basic,
                         ),
                         transicaoAno(
                           Text(
@@ -380,6 +383,9 @@ Future<DateTime?> _mostrarSeletorMes(
                         IconButton(
                           icon: const Icon(Icons.chevron_right_rounded),
                           onPressed: podeAvancarAno ? () => mudarAno(1) : null,
+                          mouseCursor: podeAvancarAno
+                              ? SystemMouseCursors.click
+                              : SystemMouseCursors.basic,
                         ),
                       ],
                     ),

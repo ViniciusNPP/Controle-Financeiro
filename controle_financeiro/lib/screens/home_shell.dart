@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:controle_financeiro/screens/recorrentes_screen.dart';
 import 'package:controle_financeiro/services/sync_service.dart';
+import 'package:controle_financeiro/services/update_service.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
+import 'package:controle_financeiro/widgets/update_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/filtro_historico.dart';
@@ -39,6 +41,14 @@ class _HomeShellState extends State<HomeShell> {
     3,
   ]; // Posição de cada aba na sidebar
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _verificarAtualizacao(),
+    );
+  }
+
   // Pedido de navegação Gráficos -> Histórico
   List<FiltroHistorico>? _filtrosParaHistorico;
   int _pedidoParaHistoricoId = 0;
@@ -57,6 +67,20 @@ class _HomeShellState extends State<HomeShell> {
       context: context,
       builder: (_) => _SincronizacaoDialog(finance: finance),
     );
+  }
+
+  Future<void> _verificarAtualizacao() async {
+    // Acabou de atualizar? Mostra a tela de sucesso.
+    final recente = await UpdateService.versaoRecemAtualizada();
+    if (!mounted) return;
+    if (recente != null) {
+      await mostrarDialogoAtualizado(context);
+      return;
+    }
+
+    final info = await UpdateService.checkForUpdate();
+    if (info == null || !mounted) return;
+    await mostrarDialogoAtualizacao(context, info);
   }
 
   @override

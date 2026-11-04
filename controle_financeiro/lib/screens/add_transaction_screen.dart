@@ -21,6 +21,8 @@ const double _kLarguraMaxCardMobile = 580; // teto do card no mobile
 // PONTO DE CONTROLE 3: desktop x mobile por ALTURA
 const double _kAlturaMinimaDesktopLargo = 865;
 const double _kAlturaMinimaDesktopCompacto = 920;
+const double _kAlturaMinimaConteudoCard =
+    640; // Altura mínima do conteúdo do card antes de a tela precisar rolar
 
 const double _kMargemVerticalCard = 8;
 
@@ -347,7 +349,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     ],
   );
 
-    @override
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, c) {
@@ -407,13 +409,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           final h = c.maxHeight - padding * 2;
           return SingleChildScrollView(
             padding: EdgeInsets.all(padding),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: h > 0 ? h : 0.0),
-              child: IntrinsicHeight(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: secoes,
-                ),
+            child: SizedBox(
+              height: h > _kAlturaMinimaConteudoCard
+                  ? h
+                  : _kAlturaMinimaConteudoCard,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: secoes,
               ),
             ),
           );
