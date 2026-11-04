@@ -210,6 +210,116 @@ class _AutocompleteEstilizadoState extends State<_AutocompleteEstilizado>
   }
 }
 
+/// Estrutura compartilhada de menu suspenso com estilo e posicionamento padrão.
+/// Cada chamador define os itens e o conteúdo que abre o menu.
+class PopupMenuEstilizado<T> extends StatelessWidget {
+  final PopupMenuItemBuilder<T> itemBuilder;
+  final Widget child;
+  final ValueChanged<T>? onSelected;
+  final bool enabled;
+  final VoidCallback? onOpened;
+  final VoidCallback? onCanceled;
+  final PopupMenuPosition? position;
+  final Offset offset;
+  final ShapeBorder? shape;
+  final BoxConstraints? menuConstraints;
+
+  const PopupMenuEstilizado({
+    super.key,
+    required this.itemBuilder,
+    required this.child,
+    this.onSelected,
+    this.enabled = true,
+    this.onOpened,
+    this.onCanceled,
+    this.position = PopupMenuPosition.under,
+    this.offset = const Offset(0, 4),
+    this.shape,
+    this.menuConstraints,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final restricao = constraints.hasBoundedWidth
+            ? BoxConstraints(
+                minWidth: constraints.maxWidth,
+                maxWidth: constraints.maxWidth,
+                maxHeight: 280,
+              )
+            : const BoxConstraints(minWidth: 160, maxHeight: 280);
+
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: PopupMenuButton<T>(
+            enabled: enabled,
+            tooltip: '',
+            popUpAnimationStyle: AppMotion.estiloDropdown,
+            position: position,
+            offset: offset,
+            shape:
+                shape ??
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            constraints: menuConstraints ?? restricao,
+            onOpened: onOpened,
+            onCanceled: onCanceled,
+            onSelected: onSelected,
+            itemBuilder: itemBuilder,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
+PopupMenuItem<T> popupMenuItemEstilizado<T>({
+  required T value,
+  required Widget child,
+  bool enabled = true,
+  EdgeInsets? padding,
+}) {
+  return PopupMenuItem<T>(
+    value: value,
+    enabled: enabled,
+    mouseCursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+    padding: padding,
+    child: child,
+  );
+}
+
+PopupMenuItem<T> popupMenuItemTexto<T>({
+  required T value,
+  required String texto,
+  bool selecionado = false,
+  bool habilitado = true,
+  TextOverflow? overflow,
+}) {
+  return popupMenuItemEstilizado<T>(
+    value: value,
+    enabled: habilitado,
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            texto,
+            overflow: overflow,
+            style: selecionado
+                ? const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  )
+                : null,
+          ),
+        ),
+        if (selecionado)
+          const Icon(Icons.check_rounded, size: 18, color: AppColors.primary),
+      ],
+    ),
+  );
+}
+
 /// Dropdown personalizado
 Widget dropdownEstilizado({
   required List<String> opcoes,
@@ -251,92 +361,63 @@ class _DropdownEstilizadoState extends State<_DropdownEstilizado> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final restricao = constraints.hasBoundedWidth
-            ? BoxConstraints(
-                minWidth: constraints.maxWidth,
-                maxWidth: constraints.maxWidth,
-                maxHeight: 280,
-              )
-            : const BoxConstraints(minWidth: 160, maxHeight: 280);
-
-        return MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: PopupMenuButton<String>(
-            tooltip: '',
-            popUpAnimationStyle: AppMotion.estiloDropdown,
-            position: PopupMenuPosition.under,
-            offset: const Offset(0, 4),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            constraints: restricao,
-            onOpened: () => setState(() => _aberto = true),
-            onCanceled: () => setState(() => _aberto = false),
-            onSelected: (valor) {
-              setState(() => _aberto = false);
-              widget.onSelecionar(valor);
-            },
-            itemBuilder: (context) => [
-              for (final o in widget.opcoes)
-                PopupMenuItem<String>(
-                  value: o,
-                  child: Text(
-                    o,
-                    style: o == widget.valorSelecionado
-                        ? const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                          )
-                        : null,
+    return PopupMenuEstilizado<String>(
+      onOpened: () => setState(() => _aberto = true),
+      onCanceled: () => setState(() => _aberto = false),
+      onSelected: (valor) {
+        setState(() => _aberto = false);
+        widget.onSelecionar(valor);
+      },
+      itemBuilder: (context) => [
+        for (final o in widget.opcoes)
+          popupMenuItemTexto<String>(
+            value: o,
+            texto: o,
+            selecionado: o == widget.valorSelecionado,
+            habilitado: o != widget.valorSelecionado,
+          ),
+      ],
+      child: HoverAnimado(
+        raio: 14,
+        cursor: SystemMouseCursors.click,
+        child: InputDecorator(
+          decoration: InputDecoration(
+            hintText: widget.hint,
+            isDense: widget.compacto,
+            contentPadding: widget.compacto
+                ? const EdgeInsets.symmetric(horizontal: 12, vertical: 14)
+                : null,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.valorSelecionado ?? widget.hint,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: widget.compacto ? 13 : null,
+                    fontWeight: widget.compacto ? FontWeight.w600 : null,
+                    color: widget.valorSelecionado == null
+                        ? AppColors.textSecondary
+                        : (widget.compacto
+                              ? AppColors.primary
+                              : AppColors.textPrimary),
                   ),
                 ),
-            ],
-            child: HoverAnimado(
-              raio: 14,
-              cursor: SystemMouseCursors.click,
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  hintText: widget.hint,
-                  isDense: widget.compacto,
-                  contentPadding: widget.compacto
-                      ? const EdgeInsets.symmetric(horizontal: 12, vertical: 14)
-                      : null,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.valorSelecionado ?? widget.hint,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: widget.compacto ? 13 : null,
-                          fontWeight: widget.compacto ? FontWeight.w600 : null,
-                          color: widget.valorSelecionado == null
-                              ? AppColors.textSecondary
-                              : (widget.compacto
-                                    ? AppColors.primary
-                                    : AppColors.textPrimary),
-                        ),
-                      ),
-                    ),
-                    AnimatedRotation(
-                      turns: _aberto ? 0.5 : 0,
-                      duration: AppMotion.fade,
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        size: widget.compacto ? 20 : 24,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+              ),
+              AnimatedRotation(
+                turns: _aberto ? 0.5 : 0,
+                duration: AppMotion.fade,
+                child: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: widget.compacto ? 20 : 24,
+                  color: AppColors.textSecondary,
                 ),
               ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

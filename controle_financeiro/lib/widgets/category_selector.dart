@@ -1,4 +1,5 @@
 import 'package:controle_financeiro/utils/dialog_fade.dart';
+import 'package:controle_financeiro/utils/dropdown.dart';
 import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +7,8 @@ import '../models/categoria.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import 'botoes_personalizados.dart';
+
+enum _AcaoCategoria { nova }
 
 /// Campo de categoria. Fica visualmente "apagado" e não clicável enquanto
 /// nenhum tipo (Entrada/Saída) foi escolhido. Quando habilitado, mostra só
@@ -29,12 +32,7 @@ class CategorySelector extends StatefulWidget {
 }
 
 class _CategorySelectorState extends State<CategorySelector> {
-  // Valor do item "Nova categoria" (os demais usam o índice na lista).
-  static const int _novaCategoria = -1;
-
   bool _aberto = false;
-  // Guardada quando o menu abre, para o índice escolhido apontar pra mesma lista.
-  List<Categoria> _opcoes = const [];
 
   List<Categoria> categoriasPorUso(BuildContext context, TipoLancamento tipo) {
     final provider = context.read<FinanceProvider>();
@@ -52,53 +50,39 @@ class _CategorySelectorState extends State<CategorySelector> {
     return categorias;
   }
 
-  Future<void> _aoSelecionar(int valor) async {
+  Future<void> _aoSelecionar(Object valor) async {
     setState(() => _aberto = false);
 
-    if (valor == _novaCategoria) {
+    if (valor == _AcaoCategoria.nova) {
       // O menu já fechou; agora abre o pop-up de criação.
       final nova = await _dialogNovaCategoria(context, widget.tipo!);
       if (nova != null && mounted) widget.onSelecionar(nova);
       return;
     }
-    widget.onSelecionar(_opcoes[valor]);
+
+    if (valor is! Categoria) {
+      throw StateError('Opção de categoria desconhecida: $valor');
+    }
+    widget.onSelecionar(valor);
   }
 
-  List<PopupMenuEntry<int>> _itens(BuildContext context) {
-    _opcoes = categoriasPorUso(context, widget.tipo!);
+  List<PopupMenuEntry<Object>> _itens(BuildContext context) {
+    final opcoes = categoriasPorUso(context, widget.tipo!);
     final selecionadaId = widget.categoriaSelecionada?.id;
 
     return [
-      for (var i = 0; i < _opcoes.length; i++)
-        PopupMenuItem<int>(
-          value: i,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _opcoes[i].nome,
-                  overflow: TextOverflow.ellipsis,
-                  style: _opcoes[i].id == selecionadaId
-                      ? const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        )
-                      : null,
-                ),
-              ),
-              if (_opcoes[i].id == selecionadaId)
-                const Icon(
-                  Icons.check_rounded,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
-            ],
-          ),
+      for (final categoria in opcoes)
+        popupMenuItemTexto<Object>(
+          value: categoria,
+          texto: categoria.nome,
+          overflow: TextOverflow.ellipsis,
+          selecionado: categoria.id == selecionadaId,
+          habilitado: categoria.id != selecionadaId,
         ),
       const PopupMenuDivider(),
       // Item destacado: ao tocar, o menu fecha e abre o pop-up.
-      PopupMenuItem<int>(
-        value: _novaCategoria,
+      popupMenuItemEstilizado<Object>(
+        value: _AcaoCategoria.nova,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -132,93 +116,70 @@ class _CategorySelectorState extends State<CategorySelector> {
   Widget build(BuildContext context) {
     final habilitado = widget.tipo != null;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final restricao = constraints.hasBoundedWidth
-            ? BoxConstraints(
-                minWidth: constraints.maxWidth,
-                maxWidth: constraints.maxWidth,
-                maxHeight: 280,
-              )
-            : const BoxConstraints(minWidth: 160, maxHeight: 280);
-
-        return Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: habilitado ? AppColors.surface : AppColors.disabledFill,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: IgnorePointer(
-            ignoring: !habilitado,
-            child: Opacity(
-              opacity: habilitado ? 1 : 0.55,
-              child: MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: PopupMenuButton<int>(
-                  enabled: habilitado,
-                  tooltip: '',
-                  popUpAnimationStyle: AppMotion.estiloDropdown,
-                  position: PopupMenuPosition.under,
-                  offset: const Offset(0, 4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  constraints: restricao,
-                  onOpened: () => setState(() => _aberto = true),
-                  onCanceled: () => setState(() => _aberto = false),
-                  onSelected: _aoSelecionar,
-                  itemBuilder: _itens,
-                  child: HoverAnimado(
-                    raio: 14,
-                    cursor: SystemMouseCursors.click,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: widget.compact ? 11 : 16,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.sell_outlined,
-                            size: 18,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              widget.categoriaSelecionada?.nome ??
-                                  (habilitado
-                                      ? 'Escolha a categoria'
-                                      : 'Escolha o tipo'),
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: widget.categoriaSelecionada != null
-                                    ? AppColors.textPrimary
-                                    : AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                          AnimatedRotation(
-                            turns: _aberto ? 0.5 : 0,
-                            duration: AppMotion.fade,
-                            child: const Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: habilitado ? AppColors.surface : AppColors.disabledFill,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: IgnorePointer(
+        ignoring: !habilitado,
+        child: Opacity(
+          opacity: habilitado ? 1 : 0.55,
+          child: PopupMenuEstilizado<Object>(
+            enabled: habilitado,
+            onOpened: () => setState(() => _aberto = true),
+            onCanceled: () => setState(() => _aberto = false),
+            onSelected: _aoSelecionar,
+            itemBuilder: _itens,
+            child: HoverAnimado(
+              raio: 14,
+              cursor: SystemMouseCursors.click,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: widget.compact ? 11 : 16,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.sell_outlined,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.categoriaSelecionada?.nome ??
+                            (habilitado
+                                ? 'Escolha a categoria'
+                                : 'Escolha o tipo'),
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: widget.categoriaSelecionada != null
+                              ? AppColors.textPrimary
+                              : AppColors.textSecondary,
+                        ),
                       ),
                     ),
-                  ),
+                    AnimatedRotation(
+                      turns: _aberto ? 0.5 : 0,
+                      duration: AppMotion.fade,
+                      child: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

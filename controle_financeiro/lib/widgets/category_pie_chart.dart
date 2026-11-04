@@ -12,6 +12,7 @@ class CategoryPieChartCard extends StatefulWidget {
   final double? alturaFixa;
   final ValueChanged<String>? onAbrirHistorico;
   final bool usarRotuloExterno;
+  final List<Color> paleta;
 
   const CategoryPieChartCard({
     super.key,
@@ -20,6 +21,7 @@ class CategoryPieChartCard extends StatefulWidget {
     this.alturaFixa,
     this.onAbrirHistorico,
     this.usarRotuloExterno = true,
+    this.paleta = AppColors.entradaPalette
   });
 
   @override
@@ -193,7 +195,11 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
     final ordemCores = _entradasGrafico(entradasLegenda, filhosOutros);
     Color corDe(String nome) {
       final i = ordemCores.indexWhere((e) => e.key == nome);
-      return AppColors.forIndex(i < 0 ? 0 : i);
+      return AppColors.amostrarPaleta(
+        widget.paleta,
+        ordemCores.length,
+        i < 0 ? 0 : i,
+      );
     }
 
     // Total "real"
@@ -286,71 +292,81 @@ class _CategoryPieChartCardState extends State<CategoryPieChartCard> {
                             return Stack(
                               clipBehavior: Clip.none,
                               children: [
-                                PieChart(
-                                  PieChartData(
-                                    sectionsSpace: 2,
-                                    centerSpaceRadius: raioCentro,
-                                    pieTouchData: PieTouchData(
-                                      touchCallback: (event, response) {
-                                        final indice = response
-                                            ?.touchedSection
-                                            ?.touchedSectionIndex;
-                                        final valido =
-                                            indice != null &&
-                                            indice >= 0 &&
-                                            indice < entradas.length;
+                                MouseRegion(
+                                  cursor: _categoriaHover != null
+                                      ? SystemMouseCursors.click
+                                      : MouseCursor.defer,
+                                  child: PieChart(
+                                    PieChartData(
+                                      sectionsSpace: 2,
+                                      centerSpaceRadius: raioCentro,
+                                      pieTouchData: PieTouchData(
+                                        touchCallback: (event, response) {
+                                          final indice = response
+                                              ?.touchedSection
+                                              ?.touchedSectionIndex;
+                                          final valido =
+                                              indice != null &&
+                                              indice >= 0 &&
+                                              indice < entradas.length;
 
-                                        // Mouse passando por cima: mostra o valor temporariamente.
-                                        if (event is FlPointerHoverEvent ||
-                                            event is FlPointerEnterEvent ||
-                                            event is FlPointerExitEvent) {
-                                          final novo =
-                                              (event is FlPointerExitEvent ||
-                                                  !valido)
-                                              ? null
-                                              : entradas[indice].key;
-                                          if (novo != _categoriaHover) {
-                                            setState(
-                                              () => _categoriaHover = novo,
-                                            );
-                                          }
-                                          return;
-                                        }
-
-                                        // Clique simples: fixa/solta o valor.
-                                        if (event is FlTapUpEvent && valido) {
-                                          final nome = entradas[indice].key;
-                                          setState(() {
-                                            _categoriaHover = null;
-                                            _categoriaFixada =
-                                                _categoriaFixada == nome
+                                          // Mouse passando por cima: mostra o valor temporariamente.
+                                          if (event is FlPointerHoverEvent ||
+                                              event is FlPointerEnterEvent ||
+                                              event is FlPointerExitEvent) {
+                                            final novo =
+                                                (event is FlPointerExitEvent ||
+                                                    !valido)
                                                 ? null
-                                                : nome;
-                                          });
-                                        }
-                                      },
+                                                : entradas[indice].key;
+                                            if (novo != _categoriaHover) {
+                                              setState(
+                                                () => _categoriaHover = novo,
+                                              );
+                                            }
+                                            return;
+                                          }
+
+                                          // Clique simples: fixa/solta o valor.
+                                          if (event is FlTapUpEvent && valido) {
+                                            final nome = entradas[indice].key;
+                                            setState(() {
+                                              _categoriaHover = null;
+                                              _categoriaFixada =
+                                                  _categoriaFixada == nome
+                                                  ? null
+                                                  : nome;
+                                            });
+                                          }
+                                        },
+                                      ),
+                                      sections: [
+                                        for (
+                                          var i = 0;
+                                          i < entradas.length;
+                                          i++
+                                        )
+                                          PieChartSectionData(
+                                            value: entradas[i].value,
+                                            color: corDe(entradas[i].key),
+                                            radius: i == indiceTocado
+                                                ? raioSelecionado
+                                                : raioNormal,
+                                            showTitle:
+                                                i == indiceTocado &&
+                                                !tocadaEhPequena,
+                                            title:
+                                                Formatters.moedaIntSemSimbolo(
+                                                  entradas[i].value,
+                                                ),
+                                            titleStyle: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: fontSizeTitulo,
+                                            ),
+                                          ),
+                                      ],
                                     ),
-                                    sections: [
-                                      for (var i = 0; i < entradas.length; i++)
-                                        PieChartSectionData(
-                                          value: entradas[i].value,
-                                          color: corDe(entradas[i].key),
-                                          radius: i == indiceTocado
-                                              ? raioSelecionado
-                                              : raioNormal,
-                                          showTitle:
-                                              i == indiceTocado &&
-                                              !tocadaEhPequena,
-                                          title: Formatters.moedaIntSemSimbolo(
-                                            entradas[i].value,
-                                          ),
-                                          titleStyle: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: fontSizeTitulo,
-                                          ),
-                                        ),
-                                    ],
                                   ),
                                 ),
                                 if (tocadaEhPequena)

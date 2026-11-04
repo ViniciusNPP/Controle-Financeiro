@@ -10,6 +10,14 @@ import 'package:flutter/foundation.dart';
 
 enum GranularidadeNavegador { mes, ano }
 
+final ButtonStyle _estiloSeta = ButtonStyle(
+  mouseCursor: WidgetStateProperty.resolveWith(
+    (states) => states.contains(WidgetState.disabled)
+        ? SystemMouseCursors.basic
+        : SystemMouseCursors.click,
+  ),
+);
+
 //Barra reutilizável de navegação por mês ou ano
 class MonthYearNavigator extends StatelessWidget {
   final GranularidadeNavegador granularidade;
@@ -122,6 +130,7 @@ class MonthYearNavigator extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.chevron_left_rounded, size: 20),
                     onPressed: _podeVoltar ? () => _navegar(-1) : null,
+                    style: _estiloSeta,
                   ),
                   Text(
                     _texto,
@@ -133,6 +142,7 @@ class MonthYearNavigator extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.chevron_right_rounded, size: 20),
                     onPressed: _podeAvancar ? () => _navegar(1) : null,
+                    style: _estiloSeta,
                   ),
                 ],
               ),
@@ -366,9 +376,7 @@ Future<DateTime?> _mostrarSeletorMes(
                         IconButton(
                           icon: const Icon(Icons.chevron_left_rounded),
                           onPressed: podeVoltarAno ? () => mudarAno(-1) : null,
-                          mouseCursor: podeVoltarAno
-                              ? SystemMouseCursors.click
-                              : SystemMouseCursors.basic,
+                          style: _estiloSeta,
                         ),
                         transicaoAno(
                           Text(
@@ -383,9 +391,7 @@ Future<DateTime?> _mostrarSeletorMes(
                         IconButton(
                           icon: const Icon(Icons.chevron_right_rounded),
                           onPressed: podeAvancarAno ? () => mudarAno(1) : null,
-                          mouseCursor: podeAvancarAno
-                              ? SystemMouseCursors.click
-                              : SystemMouseCursors.basic,
+                          style: _estiloSeta,
                         ),
                       ],
                     ),

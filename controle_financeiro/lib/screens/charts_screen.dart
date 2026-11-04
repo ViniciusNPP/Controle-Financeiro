@@ -136,6 +136,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
       CategoryPieChartCard(
         titulo: 'Saídas específicas (R\$)',
         dados: saidasPorCategoria,
+        paleta: AppColors.saidaPalette,
         onAbrirHistorico: (categoria) =>
             _abrirHistoricoPizza(filtro, categoria, TipoLancamento.saida),
       ),

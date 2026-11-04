@@ -28,28 +28,38 @@ class AppColors {
   static const Color border = Color(0xFFE5E7EE);
   static const Color disabledFill = Color(0xFFECEDF2);
 
-  /// Paleta usada para colorir categorias nos gráficos de pizza.
-  static const List<Color> categoriaPalette = [
-    Color(0xFF2E2A6E),
+  /// Entradas: tons igualmente espaçados do verde escuro ao verde de entrada.
+  static const List<Color> entradaPalette = [
+    Color(0xFF0A5C36),
+    Color(0xFF0E6B40),
+    Color(0xFF13784B),
+    Color(0xFF198555),
+    Color(0xFF209260),
+    Color(0xFF279D6B),
     Color(0xFF2FA875),
-    Color(0xFFD64550),
-    Color(0xFFE8A33D),
-    Color(0xFF4B9FD6),
-    Color(0xFF9B5DE5),
-    Color(0xFF5B6472),
-    Color(0xFFE4572E),
-    Color(0xFF1F9E9E),
-    Color(0xFFC44FA0),
-    Color(0xFF7C6B4F),
-    Color(0xFF4E6E58),
-    Color(0xFFB8873F),
-    Color(0xFF6E4E9E),
-    Color(0xFF3F6E9E),
-    Color(0xFF9E3F5B),
-    Color(0xFF5F8B4C),
   ];
 
-  static Color forIndex(int i) => categoriaPalette[i % categoriaPalette.length];
+  /// Saídas: tons igualmente espaçados do vermelho ao amarelo-ouro.
+  static const List<Color> saidaPalette = [
+    Color(0xFFC62828),
+    Color(0xFFC93B26),
+    Color(0xFFCB4E24),
+    Color(0xFFCE6323),
+    Color(0xFFD17921),
+    Color(0xFFD3911F),
+    Color(0xFFD6A91D),
+  ];
+
+  /// Escolhe a cor da posição [i] entre [n] elementos, espalhando-os por toda
+  /// a paleta: i = 0 pega a primeira cor, i = n-1 pega a última e as demais
+  /// ficam igualmente espaçadas.
+  static Color amostrarPaleta(List<Color> paleta, int n, int i) {
+    if (paleta.length == 1 || n <= 1) return paleta.first;
+    final pos = (i.clamp(0, n - 1) / (n - 1)) * (paleta.length - 1);
+    final baixo = pos.floor();
+    final alto = pos.ceil();
+    return Color.lerp(paleta[baixo], paleta[alto], pos - baixo)!;
+  }
 }
 
 class AppTheme {

@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../models/categoria.dart';
 import '../models/transacao.dart';
 import '../theme/app_theme.dart';
+import '../utils/dropdown.dart';
 import '../utils/formatters.dart';
 import '../utils/period_utils.dart';
 
@@ -380,12 +381,11 @@ class _BarChartCardState extends State<BarChartCard> {
 
   Widget _cabecalhoComSeletor(Color corTexto) {
     final rotuloAtual = _categoriaSelecionada ?? 'Todas';
-    return PopupMenuButton<String>(
-      tooltip: '',
-      popUpAnimationStyle: AppMotion.estiloDropdown,
+    return PopupMenuEstilizado<String>(
+      position: null,
       offset: const Offset(0, 28),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      constraints: const BoxConstraints(maxHeight: 280, minWidth: 160),
+      menuConstraints: const BoxConstraints(maxHeight: 280, minWidth: 160),
       onOpened: () => setState(() => _seletorAberto = true),
       onCanceled: () => setState(() => _seletorAberto = false),
       onSelected: (valor) {
@@ -393,9 +393,19 @@ class _BarChartCardState extends State<BarChartCard> {
         _selecionarCategoria(valor == _valorTodas ? null : valor);
       },
       itemBuilder: (context) => [
-        const PopupMenuItem<String>(value: _valorTodas, child: Text('Todas')),
+        popupMenuItemTexto<String>(
+          value: _valorTodas,
+          texto: 'Todas',
+          selecionado: _categoriaSelecionada == null,
+          habilitado: _categoriaSelecionada != null,
+        ),
         for (final c in widget.categorias!)
-          PopupMenuItem<String>(value: c.nome, child: Text(c.nome)),
+          popupMenuItemTexto<String>(
+            value: c.nome,
+            texto: c.nome,
+            selecionado: c.nome == _categoriaSelecionada,
+            habilitado: c.nome != _categoriaSelecionada,
+          ),
       ],
       child: InkWell(
         mouseCursor: SystemMouseCursors.click,
