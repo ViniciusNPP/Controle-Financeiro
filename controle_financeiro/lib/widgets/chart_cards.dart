@@ -196,7 +196,7 @@ class _BarChartCardState extends State<BarChartCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 80,
+            flex: 70,
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
@@ -209,11 +209,8 @@ class _BarChartCardState extends State<BarChartCard> {
                       ? _cabecalhoComSeletor(corTextoSecundario)
                       : Text(
                           widget.titulo,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: corTextoSecundario,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(color: corTextoSecundario),
                         ),
                   const SizedBox(height: 4),
                   TrocaFade(
@@ -231,7 +228,7 @@ class _BarChartCardState extends State<BarChartCard> {
           ),
           const SizedBox(height: 12),
           Expanded(
-            flex: 160,
+            flex: 218,
             child: chaves.isEmpty
                 ? Center(
                     child: Text(
@@ -414,11 +411,9 @@ class _BarChartCardState extends State<BarChartCard> {
           children: [
             Text(
               '${widget.titulo}: $rotuloAtual ${_seletorAberto ? '▴' : '▾'}',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: corTexto,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: corTexto),
             ),
           ],
         ),

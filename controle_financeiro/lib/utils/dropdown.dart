@@ -327,6 +327,10 @@ Widget dropdownEstilizado({
   required ValueChanged<String> onSelecionar,
   String hint = 'Selecione...',
   bool compacto = false,
+  bool habilitado = true,
+  IconData? icone,
+  String? rotuloNovo,
+  VoidCallback? onNovo,
 }) {
   return _DropdownEstilizado(
     opcoes: opcoes,
@@ -334,6 +338,10 @@ Widget dropdownEstilizado({
     onSelecionar: onSelecionar,
     hint: hint,
     compacto: compacto,
+    habilitado: habilitado,
+    icone: icone,
+    rotuloNovo: rotuloNovo,
+    onNovo: onNovo,
   );
 }
 
@@ -343,6 +351,10 @@ class _DropdownEstilizado extends StatefulWidget {
   final ValueChanged<String> onSelecionar;
   final String hint;
   final bool compacto;
+  final bool habilitado;
+  final IconData? icone;
+  final String? rotuloNovo;
+  final VoidCallback? onNovo;
 
   const _DropdownEstilizado({
     required this.opcoes,
@@ -350,6 +362,10 @@ class _DropdownEstilizado extends StatefulWidget {
     required this.onSelecionar,
     required this.hint,
     required this.compacto,
+    required this.habilitado,
+    required this.icone,
+    required this.rotuloNovo,
+    required this.onNovo,
   });
 
   @override
@@ -358,63 +374,118 @@ class _DropdownEstilizado extends StatefulWidget {
 
 class _DropdownEstilizadoState extends State<_DropdownEstilizado> {
   bool _aberto = false;
+  static const _novo = '\u0000novo'; // Valor reservado do item "Novo"
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuEstilizado<String>(
-      onOpened: () => setState(() => _aberto = true),
-      onCanceled: () => setState(() => _aberto = false),
-      onSelected: (valor) {
-        setState(() => _aberto = false);
-        widget.onSelecionar(valor);
-      },
-      itemBuilder: (context) => [
-        for (final o in widget.opcoes)
-          popupMenuItemTexto<String>(
-            value: o,
-            texto: o,
-            selecionado: o == widget.valorSelecionado,
-            habilitado: o != widget.valorSelecionado,
-          ),
-      ],
-      child: HoverAnimado(
-        raio: 14,
-        cursor: SystemMouseCursors.click,
-        child: InputDecorator(
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            isDense: widget.compacto,
-            contentPadding: widget.compacto
-                ? const EdgeInsets.symmetric(horizontal: 12, vertical: 14)
-                : null,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  widget.valorSelecionado ?? widget.hint,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: widget.compacto ? 13 : null,
-                    fontWeight: widget.compacto ? FontWeight.w600 : null,
-                    color: widget.valorSelecionado == null
-                        ? AppColors.textSecondary
-                        : (widget.compacto
-                              ? AppColors.primary
-                              : AppColors.textPrimary),
+    return IgnorePointer(
+      ignoring: !widget.habilitado,
+      child: Opacity(
+        opacity: widget.habilitado ? 1 : 0.55,
+        child: PopupMenuEstilizado<String>(
+          onOpened: () => setState(() => _aberto = true),
+          onCanceled: () => setState(() => _aberto = false),
+          onSelected: (valor) {
+            setState(() => _aberto = false);
+            if (valor == _novo) {
+              widget.onNovo?.call();
+              return;
+            }
+            widget.onSelecionar(valor);
+          },
+          itemBuilder: (context) => [
+            for (final o in widget.opcoes)
+              popupMenuItemTexto<String>(
+                value: o,
+                texto: o,
+                selecionado: o == widget.valorSelecionado,
+                habilitado: o != widget.valorSelecionado,
+              ),
+            if (widget.onNovo != null) ...[
+              const PopupMenuDivider(),
+              PopupMenuItem<String>(
+                value: _novo,
+                mouseCursor: SystemMouseCursors.click,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.add_circle_outline_rounded,
+                        size: 20,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        widget.rotuloNovo ?? 'Novo',
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              AnimatedRotation(
-                turns: _aberto ? 0.5 : 0,
-                duration: AppMotion.fade,
-                child: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: widget.compacto ? 20 : 24,
-                  color: AppColors.textSecondary,
-                ),
-              ),
             ],
+          ],
+          child: HoverAnimado(
+            raio: 14,
+            cursor: SystemMouseCursors.click,
+            child: InputDecorator(
+              decoration: InputDecoration(
+                hintText: widget.hint,
+                isDense: widget.compacto,
+                fillColor: widget.habilitado ? null : AppColors.disabledFill,
+                contentPadding: widget.compacto
+                    ? const EdgeInsets.symmetric(horizontal: 12, vertical: 14)
+                    : null,
+              ),
+              child: Row(
+                children: [
+                  if (widget.icone != null) ...[
+                    Icon(
+                      widget.icone,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: Text(
+                      widget.valorSelecionado ?? widget.hint,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: widget.compacto ? 13 : null,
+                        fontWeight: widget.compacto ? FontWeight.w600 : null,
+                        color: widget.valorSelecionado == null
+                            ? AppColors.textSecondary
+                            : (widget.compacto
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary),
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _aberto ? 0.5 : 0,
+                    duration: AppMotion.fade,
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: widget.compacto ? 20 : 24,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

@@ -54,11 +54,17 @@ class _HomeShellState extends State<HomeShell> {
   int _pedidoParaHistoricoId = 0;
 
   void _abrirHistoricoComFiltros(List<FiltroHistorico> filtros) {
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _filtrosParaHistorico = filtros;
       _pedidoParaHistoricoId++;
       _aba = 2; // índice da aba Histórico, ver `telas`/`titulos` no build()
     });
+  }
+
+  void _selecionarAba(int i) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _aba = i);
   }
 
   void _abrirSincronizacao(BuildContext context) {
@@ -111,7 +117,7 @@ class _HomeShellState extends State<HomeShell> {
     );
     final sidebar = AppSidebarContent(
       abaSelecionada: _aba,
-      onSelecionar: (i) => setState(() => _aba = i),
+      onSelecionar: _selecionarAba,
       onSincronizar: () => _abrirSincronizacao(context),
     );
 

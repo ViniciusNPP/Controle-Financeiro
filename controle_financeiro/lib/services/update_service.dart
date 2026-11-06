@@ -30,15 +30,18 @@ class UpdateService {
       final res = await http
           .get(
             Uri.parse(
-                'https://api.github.com/repos/$_owner/$_repo/releases/latest'),
+              'https://api.github.com/repos/$_owner/$_repo/releases/latest',
+            ),
             headers: {'Accept': 'application/vnd.github+json'},
           )
           .timeout(const Duration(seconds: 8));
       if (res.statusCode != 200) return null;
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final latest =
-          (data['tag_name'] as String).replaceFirst(RegExp(r'^[vV]'), '');
+      final latest = (data['tag_name'] as String).replaceFirst(
+        RegExp(r'^[vV]'),
+        '',
+      );
       final current = (await PackageInfo.fromPlatform()).version;
       if (!_isNewer(latest, current)) return null;
 
@@ -63,12 +66,8 @@ class UpdateService {
   }
 
   static bool _isNewer(String latest, String current) {
-    List<int> parse(String v) => v
-        .split('+')
-        .first
-        .split('.')
-        .map((e) => int.tryParse(e) ?? 0)
-        .toList();
+    List<int> parse(String v) =>
+        v.split('+').first.split('.').map((e) => int.tryParse(e) ?? 0).toList();
     final a = parse(latest), b = parse(current);
     for (var i = 0; i < 3; i++) {
       final x = i < a.length ? a[i] : 0;
@@ -78,7 +77,7 @@ class UpdateService {
     return false;
   }
 
-    // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
   // Marcador de "atualização em andamento"
   // --------------------------------------------------------------------------
   static Future<File> _arquivoPendente() async {
@@ -95,6 +94,7 @@ class UpdateService {
   /// Chamar ao abrir o app. Retorna a versão se o app acabou de ser atualizado.
   static Future<String?> versaoRecemAtualizada() async {
     try {
+      await _limparApkBaixado();
       final f = await _arquivoPendente();
       if (!await f.exists()) return null;
       final alvo = (await f.readAsString()).trim();
@@ -181,5 +181,15 @@ class UpdateService {
           throw Exception('Falha na atualização: ${e.status}');
       }
     }
+  }
+
+  /// Apaga o APK baixado pelo ota_update (Android).
+  static Future<void> _limparApkBaixado() async {
+    if (!Platform.isAndroid) return;
+    try {
+      final dir = await getApplicationSupportDirectory();
+      final pasta = Directory('${dir.path}/ota_update');
+      if (await pasta.exists()) await pasta.delete(recursive: true);
+    } catch (_) {}
   }
 }

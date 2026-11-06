@@ -8,7 +8,14 @@ import '../utils/period_utils.dart';
 
 enum _ModoPeriodo { mensal, anual }
 
-enum _GranMensal { mes, bimestre, trimestre, semestre, todoPeriodo, personalizado }
+enum _GranMensal {
+  mes,
+  bimestre,
+  trimestre,
+  semestre,
+  todoPeriodo,
+  personalizado,
+}
 
 enum _GranAnual { ano, todoPeriodo, personalizado }
 
@@ -16,7 +23,11 @@ class PeriodSelector extends StatefulWidget {
   final List<Transacao> todasTransacoes;
   final ValueChanged<FiltroPeriodo> onChanged;
 
-  const PeriodSelector({super.key, required this.todasTransacoes, required this.onChanged});
+  const PeriodSelector({
+    super.key,
+    required this.todasTransacoes,
+    required this.onChanged,
+  });
 
   @override
   State<PeriodSelector> createState() => _PeriodSelectorState();
@@ -26,6 +37,12 @@ class _PeriodSelectorState extends State<PeriodSelector> {
   _ModoPeriodo _modo = _ModoPeriodo.mensal;
   _GranMensal _granMensal = _GranMensal.mes;
   _GranAnual _granAnual = _GranAnual.ano;
+
+  bool _expandido = false;
+
+  void _alternarExpandido() => setState(() {
+    _expandido = !_expandido;
+  });
 
   late DateTime _mesReferencia;
   late DateTime _mesPersonalizadoDe;
@@ -47,7 +64,8 @@ class _PeriodSelectorState extends State<PeriodSelector> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _emitir());
   }
 
-  List<DateTime> get _todasAsDatas => widget.todasTransacoes.map((t) => t.data).toList();
+  List<DateTime> get _todasAsDatas =>
+      widget.todasTransacoes.map((t) => t.data).toList();
 
   // Intervalo real de datas com lançamentos, para limitar a navegação dos
   // seletores de mês/ano ao período que realmente existe dados em vez de um
@@ -84,7 +102,10 @@ class _PeriodSelectorState extends State<PeriodSelector> {
           filtro = PeriodoUtils.todoPeriodoMensal(_todasAsDatas);
           break;
         case _GranMensal.personalizado:
-          filtro = PeriodoUtils.mesesPersonalizado(_mesPersonalizadoDe, _mesPersonalizadoAte);
+          filtro = PeriodoUtils.mesesPersonalizado(
+            _mesPersonalizadoDe,
+            _mesPersonalizadoAte,
+          );
           break;
       }
     } else {
@@ -96,7 +117,10 @@ class _PeriodSelectorState extends State<PeriodSelector> {
           filtro = PeriodoUtils.todoPeriodoAnual(_todasAsDatas);
           break;
         case _GranAnual.personalizado:
-          filtro = PeriodoUtils.anosPersonalizado(_anoPersonalizadoDe, _anoPersonalizadoAte);
+          filtro = PeriodoUtils.anosPersonalizado(
+            _anoPersonalizadoDe,
+            _anoPersonalizadoAte,
+          );
           break;
       }
     }
@@ -105,24 +129,72 @@ class _PeriodSelectorState extends State<PeriodSelector> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _seletorModo(),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return _modo == _ModoPeriodo.mensal
-                  ? _chipsOuDropdownMensal(constraints.maxWidth)
-                  : _chipsOuDropdownAnual(constraints.maxWidth);
-            },
+    return AnimatedSize(
+      duration: AppMotion.fadeThrough,
+      curve: Curves.easeInOutCubic,
+      alignment: Alignment.topLeft,
+      clipBehavior: Clip.none,
+      child: TrocaFadeThrough(
+        chave: _expandido,
+        alinhamento: Alignment.topLeft,
+        child: _expandido
+            ? _painelExpandido()
+            : Align(alignment: Alignment.centerRight, child: _botaoExpandir()),
+      ),
+    );
+  }
+
+  Widget _painelExpandido() {
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: AppTheme.cardDecoration(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _seletorModo(),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return _modo == _ModoPeriodo.mensal
+                    ? _chipsOuDropdownMensal(constraints.maxWidth)
+                    : _chipsOuDropdownAnual(constraints.maxWidth);
+              },
+            ),
+            const SizedBox(height: 12),
+            _modo == _ModoPeriodo.mensal
+                ? _controlesMensal()
+                : _controlesAnual(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _botaoExpandir() {
+    return HoverAnimado(
+      raio: 12,
+      escala: 1.04,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _alternarExpandido,
+        child: Container(
+          padding: const EdgeInsets.all(9),
+          decoration: BoxDecoration(
+            color: AppColors.disabledFill,
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(height: 12),
-          _modo == _ModoPeriodo.mensal ? _controlesMensal() : _controlesAnual(),
-        ],
+          child: AnimatedRotation(
+            turns: _expandido ? 0.5 : 0,
+            duration: AppMotion.fade,
+            child: Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 22,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -133,11 +205,13 @@ class _PeriodSelectorState extends State<PeriodSelector> {
         _botaoModo('Mensal', _ModoPeriodo.mensal),
         const SizedBox(width: 8),
         _botaoModo('Anual', _ModoPeriodo.anual),
+        const Spacer(),
+        _botaoExpandir(),
       ],
     );
   }
 
-    Widget _botaoModo(String label, _ModoPeriodo modo) {
+  Widget _botaoModo(String label, _ModoPeriodo modo) {
     return ChipAnimado(
       label: label,
       selecionado: _modo == modo,
@@ -172,7 +246,10 @@ class _PeriodSelectorState extends State<PeriodSelector> {
   }
 
   // Estilo de texto usado nos chips — reaproveitado aqui pra medir a largura real de cada label.
-  static const TextStyle _estiloChip = TextStyle(fontSize: 13, fontWeight: FontWeight.w600);
+  static const TextStyle _estiloChip = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+  );
 
   // Padding horizontal (14+14) + borda (4+4) de cada chip, ver _chip() acima.
   static const double _larguraExtraPorChip = 14 * 2 + 4 * 2;
@@ -190,12 +267,20 @@ class _PeriodSelectorState extends State<PeriodSelector> {
       )..layout();
       total += tp.width + _larguraExtraPorChip;
     }
-    total += _espacamentoEntreChips * (labels.length - 1).clamp(0, labels.length);
+    total +=
+        _espacamentoEntreChips * (labels.length - 1).clamp(0, labels.length);
     return total;
   }
 
   Widget _chipsOuDropdownMensal(double larguraDisponivel) {
-    const labels = ['Mês', 'Bimestre', 'Trimestre', 'Semestre', 'Todo o período', 'Personalizado'];
+    const labels = [
+      'Mês',
+      'Bimestre',
+      'Trimestre',
+      'Semestre',
+      'Todo o período',
+      'Personalizado',
+    ];
     final cabe = _larguraNecessaria(labels) <= larguraDisponivel;
     return cabe ? _chipsMensal() : _dropdownMensal();
   }
@@ -211,12 +296,36 @@ class _PeriodSelectorState extends State<PeriodSelector> {
       spacing: 8,
       runSpacing: 8,
       children: [
-        _chip('Mês', _granMensal == _GranMensal.mes, () => _setGran(mensal: _GranMensal.mes)),
-        _chip('Bimestre', _granMensal == _GranMensal.bimestre, () => _setGran(mensal: _GranMensal.bimestre)),
-        _chip('Trimestre', _granMensal == _GranMensal.trimestre, () => _setGran(mensal: _GranMensal.trimestre)),
-        _chip('Semestre', _granMensal == _GranMensal.semestre, () => _setGran(mensal: _GranMensal.semestre)),
-        _chip('Todo o período', _granMensal == _GranMensal.todoPeriodo, () => _setGran(mensal: _GranMensal.todoPeriodo)),
-        _chip('Personalizado', _granMensal == _GranMensal.personalizado, () => _setGran(mensal: _GranMensal.personalizado)),
+        _chip(
+          'Mês',
+          _granMensal == _GranMensal.mes,
+          () => _setGran(mensal: _GranMensal.mes),
+        ),
+        _chip(
+          'Bimestre',
+          _granMensal == _GranMensal.bimestre,
+          () => _setGran(mensal: _GranMensal.bimestre),
+        ),
+        _chip(
+          'Trimestre',
+          _granMensal == _GranMensal.trimestre,
+          () => _setGran(mensal: _GranMensal.trimestre),
+        ),
+        _chip(
+          'Semestre',
+          _granMensal == _GranMensal.semestre,
+          () => _setGran(mensal: _GranMensal.semestre),
+        ),
+        _chip(
+          'Todo o período',
+          _granMensal == _GranMensal.todoPeriodo,
+          () => _setGran(mensal: _GranMensal.todoPeriodo),
+        ),
+        _chip(
+          'Personalizado',
+          _granMensal == _GranMensal.personalizado,
+          () => _setGran(mensal: _GranMensal.personalizado),
+        ),
       ],
     );
   }
@@ -226,9 +335,21 @@ class _PeriodSelectorState extends State<PeriodSelector> {
       spacing: 8,
       runSpacing: 8,
       children: [
-        _chip('Ano', _granAnual == _GranAnual.ano, () => _setGran(anual: _GranAnual.ano)),
-        _chip('Todo o período', _granAnual == _GranAnual.todoPeriodo, () => _setGran(anual: _GranAnual.todoPeriodo)),
-        _chip('Personalizado', _granAnual == _GranAnual.personalizado, () => _setGran(anual: _GranAnual.personalizado)),
+        _chip(
+          'Ano',
+          _granAnual == _GranAnual.ano,
+          () => _setGran(anual: _GranAnual.ano),
+        ),
+        _chip(
+          'Todo o período',
+          _granAnual == _GranAnual.todoPeriodo,
+          () => _setGran(anual: _GranAnual.todoPeriodo),
+        ),
+        _chip(
+          'Personalizado',
+          _granAnual == _GranAnual.personalizado,
+          () => _setGran(anual: _GranAnual.personalizado),
+        ),
       ],
     );
   }
@@ -263,43 +384,60 @@ class _PeriodSelectorState extends State<PeriodSelector> {
   }
 
   Widget _dropdownGranularidade<T>({
-  required T valor,
-  required Map<T, String> rotulos,
-  required ValueChanged<T> onChanged,
-}) {
-  return SizedBox(
-    width: double.infinity,
-    child: dropdownEstilizado(
-      compacto: true,
-      opcoes: rotulos.values.toList(),
-      valorSelecionado: rotulos[valor],
-      onSelecionar: (label) => onChanged(
-        rotulos.entries.firstWhere((e) => e.value == label).key,
+    required T valor,
+    required Map<T, String> rotulos,
+    required ValueChanged<T> onChanged,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: dropdownEstilizado(
+        compacto: true,
+        opcoes: rotulos.values.toList(),
+        valorSelecionado: rotulos[valor],
+        onSelecionar: (label) =>
+            onChanged(rotulos.entries.firstWhere((e) => e.value == label).key),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _setGran({_GranMensal? mensal, _GranAnual? anual}) {
-  setState(() {
-    if (mensal != null) _granMensal = mensal;
-    if (anual != null) _granAnual = anual;
-  });
-  _emitir();
-}
+    setState(() {
+      if (mensal != null) _granMensal = mensal;
+      if (anual != null) _granAnual = anual;
+    });
+    _emitir();
+  }
 
   Widget _controlesMensal() {
     if (_granMensal == _GranMensal.todoPeriodo) return const SizedBox.shrink();
     if (_granMensal == _GranMensal.personalizado) {
       return Row(
         children: [
-          Expanded(child: _seletor('De', valorMes: _mesPersonalizadoDe, setMes: (d) => _mesPersonalizadoDe = d, abreviado: true)),
+          Expanded(
+            child: _seletor(
+              'De',
+              valorMes: _mesPersonalizadoDe,
+              setMes: (d) => _mesPersonalizadoDe = d,
+              abreviado: true,
+            ),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: _seletor('Até', valorMes: _mesPersonalizadoAte, setMes: (d) => _mesPersonalizadoAte = d, abreviado: true)),
+          Expanded(
+            child: _seletor(
+              'Até',
+              valorMes: _mesPersonalizadoAte,
+              setMes: (d) => _mesPersonalizadoAte = d,
+              abreviado: true,
+            ),
+          ),
         ],
       );
     }
-    return _seletor(null, valorMes: _mesReferencia, setMes: (d) => _mesReferencia = d);
+    return _seletor(
+      null,
+      valorMes: _mesReferencia,
+      setMes: (d) => _mesReferencia = d,
+    );
   }
 
   Widget _controlesAnual() {
@@ -307,39 +445,65 @@ class _PeriodSelectorState extends State<PeriodSelector> {
     if (_granAnual == _GranAnual.personalizado) {
       return Row(
         children: [
-          Expanded(child: _seletor('De', valorAno: _anoPersonalizadoDe, setAno: (a) => _anoPersonalizadoDe = a)),
+          Expanded(
+            child: _seletor(
+              'De',
+              valorAno: _anoPersonalizadoDe,
+              setAno: (a) => _anoPersonalizadoDe = a,
+            ),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: _seletor('Até', valorAno: _anoPersonalizadoAte, setAno: (a) => _anoPersonalizadoAte = a)),
+          Expanded(
+            child: _seletor(
+              'Até',
+              valorAno: _anoPersonalizadoAte,
+              setAno: (a) => _anoPersonalizadoAte = a,
+            ),
+          ),
         ],
       );
     }
-    return _seletor(null, valorAno: _anoReferencia, setAno: (a) => _anoReferencia = a);
+    return _seletor(
+      null,
+      valorAno: _anoReferencia,
+      setAno: (a) => _anoReferencia = a,
+    );
   }
 
   Widget _seletor(
-    String? rotulo, 
-    {DateTime? valorMes, int? 
-    valorAno, void Function(DateTime)? 
-    setMes, void Function(int)? setAno, 
-    bool abreviado = false
-    }) {
-      
+    String? rotulo, {
+    DateTime? valorMes,
+    int? valorAno,
+    void Function(DateTime)? setMes,
+    void Function(int)? setAno,
+    bool abreviado = false,
+  }) {
     assert(
-      (valorMes != null && setMes != null && valorAno == null && setAno == null) ||
-      (valorAno != null && setAno != null && valorMes == null && setMes == null),
+      (valorMes != null &&
+              setMes != null &&
+              valorAno == null &&
+              setAno == null) ||
+          (valorAno != null &&
+              setAno != null &&
+              valorMes == null &&
+              setMes == null),
       'Passe exatamente um par: (valorMes + setMes) ou (valorAno + setAno), nunca os dois nem nenhum.',
     );
 
     final ehMes = valorMes != null;
     return MonthYearNavigator(
-      granularidade: ehMes ? GranularidadeNavegador.mes : GranularidadeNavegador.ano,
+      granularidade: ehMes
+          ? GranularidadeNavegador.mes
+          : GranularidadeNavegador.ano,
       valor: ehMes ? valorMes : DateTime(valorAno!),
       rotulo: rotulo,
       abreviado: abreviado,
       dataMinima: _dataMinima,
       dataMaxima: _dataMaxima,
       onChanged: (d) {
-        setState(() => ehMes ? setMes!(DateTime(d.year, d.month)) : setAno!(d.year));
+        setState(
+          () => ehMes ? setMes!(DateTime(d.year, d.month)) : setAno!(d.year),
+        );
         _emitir();
       },
     );
