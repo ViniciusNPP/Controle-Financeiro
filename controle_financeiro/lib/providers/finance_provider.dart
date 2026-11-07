@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/categoria.dart';
 import '../models/recorrencia.dart';
 import '../models/transacao.dart';
@@ -32,10 +33,76 @@ class FinanceProvider extends ChangeNotifier {
       await _storage.salvar(_dados);
     }
 
+    await _migrarIdsCategorias();
+    await _adicionarCategoriasPadraoNovas();
     await _gerarTransacoesPendentes();
 
     _carregado = true;
     notifyListeners();
+  }
+
+  /// Converte IDs antigos ("saida_água") para os numéricos, em categorias, transações e recorrências
+  Future<void> _migrarIdsCategorias() async {
+    final mapa = Categoria.idsAntigosParaNovos();
+    String novo(String id) => mapa[id] ?? id;
+
+    final precisaMigrar =
+        _dados.categorias.any((c) => mapa.containsKey(c.id)) ||
+        _dados.transacoes.any((t) => mapa.containsKey(t.categoriaId)) ||
+        _dados.recorrentes.any((r) => mapa.containsKey(r.categoriaId));
+    if (!precisaMigrar) return;
+
+    // Converte e remove categorias duplicadas pelo ID (mantém a primeira).
+    final vistos = <String>{};
+    final categorias = <Categoria>[];
+    for (final c in _dados.categorias) {
+      final convertida = c.copyWith(id: novo(c.id));
+      if (vistos.add(convertida.id)) categorias.add(convertida);
+    }
+
+    _dados = DadosApp(
+      categorias: categorias,
+      transacoes: [
+        for (final t in _dados.transacoes)
+          t.copyWith(categoriaId: novo(t.categoriaId)),
+      ],
+      recorrentes: [
+        for (final r in _dados.recorrentes)
+          r.copyWith(categoriaId: novo(r.categoriaId)),
+      ],
+    );
+    await _storage.salvar(_dados);
+  }
+
+  /// Adiciona categorias padrão novas sem recriar as que o usuário excluiu de propósito.
+  Future<void> _adicionarCategoriasPadraoNovas() async {
+    const chave = 'categorias_padrao_oferecidas';
+    final prefs = await SharedPreferences.getInstance();
+    final padroes = Categoria.todasPadroes();
+
+    final jaOferecidas = prefs.getStringList(chave);
+    final mapaAntigo = Categoria.idsAntigosParaNovos();
+    final oferecidas = <String>{
+      ...?jaOferecidas?.map((id) => mapaAntigo[id] ?? id),
+    };
+
+    final idsExistentes = _dados.categorias.map((c) => c.id).toSet();
+    final novas = <Categoria>[];
+
+    for (final p in padroes) {
+      final foiOferecida = oferecidas.contains(p.id);
+      if (!idsExistentes.contains(p.id) && !foiOferecida) {
+        novas.add(p);
+      }
+      oferecidas.add(p.id);
+    }
+
+    await prefs.setStringList(chave, oferecidas.toList());
+
+    if (novas.isEmpty) return;
+
+    _dados = _dados.copyWith(categorias: [..._dados.categorias, ...novas]);
+    await _storage.salvar(_dados);
   }
 
   /// Percorre os moldes de recorrência e gera as Transacoes pendentes em sequência
