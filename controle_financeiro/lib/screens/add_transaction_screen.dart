@@ -21,10 +21,10 @@ const double _kLarguraMaxCardMobile = 580; // teto do card no mobile
 // PONTO DE CONTROLE 3: desktop x mobile por ALTURA
 const double _kAlturaMinimaDesktopLargo = 865;
 const double _kAlturaMinimaDesktopCompacto = 920;
-const double _kAlturaMinimaConteudoCard =
-    640; // Altura mínima do conteúdo do card antes de a tela precisar rolar
 
 const double _kMargemVerticalCard = 8;
+
+const Duration _kDuracaoRecorrencia = Duration(milliseconds: 300);
 
 class AddTransactionScreen extends StatefulWidget {
   final bool ativa;
@@ -270,34 +270,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   );
 
   /// Campo cresce para ocupar a altura que sobrar.
-  Widget _campoDescricao({bool expandir = false}) => Column(
+  Widget _campoDescricao() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       _rotulo('Descrição (opcional)'),
-      if (expandir)
-        Expanded(
-          child: ConstrainedBox(
-            // Altura mínima do campo antes de a tela precisar rolar.
-            constraints: const BoxConstraints(minHeight: 96),
-            child: TextField(
-              controller: _descricaoController,
-              maxLength: 250,
-              maxLines: null,
-              minLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              decoration: const InputDecoration(hintText: 'Observação...'),
-            ),
-          ),
-        )
-      else
-        TextField(
-          controller: _descricaoController,
-          maxLength: 250,
-          maxLines: 3,
-          minLines: 1,
-          decoration: const InputDecoration(hintText: 'Observação...'),
-        ),
+      TextField(
+        controller: _descricaoController,
+        maxLength: 250,
+        maxLines: 5,
+        minLines: 1,
+        decoration: const InputDecoration(hintText: 'Observação...'),
+      ),
     ],
   );
 
@@ -400,26 +383,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     child: child,
   );
 
-  /// Card que preenche toda a altura que recebe.
   Widget _cartao({required double padding, required List<Widget> secoes}) {
     return Container(
       decoration: AppTheme.cardDecoration(),
-      child: LayoutBuilder(
-        builder: (context, c) {
-          final h = c.maxHeight - padding * 2;
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(padding),
-            child: SizedBox(
-              height: h > _kAlturaMinimaConteudoCard
-                  ? h
-                  : _kAlturaMinimaConteudoCard,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: secoes,
-              ),
-            ),
-          );
-        },
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(padding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: secoes,
+        ),
       ),
     );
   }
@@ -437,9 +410,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           style: Theme.of(context).textTheme.headlineMedium,
         ),
         const SizedBox(height: 16),
-        Expanded(
+        Flexible(
           child: _cartao(
-            padding: 28,
+            padding: largo ? 28 : 16,
             secoes: [
               // Data | Tipo
               _sec(
@@ -472,11 +445,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         ],
                       ),
               ),
-              Expanded(
-                child: _sec(_campoDescricao(expandir: true), depois: 12),
-              ),
-              _sec(_switchRecorrenteDesktop(), depois: 16),
-              _sec(_blocoRecorrencia(largo), depois: 28),
+              _sec(_campoDescricao(), depois: 16),
+
+              _switchRecorrenteDesktop(),
+              _blocoRecorrenciaAnimado(largo),
+
               _botoesDesktop(),
             ],
           ),
@@ -623,29 +596,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 color: AppColors.textPrimary,
               ),
             ),
-            SizedBox(height: 2),
-            Text(
-              'Esta transação se repetirá automaticamente.',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-            ),
           ],
         ),
       ),
     ],
   );
 
-  /// Retângulo da recorrência (desktop). Cinza/desabilitado com o switch
-  /// desligado; branco e interativo com o switch ligado.
-  Widget _blocoRecorrencia(bool largo) {
+  /// Bloco de recorrência (desktop): abre e fecha suavemente conforme o
+  /// switch. O espaço de 28px antes dos botões fica fora da animação.
+  Widget _blocoRecorrenciaAnimado(bool largo) {
     final ativo = _recorrenciaAtiva;
-    final corTexto = ativo ? AppColors.textPrimary : AppColors.textSecondary;
-    final corIcone = ativo ? const Color(0xFF3e3b79) : AppColors.textSecondary;
+    const corTexto = AppColors.textPrimary;
+    const corIcone = Color(0xFF3e3b79);
 
     Widget rotulo(String t) => Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         t,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: corTexto,
@@ -657,20 +625,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         rotulo('Repetir'),
-        Opacity(
-          opacity: ativo ? 1 : 0.55,
-          child: dropdownEstilizado(
-            opcoes: [
-              for (final p in PeriodoRecorrencia.values) _labelPeriodo(p),
-            ],
-            valorSelecionado: _labelPeriodo(_periodo),
-            onSelecionar: (label) {
-              final escolhido = PeriodoRecorrencia.values.firstWhere(
-                (p) => _labelPeriodo(p) == label,
-              );
-              setState(() => _periodo = escolhido);
-            },
-          ),
+        dropdownEstilizado(
+          opcoes: [for (final p in PeriodoRecorrencia.values) _labelPeriodo(p)],
+          valorSelecionado: _labelPeriodo(_periodo),
+          onSelecionar: (label) {
+            final escolhido = PeriodoRecorrencia.values.firstWhere(
+              (p) => _labelPeriodo(p) == label,
+            );
+            setState(() => _periodo = escolhido);
+          },
         ),
       ],
     );
@@ -684,7 +647,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 'Indeterminado',
                 softWrap: false,
                 style: TextStyle(
@@ -711,7 +674,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         DatePickerField(
           valor: _inicioRec,
           firstDate: _hoje(),
-          desativado: !ativo,
           onChanged: (d) => setState(() {
             _inicioRec = d;
             if (!_terminoRec.isAfter(_inicioRec)) {
@@ -722,7 +684,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       ],
     );
 
-    // Só habilita quando o bloco está ativo E "Indeterminado" está desligado.
+    // Só habilita quando "Indeterminado" está desligado.
     final campoTermino = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -730,90 +692,112 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         DatePickerField(
           valor: _terminoRec,
           firstDate: _inicioRec.add(const Duration(days: 1)),
-          desativado: !ativo || _indeterminado,
+          desativado: _indeterminado,
           onChanged: (d) => setState(() => _terminoRec = d),
         ),
       ],
     );
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+    final conteudo = Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: ativo ? AppColors.surface : AppColors.disabledFill,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
-      // Bloqueia toda interação enquanto o switch "Recorrente" está desligado.
-      child: IgnorePointer(
-        ignoring: !ativo,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: corIcone.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.calendar_month_rounded,
-                    size: 20,
-                    color: corIcone,
-                  ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: corIcone.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Configuração da recorrência',
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: corTexto,
-                    ),
-                  ),
+                child: const Icon(
+                  Icons.calendar_month_rounded,
+                  size: 20,
+                  color: corIcone,
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Repetir + Indeterminado na mesma linha
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(child: campoRepetir),
-                const SizedBox(width: 16),
-                switchIndeterminado,
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // A partir de | Termina em (largo: lado a lado / compacto: coluna)
-            if (largo)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: campoInicio),
-                  const SizedBox(width: 16),
-                  Expanded(child: campoTermino),
-                ],
-              )
-            else
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  campoInicio,
-                  const SizedBox(height: 16),
-                  campoTermino,
-                ],
               ),
-          ],
-        ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Configuração da recorrência',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: corTexto,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Repetir + Indeterminado na mesma linha
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(child: campoRepetir),
+              const SizedBox(width: 16),
+              switchIndeterminado,
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // A partir de | Termina em (largo: lado a lado / compacto: coluna)
+          if (largo)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: campoInicio),
+                const SizedBox(width: 16),
+                Expanded(child: campoTermino),
+              ],
+            )
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [campoInicio, const SizedBox(height: 16), campoTermino],
+            ),
+        ],
       ),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipRect(
+          child: AnimatedAlign(
+            alignment: Alignment.topCenter,
+            heightFactor: ativo ? 1.0 : 0.0,
+            duration: _kDuracaoRecorrencia,
+            curve: Curves.easeInOut,
+            child: AnimatedOpacity(
+              opacity: ativo ? 1.0 : 0.0,
+              duration: _kDuracaoRecorrencia,
+              curve: Curves.easeInOut,
+              // Fechado (ou fechando): sem clique e sem foco pelo teclado.
+              child: IgnorePointer(
+                ignoring: !ativo,
+                child: ExcludeFocus(
+                  excluding: !ativo,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: SizedBox(width: double.infinity, child: conteudo),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 28),
+      ],
     );
   }
 

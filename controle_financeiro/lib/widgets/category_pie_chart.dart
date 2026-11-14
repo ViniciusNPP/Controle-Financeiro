@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show mapEquals;
+import 'package:flutter/gestures.dart' show kLongPressTimeout;
 
 class CategoryPieChartCard extends StatefulWidget {
   final String titulo;
@@ -521,20 +522,43 @@ class _ItemLegenda extends StatefulWidget {
 }
 
 class _ItemLegendaState extends State<_ItemLegenda>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   static const _duracaoErro = Duration(milliseconds: 500);
   late final AnimationController _controladorErro = AnimationController(
     vsync: this,
     duration: _duracaoErro,
   );
 
+  // Progresso do "segurar para ocultar". Dura o mesmo tempo que o Flutter
+  // espera para disparar o long-press, então termina junto com ele.
+  late final AnimationController _controladorPressao = AnimationController(
+    vsync: this,
+    duration: kLongPressTimeout,
+    reverseDuration: const Duration(milliseconds: 150),
+  );
+
   @override
   void dispose() {
     _controladorErro.dispose();
+    _controladorPressao.dispose();
     super.dispose();
   }
 
+  void _aoMudarPressao(bool pressionado) {
+    if (pressionado) {
+      if (widget.onDoubleTap != null) {
+        _controladorPressao.forward();
+      }
+    } else {
+      _controladorPressao.reverse();
+    }
+  }
+
   void _alternarOcultaComFeedback() {
+    // O long-press disparou: zera a animação, porque o risco "de verdade"
+    // (ou o tremor de erro) assume a partir daqui.
+    _controladorPressao.value = 0;
+
     final onDoubleTap = widget.onDoubleTap;
     if (onDoubleTap == null) return;
     final aplicado = onDoubleTap();
@@ -546,13 +570,18 @@ class _ItemLegendaState extends State<_ItemLegenda>
   @override
   Widget build(BuildContext context) {
     final pct = widget.total == 0 ? 0.0 : (widget.valor / widget.total) * 100;
-    // Categoria oculta: nome, círculo e % ficam translúcidos
-    final opacidade = widget.oculta ? 0.35 : 1.0;
 
     final linha = AnimatedBuilder(
-      animation: _controladorErro,
+      animation: Listenable.merge([_controladorErro, _controladorPressao]),
       builder: (context, child) {
         final t = _controladorErro.value;
+        final p = _controladorPressao.value; // 0 → 1 enquanto segura
+        const fracaoLinhaInicialAoReexibir = 1.0; // use 0.5 para começar na metade
+        final opacidade = widget.oculta ? 0.35 + 0.65 * p : 1.0 - 0.65 * p;
+        final fracaoLinha = widget.oculta
+            ? fracaoLinhaInicialAoReexibir * (1.0 - p)
+            : 0.5 * p;
+        final animandoPressao = p > 0;
         // Pisca: sobe pra vermelho na primeira metade, volta na segunda.
         final intensidadeVermelho = t <= 0.5
             ? (t / 0.5)
@@ -586,17 +615,45 @@ class _ItemLegendaState extends State<_ItemLegenda>
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.nome,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: corTexto,
-                        decoration: widget.oculta
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                                    Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final estilo = TextStyle(
+                          fontSize: 12.5,
+                          color: corTexto,
+                          decoration: widget.oculta && !animandoPressao
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        );
+                        // Mede o nome para saber onde fica a metade dele.
+                        final medidor = TextPainter(
+                          text: TextSpan(text: widget.nome, style: estilo),
+                          textDirection: TextDirection.ltr,
+                          maxLines: 1,
+                        )..layout();
+                        final larguraNome =
+                            math.min(medidor.width, constraints.maxWidth);
+
+                        return Stack(
+                          alignment: Alignment.centerLeft,
+                          children: [
+                            Text(
+                              widget.nome,
+                              style: estilo,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (animandoPressao)
+                              Positioned(
+                                left: 0,
+                                child: Container(
+                                  width: larguraNome * fracaoLinha,
+                                  height: 1.2,
+                                  color: corTexto,
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                   if (widget.expansivel) ...[
@@ -636,6 +693,7 @@ class _ItemLegendaState extends State<_ItemLegenda>
         hoverColor: Colors.transparent,
         mouseCursor: SystemMouseCursors.click,
         borderRadius: BorderRadius.circular(8),
+        onHighlightChanged: _aoMudarPressao,
         onTap: widget.onTap,
         onDoubleTap: widget.onAbrirHistorico,
         onLongPress: widget.onDoubleTap == null

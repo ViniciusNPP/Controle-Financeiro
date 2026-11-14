@@ -251,8 +251,13 @@ class _SpinnerArcoState extends State<_SpinnerArco>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1600),
+    duration: const Duration(milliseconds: 2400),
   )..repeat();
+
+  // Fase 1: a ponta da frente completa a volta.
+  static const _frente = Interval(0.00, 0.50, curve: Curves.easeInOut);
+  // Fase 2: a ponta de trás alcança a da frente
+  static const _tras = Interval(0.10, 0.80, curve: Curves.easeInOut);
 
   @override
   void dispose() {
@@ -267,8 +272,8 @@ class _SpinnerArcoState extends State<_SpinnerArco>
       builder: (_, __) => CustomPaint(
         size: Size.square(widget.tamanho),
         painter: _ArcoPainter(
-          // easeOutCubic: começa rápido e termina devagar
-          progresso: Curves.easeOutCubic.transform(_c.value),
+          inicio: _tras.transform(_c.value),
+          fim: _frente.transform(_c.value),
           cor: widget.cor,
         ),
       ),
@@ -277,32 +282,25 @@ class _SpinnerArcoState extends State<_SpinnerArco>
 }
 
 class _ArcoPainter extends CustomPainter {
-  final double progresso;
+  /// Posições das pontas, de 0 a 1 (0 = topo, 1 = volta completa).
+  final double inicio;
+  final double fim;
   final Color cor;
-  _ArcoPainter({required this.progresso, required this.cor});
+  _ArcoPainter({required this.inicio, required this.fim, required this.cor});
 
   @override
   void paint(Canvas canvas, Size size) {
     const espessura = 6.0;
-    final rect = Offset.zero & size;
-    final area = rect.deflate(espessura / 2);
+    final area = (Offset.zero & size).deflate(espessura / 2);
 
-    // Trilho de fundo
-    canvas.drawArc(
-      area,
-      0,
-      2 * math.pi,
-      false,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = espessura
-        ..color = cor.withValues(alpha: 0.12),
-    );
+    // Mínimo minúsculo para que, com ponta arredondada, o arco de
+    // tamanho zero apareça como um ponto.
+    final sweep = math.max((fim - inicio) * 2 * math.pi, 0.001);
 
     canvas.drawArc(
       area,
-      -math.pi / 2,
-      2 * math.pi * progresso,
+      -math.pi / 2 + inicio * 2 * math.pi,
+      sweep,
       false,
       Paint()
         ..style = PaintingStyle.stroke
@@ -314,7 +312,7 @@ class _ArcoPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ArcoPainter old) =>
-      old.progresso != progresso || old.cor != cor;
+      old.inicio != inicio || old.fim != fim || old.cor != cor;
 }
 
 Future<void> mostrarDialogoAtualizado(BuildContext context) {
