@@ -162,15 +162,3 @@ A aba **Recorrente** serve para acompanhar e gerenciar todos os lançamentos que
 
 > ⚠️ Editar ou excluir uma recorrência **não altera** os lançamentos que ela já gerou: eles continuam no Histórico e devem ser editados ou excluídos por lá, individualmente.
 
-## Licença
-
-Este projeto está licenciado sob a **Creative Commons Atribuição-NãoComercial 4.0 Internacional (CC BY-NC 4.0)**.
-
-Isso significa que qualquer pessoa pode usar, modificar e redistribuir este código livremente, **desde que**:
-
-* Dê o devido crédito ao autor original;
-* **Não** venda, comercialize ou lucre com o software ou qualquer versão modificada dele, sem autorização prévia e por escrito.
-
-Consulte o arquivo **'LICENSE'** para os termos completos, ou veja o resumo oficial em:
-https://creativecommons.org/licenses/by-nc/4.0/deed.pt\_BR
-
