@@ -6,8 +6,8 @@ import '../models/categoria.dart';
 import '../models/transacao.dart';
 import '../theme/app_theme.dart';
 import '../utils/dropdown.dart';
-import '../utils/formatters.dart';
-import '../utils/period_utils.dart';
+import '../utils/formatadores.dart';
+import '../utils/periodo_utils.dart';
 
 class BarChartCard extends StatefulWidget {
   final String titulo;

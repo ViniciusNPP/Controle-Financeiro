@@ -1,6 +1,6 @@
 import 'package:controle_financeiro/utils/sidebar_utils.dart';
 import 'package:controle_financeiro/widgets/animacoes_base.dart';
-import 'package:controle_financeiro/widgets/others_widgets.dart';
+import 'package:controle_financeiro/widgets/widgets_extras.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
@@ -8,7 +8,7 @@ import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/dropdown.dart';
 import '../widgets/form_fields.dart';
-import '../widgets/category_selector.dart';
+import '../widgets/categoria_selecionador.dart';
 import '../widgets/botoes_personalizados.dart';
 import '../widgets/recorrencia_widgets.dart';
 import '../models/recorrencia.dart' as model;

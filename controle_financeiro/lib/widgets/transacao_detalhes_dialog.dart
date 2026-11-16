@@ -1,4 +1,4 @@
-import 'package:controle_financeiro/widgets/others_widgets.dart';
+import 'package:controle_financeiro/widgets/widgets_extras.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/categoria.dart';
@@ -7,11 +7,11 @@ import '../models/transacao.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/dropdown.dart';
-import '../utils/formatters.dart';
+import '../utils/formatadores.dart';
 import 'form_fields.dart';
-import 'category_selector.dart';
+import 'categoria_selecionador.dart';
 import 'botoes_personalizados.dart';
-import 'custom_dialogs.dart';
+import 'dialogs_customizados.dart';
 import 'recorrencia_widgets.dart' show SwitchRecorrencia;
 
 class TransacaoDetailDialog extends StatefulWidget {

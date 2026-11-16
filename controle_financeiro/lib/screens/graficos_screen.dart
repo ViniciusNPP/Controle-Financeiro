@@ -7,10 +7,10 @@ import '../models/filtro_historico.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/navegacao_historico.dart';
-import '../utils/period_utils.dart';
-import '../widgets/period_selector.dart';
-import '../widgets/chart_cards.dart';
-import '../widgets/category_pie_chart.dart';
+import '../utils/periodo_utils.dart';
+import '../widgets/periodo_selecionador.dart';
+import '../widgets/grafico_barra.dart';
+import '../widgets/grafico_torta_categorias.dart';
 
 class ChartsScreen extends StatefulWidget {
   /// Chamado quando o usuário pede para ver aqueles lançamentos no Histórico.

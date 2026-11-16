@@ -2,7 +2,7 @@ import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../theme/app_theme.dart';
-import '../utils/formatters.dart';
+import '../utils/formatadores.dart';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/gestures.dart' show kLongPressTimeout;

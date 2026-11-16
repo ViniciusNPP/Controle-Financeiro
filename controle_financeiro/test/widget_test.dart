@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:controle_financeiro/providers/finance_provider.dart';
-import 'package:controle_financeiro/screens/charts_screen.dart';
+import 'package:controle_financeiro/screens/graficos_screen.dart';
 
 void main() {
   testWidgets('a tela de gráficos renderiza corretamente', (WidgetTester tester) async {

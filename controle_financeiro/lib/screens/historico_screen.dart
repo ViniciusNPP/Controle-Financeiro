@@ -7,9 +7,9 @@ import '../models/filtro_historico.dart';
 import '../models/transacao.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
-import '../utils/formatters.dart';
-import '../widgets/filtro_builder.dart';
-import '../widgets/transacao_detail_dialog.dart';
+import '../utils/formatadores.dart';
+import '../widgets/historico_filtro.dart';
+import '../widgets/transacao_detalhes_dialog.dart';
 import '../utils/dialog_fade.dart';
 
 enum _ModoOrdenacao {

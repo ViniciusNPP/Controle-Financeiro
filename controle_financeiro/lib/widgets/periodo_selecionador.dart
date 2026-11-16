@@ -1,10 +1,10 @@
 import 'package:controle_financeiro/utils/dropdown.dart';
 import 'package:controle_financeiro/widgets/animacoes_base.dart';
-import 'package:controle_financeiro/widgets/month_year_navigator.dart';
+import 'package:controle_financeiro/widgets/mes_ano_navegador.dart';
 import 'package:flutter/material.dart';
 import '../models/transacao.dart';
 import '../theme/app_theme.dart';
-import '../utils/period_utils.dart';
+import '../utils/periodo_utils.dart';
 
 enum _ModoPeriodo { mensal, anual }
 
@@ -139,8 +139,47 @@ class _PeriodSelectorState extends State<PeriodSelector> {
         alinhamento: Alignment.topLeft,
         child: _expandido
             ? _painelExpandido()
-            : Align(alignment: Alignment.centerRight, child: _botaoExpandir()),
+            : SizedBox(
+                width: double.infinity,
+                child: Row(
+                  children: [
+                    Expanded(child: _navegadorRecolhido()),
+                    const SizedBox(width: 8),
+                    _botaoExpandir(),
+                  ],
+                ),
+              ),
       ),
+    );
+  }
+
+  Widget _navegadorRecolhido() {
+    final mensal = _modo == _ModoPeriodo.mensal;
+    return MonthYearNavigator(
+      granularidade: mensal
+          ? GranularidadeNavegador.mes
+          : GranularidadeNavegador.ano,
+      valor: mensal ? _mesReferencia : DateTime(_anoReferencia),
+      dataMinima: _dataMinima,
+      dataMaxima: _dataMaxima,
+      onChanged: (data) {
+        setState(() {
+          if (mensal) {
+            _mesReferencia = DateTime(data.year, data.month);
+            if (_granMensal == _GranMensal.todoPeriodo ||
+                _granMensal == _GranMensal.personalizado) {
+              _granMensal = _GranMensal.mes;
+            }
+          } else {
+            _anoReferencia = data.year;
+            if (_granAnual == _GranAnual.todoPeriodo ||
+                _granAnual == _GranAnual.personalizado) {
+              _granAnual = _GranAnual.ano;
+            }
+          }
+        });
+        _emitir();
+      },
     );
   }
 

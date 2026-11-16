@@ -3,7 +3,7 @@ import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
-import '../utils/formatters.dart';
+import '../utils/formatadores.dart';
 
 class DatePickerField extends StatelessWidget {
   final DateTime valor;

@@ -6,7 +6,7 @@ import '../models/recorrencia.dart';
 import '../models/transacao.dart';
 import '../services/storage_service.dart';
 import '../services/sync_service.dart';
-import '../utils/recorrencia_calculator.dart';
+import '../utils/recorrencia_calculadora.dart';
 
 class FinanceProvider extends ChangeNotifier {
   final StorageService _storage = StorageService();

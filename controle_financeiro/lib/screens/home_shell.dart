@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:controle_financeiro/screens/creditos_screen.dart';
 import 'package:controle_financeiro/screens/recorrentes_screen.dart';
 import 'package:controle_financeiro/services/sync_service.dart';
 import 'package:controle_financeiro/services/update_service.dart';
@@ -14,9 +15,9 @@ import '../widgets/abas_animadas.dart';
 import '../utils/dialog_fade.dart';
 import '../widgets/animacoes_base.dart';
 
-import 'add_transaction_screen.dart';
+import 'add_transacao_screen.dart';
 import 'categorias_screen.dart';
-import 'charts_screen.dart';
+import 'graficos_screen.dart';
 import 'historico_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -39,6 +40,7 @@ class _HomeShellState extends State<HomeShell> {
     1,
     4,
     3,
+    5,
   ]; // Posição de cada aba na sidebar
 
   @override
@@ -100,6 +102,7 @@ class _HomeShellState extends State<HomeShell> {
       ),
       RecorrentesScreen(),
       CategoriasScreen(),
+      CreditosScreen(),
     ];
     final titulos = [
       'Adicionar lançamento',
@@ -107,6 +110,7 @@ class _HomeShellState extends State<HomeShell> {
       'Histórico',
       'Recorrências',
       'Categorias',
+      'Crédito'
     ];
 
     final conteudo = AbasAnimadas(
@@ -338,7 +342,7 @@ class _SincronizacaoDialogState extends State<_SincronizacaoDialog> {
                 const Divider(),
                 const SizedBox(height: 10),
                 Text(
-                  _pasta ?? 'Nenhuma pasta escolhida ainda',
+                  _pasta ?? 'Nenhuma pasta escolhida',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 10),

@@ -1,14 +1,14 @@
 import 'package:controle_financeiro/utils/dropdown.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
-import 'package:controle_financeiro/widgets/month_year_navigator.dart';
-import 'package:controle_financeiro/widgets/others_widgets.dart';
+import 'package:controle_financeiro/widgets/mes_ano_navegador.dart';
+import 'package:controle_financeiro/widgets/widgets_extras.dart';
 import 'animacoes_base.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/filtro_historico.dart';
 import '../theme/app_theme.dart';
-import '../utils/formatters.dart';
+import '../utils/formatadores.dart';
 
 class FiltroBuilder extends StatefulWidget {
   final List<FiltroHistorico> filtrosAtivos;

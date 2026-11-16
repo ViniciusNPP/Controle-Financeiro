@@ -5,7 +5,7 @@ import '../models/categoria.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/adicionar_categoria_dialog.dart';
-import '../widgets/categoria_detail_dialog.dart';
+import '../widgets/categoria_detalhes_dialog.dart';
 import '../widgets/layout_dois_containers.dart';
 import '../utils/dialog_fade.dart';
 
@@ -35,7 +35,7 @@ class CategoriasScreen extends StatelessWidget {
       titulo: entrada ? 'Categorias de entrada' : 'Categorias de saída',
       cor: cor,
       quantidade: categorias.length,
-      mensagemVazia: 'Nenhuma categoria ainda.',
+      mensagemVazia: 'Nenhuma categoria.',
       itemBuilder: (context, i) => _itemCategoria(context, categorias[i], cor),
       rodape: _botaoAdicionar(context, tipo, cor),
     );

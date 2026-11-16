@@ -1,5 +1,5 @@
 import 'package:controle_financeiro/theme/app_theme.dart';
-import 'package:controle_financeiro/utils/app_shortcuts.dart';
+import 'package:controle_financeiro/utils/app_atalhos.dart';
 import 'package:controle_financeiro/utils/dialog_fade.dart';
 import 'package:controle_financeiro/widgets/animacoes_base.dart';
 

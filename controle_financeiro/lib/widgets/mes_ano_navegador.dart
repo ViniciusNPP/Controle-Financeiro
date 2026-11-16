@@ -2,7 +2,7 @@ import 'package:animations/animations.dart';
 import 'package:controle_financeiro/widgets/animacoes_base.dart';
 
 import '../theme/app_theme.dart';
-import '../utils/formatters.dart';
+import '../utils/formatadores.dart';
 import '../utils/dialog_fade.dart';
 
 import 'package:flutter/material.dart';
@@ -200,7 +200,13 @@ class _GradeAnos extends StatefulWidget {
   final DateTime valorAtual;
   final int? anoMinimo;
   final int? anoMaximo;
-  const _GradeAnos({required this.valorAtual, this.anoMinimo, this.anoMaximo});
+  final ValueChanged<int>? onSelecionar;
+  const _GradeAnos({
+    required this.valorAtual,
+    this.anoMinimo,
+    this.anoMaximo,
+    this.onSelecionar,
+  });
 
   @override
   State<_GradeAnos> createState() => _GradeAnosState();
@@ -262,8 +268,13 @@ class _GradeAnosState extends State<_GradeAnos> {
         return _celulaSeletor(
           texto: '$ano',
           selecionado: ano == widget.valorAtual.year,
-          onTap: () =>
-              Navigator.pop(context, DateTime(ano, widget.valorAtual.month)),
+          onTap: () {
+            if (widget.onSelecionar != null) {
+              widget.onSelecionar!(ano);
+            } else {
+              Navigator.pop(context, DateTime(ano, widget.valorAtual.month));
+            }
+          },
         );
       },
     );
@@ -281,6 +292,7 @@ Future<DateTime?> _mostrarSeletorMes(
     builder: (context) {
       var anoExibido = valorAtual.year;
       var anoReverso = false;
+      var mostrandoAnos = false;
 
       bool mesHabilitado(int ano, int mes) {
         if (dataMinima != null &&
@@ -378,13 +390,22 @@ Future<DateTime?> _mostrarSeletorMes(
                           onPressed: podeVoltarAno ? () => mudarAno(-1) : null,
                           style: _estiloSeta,
                         ),
-                        transicaoAno(
-                          Text(
-                            '$anoExibido',
-                            key: ValueKey(anoExibido),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
+                        ToqueElastico(
+                          child: TextButton(
+                            style: const ButtonStyle(
+                              mouseCursor: WidgetStatePropertyAll(
+                                SystemMouseCursors.click,
+                              ),
+                            ),
+                            onPressed: () => setStateDialog(
+                              () => mostrandoAnos = !mostrandoAnos,
+                            ),
+                            child: Text(
+                              '$anoExibido', // Ano exibido
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                         ),
@@ -403,7 +424,27 @@ Future<DateTime?> _mostrarSeletorMes(
                         if (v.abs() < 200) return;
                         mudarAno(v < 0 ? 1 : -1);
                       },
-                      child: transicaoAno(gradeMeses(anoExibido)),
+                      child: transicaoAno(
+                        mostrandoAnos
+                            ? SizedBox(
+                                height: 280,
+                                child: _GradeAnos(
+                                  valorAtual: DateTime(
+                                    anoExibido,
+                                    valorAtual.month,
+                                  ),
+                                  anoMinimo: dataMinima?.year,
+                                  anoMaximo: dataMaxima?.year,
+                                  onSelecionar: (ano) {
+                                    setStateDialog(() {
+                                      anoExibido = ano;
+                                      mostrandoAnos = false;
+                                    });
+                                  },
+                                ),
+                              )
+                            : gradeMeses(anoExibido),
+                      ),
                     ),
                   ],
                 ),

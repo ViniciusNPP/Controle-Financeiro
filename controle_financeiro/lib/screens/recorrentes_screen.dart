@@ -8,9 +8,9 @@ import '../models/recorrencia.dart';
 import '../models/transacao.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
-import '../utils/formatters.dart';
+import '../utils/formatadores.dart';
 import '../widgets/layout_dois_containers.dart';
-import '../widgets/transacao_detail_dialog.dart';
+import '../widgets/transacao_detalhes_dialog.dart';
 import '../utils/dialog_fade.dart';
 
 enum _Campo { nome, proxima, termino, valor }
@@ -87,7 +87,7 @@ class RecorrentesScreen extends StatelessWidget {
       titulo: titulo,
       cor: cor,
       quantidade: lista.length,
-      mensagemVazia: 'Nenhuma recorrência ainda.',
+      mensagemVazia: 'Nenhuma recorrência.',
       cabecalhoTabela: _cabecalhoTabela(),
       itemBuilder: (context, i) => _itemRecorrente(context, lista[i]),
     );
