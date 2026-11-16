@@ -22,11 +22,17 @@ enum _GranAnual { ano, todoPeriodo, personalizado }
 class PeriodSelector extends StatefulWidget {
   final List<Transacao> todasTransacoes;
   final ValueChanged<FiltroPeriodo> onChanged;
+  final bool expandido;
+  final ValueChanged<bool> onExpandedChanged;
+  final Widget? expandedAction;
 
   const PeriodSelector({
     super.key,
     required this.todasTransacoes,
     required this.onChanged,
+    required this.expandido,
+    required this.onExpandedChanged,
+    this.expandedAction,
   });
 
   @override
@@ -38,11 +44,7 @@ class _PeriodSelectorState extends State<PeriodSelector> {
   _GranMensal _granMensal = _GranMensal.mes;
   _GranAnual _granAnual = _GranAnual.ano;
 
-  bool _expandido = false;
-
-  void _alternarExpandido() => setState(() {
-    _expandido = !_expandido;
-  });
+  void _alternarExpandido() => widget.onExpandedChanged(!widget.expandido);
 
   late DateTime _mesReferencia;
   late DateTime _mesPersonalizadoDe;
@@ -135,9 +137,9 @@ class _PeriodSelectorState extends State<PeriodSelector> {
       alignment: Alignment.topLeft,
       clipBehavior: Clip.none,
       child: TrocaFadeThrough(
-        chave: _expandido,
+        chave: widget.expandido,
         alinhamento: Alignment.topLeft,
-        child: _expandido
+        child: widget.expandido
             ? _painelExpandido()
             : SizedBox(
                 width: double.infinity,
@@ -225,7 +227,7 @@ class _PeriodSelectorState extends State<PeriodSelector> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: AnimatedRotation(
-            turns: _expandido ? 0.5 : 0,
+            turns: widget.expandido ? 0.5 : 0,
             duration: AppMotion.fade,
             child: Icon(
               Icons.keyboard_arrow_down_rounded,
@@ -244,6 +246,10 @@ class _PeriodSelectorState extends State<PeriodSelector> {
         _botaoModo('Mensal', _ModoPeriodo.mensal),
         const SizedBox(width: 8),
         _botaoModo('Anual', _ModoPeriodo.anual),
+        if (widget.expandido && widget.expandedAction != null) ...[
+          const SizedBox(width: 8),
+          widget.expandedAction!,
+        ],
         const Spacer(),
         _botaoExpandir(),
       ],

@@ -29,6 +29,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
   String? _categoriaEntradas;
   String? _categoriaSaidas;
   bool _somenteCredito = false;
+  bool _filtroExpandido = false;
   late PageController _pageController;
 
   @override
@@ -165,6 +166,31 @@ class _ChartsScreenState extends State<ChartsScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final larguraSuficiente = constraints.maxWidth >= 500;
+        final botaoCredito = Tooltip(
+          message: 'Mostrar somente lançamentos de crédito',
+          child: ChipAnimado(
+            label: 'Crédito',
+            selecionado: _somenteCredito,
+            onTap: () => setState(() => _somenteCredito = !_somenteCredito),
+            fundoSelecionado: AppColors.credito,
+            fundoNormal: AppColors.surface,
+            textoSelecionado: Colors.white,
+            textoNormal: AppColors.textSecondary,
+            bordaSelecionada: AppColors.credito,
+            bordaNormal: AppColors.border,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            raio: 12,
+            fontSize: 13,
+          ),
+        );
+        final seletorPeriodo = PeriodSelector(
+          todasTransacoes: finance.transacoes,
+          onChanged: (f) => setState(() => _filtro = f),
+          expandido: _filtroExpandido,
+          onExpandedChanged: (expandido) =>
+              setState(() => _filtroExpandido = expandido),
+          expandedAction: botaoCredito,
+        );
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,38 +202,16 @@ class _ChartsScreenState extends State<ChartsScreen> {
               ),
               const SizedBox(height: 16),
             ],
-                        Row(
-              children: [
-                Expanded(
-                  child: PeriodSelector(
-                    todasTransacoes: finance.transacoes, // todas, não a lista filtrada
-                    onChanged: (f) => setState(() => _filtro = f),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Tooltip(
-                  message: 'Mostrar somente lançamentos de crédito',
-                  child: ChipAnimado(
-                    label: 'Crédito',
-                    selecionado: _somenteCredito,
-                    onTap: () =>
-                        setState(() => _somenteCredito = !_somenteCredito),
-                    fundoSelecionado: AppColors.credito,
-                    fundoNormal: AppColors.surface,
-                    textoSelecionado: Colors.white,
-                    textoNormal: AppColors.textSecondary,
-                    bordaSelecionada: AppColors.credito,
-                    bordaNormal: AppColors.border,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    raio: 12,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
+            if (_filtroExpandido)
+              seletorPeriodo
+            else
+              Row(
+                children: [
+                  Expanded(child: seletorPeriodo),
+                  const SizedBox(width: 12),
+                  botaoCredito,
+                ],
+              ),
             const SizedBox(height: 20),
             Expanded(
               child: LayoutBuilder(
