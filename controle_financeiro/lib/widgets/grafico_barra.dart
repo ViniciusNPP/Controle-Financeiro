@@ -397,7 +397,7 @@ class _BarChartCardState extends State<BarChartCard> {
           habilitado: _categoriaSelecionada != null,
         ),
         for (final c in widget.categorias!)
-          popupMenuItemTexto<String>(
+          popupMenuItemTexto<String>( 
             value: c.nome,
             texto: c.nome,
             selecionado: c.nome == _categoriaSelecionada,

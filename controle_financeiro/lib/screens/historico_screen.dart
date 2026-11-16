@@ -9,7 +9,7 @@ import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatadores.dart';
 import '../widgets/historico_filtro.dart';
-import '../widgets/transacao_detalhes_dialog.dart';
+import '../widgets/dialogs/transacao_detalhes_dialog.dart';
 import '../utils/dialog_fade.dart';
 
 enum _ModoOrdenacao {
@@ -100,8 +100,14 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     });
   }
 
+  String _rotuloPagamento(Transacao t) =>
+      t.ehCredito ? 'Crédito' : (t.ehReembolso ? 'Reembolso' : '');
+
   double _valorComSinal(Transacao t) =>
       t.tipo == TipoLancamento.saida ? -t.valor : t.valor;
+    
+  bool get _creditoAtivo =>
+      _filtros.any((f) => f.ehCredito) || (_filtroRapido?.ehCredito ?? false);
 
   IconData get _iconeOrdenacao {
     switch (_ordenacao) {
@@ -429,6 +435,15 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
           Expanded(flex: 4, child: Text('CATEGORIA', style: estilo)),
           Expanded(
             flex: 3,
+            child: Text(
+              'PAGAMENTO',
+              style: estilo,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Expanded(
+            flex: 3,
             child: Text('VALOR', style: estilo, textAlign: TextAlign.right),
           ),
         ],
@@ -468,6 +483,18 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
             Expanded(
               flex: 3,
               child: Text(
+                _rotuloPagamento(t),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Text(
                 Formatters.moeda(t.valor),
                 textAlign: TextAlign.right,
                 style: TextStyle(
@@ -484,7 +511,9 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   }
 
   Widget _linhaTotal(List<Transacao> lista) {
-    final total = lista.fold<double>(0, (soma, t) => soma + _valorComSinal(t));
+    final total = lista
+        .where((t) => _creditoAtivo || !t.neutralizadaPorReembolso)
+        .fold<double>(0, (soma, t) => soma + _valorComSinal(t));
     final cor = total < 0 ? AppColors.saida : AppColors.entrada;
 
     return Container(

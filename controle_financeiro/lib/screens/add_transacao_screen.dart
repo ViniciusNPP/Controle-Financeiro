@@ -11,6 +11,9 @@ import '../widgets/form_fields.dart';
 import '../widgets/categoria_selecionador.dart';
 import '../widgets/botoes_personalizados.dart';
 import '../widgets/recorrencia_widgets.dart';
+import '../models/transacao.dart';
+import '../utils/dialog_fade.dart';
+import '../widgets/reembolso_dialog.dart';
 import '../models/recorrencia.dart' as model;
 
 const double _kLarguraMaxCardDesktop =
@@ -19,8 +22,11 @@ const double _kLarguraLayoutLargo = 700; // ← virada LARGO / COMPACTO (px)
 const double _kLarguraMaxCardMobile = 580; // teto do card no mobile
 
 // PONTO DE CONTROLE 3: desktop x mobile por ALTURA
-const double _kAlturaMinimaDesktopLargo = 865;
-const double _kAlturaMinimaDesktopCompacto = 920;
+const double _kAlturaMinimaDesktopLargo = 865; // era 865
+const double _kAlturaMinimaDesktopCompacto = 920; // era 920
+const Color _kCorCredito = Color(
+  0xFF3e3b79,
+); // mesma cor do "Salvar lançamento"
 
 const double _kMargemVerticalCard = 8;
 
@@ -28,7 +34,12 @@ const Duration _kDuracaoRecorrencia = Duration(milliseconds: 300);
 
 class AddTransactionScreen extends StatefulWidget {
   final bool ativa;
-  const AddTransactionScreen({super.key, this.ativa = true});
+  final Future<Transacao?> Function() onEscolherDespesa;
+  const AddTransactionScreen({
+    super.key,
+    this.ativa = true,
+    required this.onEscolherDespesa,
+  });
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -45,10 +56,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   TipoLancamento? _tipo;
   Categoria? _categoria;
   double _valor = 0;
+  PagamentoLancamento? _pagamento;
+  Transacao? _despesaReembolso;
+
+  bool get _reembolso => _pagamento == PagamentoLancamento.reembolso;
 
   bool _erroTipo = false;
   bool _erroCategoria = false;
   bool _erroValor = false;
+  int _rotacaoLimpar = 0;
 
   // Recorrência: fonte única de verdade para desktop (campos inline)
   // e mobile (dialog preenche estes mesmos campos).
@@ -102,6 +118,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     _indeterminado = true;
   }
 
+  void _resetarPagamento() {
+    _pagamento = null;
+    _despesaReembolso = null;
+  }
+
   @override
   void dispose() {
     _descricaoController.dispose();
@@ -124,6 +145,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   void _selecionarTipo(TipoLancamento t) {
+    if (_reembolso) return; // Reembolso tranca o tipo em "Entrada"
     setState(() {
       if (_tipo != t) _categoria = null;
       _tipo = t;
@@ -132,6 +154,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   void _alternarTipo() {
+    if (_reembolso) return; // Reembolso tranca o tipo em "Entrada"
     setState(() {
       _tipo = _tipo == TipoLancamento.entrada
           ? TipoLancamento.saida
@@ -153,7 +176,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _erroTipo = false;
       _erroCategoria = false;
       _erroValor = false;
+      _rotacaoLimpar++;
       _resetarRecorrencia();
+      _resetarPagamento();
     });
   }
 
@@ -179,6 +204,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           categoriaNome: _categoria!.nome,
           valor: _valor,
           descricao: descricao.isEmpty ? null : descricao,
+          pagamento: _pagamento,
+          reembolsoDeId: _despesaReembolso?.id,
         );
       } else {
         await context.read<FinanceProvider>().adicionarTransacaoRecorrente(
@@ -202,6 +229,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         _categoria = null;
         _valor = 0;
         _resetarRecorrencia();
+        _resetarPagamento();
       });
       return true;
     } catch (_) {
@@ -234,7 +262,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Widget _campoData() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      _rotulo('Data'),
+      _rotulo('Data *'),
       DatePickerField(
         valor: _data,
         onChanged: (d) => setState(() => _data = d),
@@ -243,7 +271,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   );
 
   Widget _campoCategoria() => CampoComErro(
-    rotulo: 'Categoria',
+    rotulo: 'Categoria *',
     erro: _erroCategoria,
     raioBorda: 16,
     child: CategorySelector(
@@ -258,7 +286,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   // O GlobalKey do valor só existe em UM lugar da árvore por vez.
   Widget _campoValor() => CampoComErro(
-    rotulo: 'Valor',
+    rotulo: 'Valor *',
     erro: _erroValor,
     child: CurrencyInput(
       controller: _valorController,
@@ -273,7 +301,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Widget _campoDescricao() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      _rotulo('Descrição (opcional)'),
+      _rotulo('Descrição'),
       TextField(
         controller: _descricaoController,
         maxLength: 250,
@@ -284,6 +312,147 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     ],
   );
 
+  String _numeroBr(double v) {
+    final p = v.toStringAsFixed(2).split('.');
+    final inteiro = p[0].replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (_) => '.',
+    );
+    return '$inteiro,${p[1]}';
+  }
+  
+  /// Desfaz o reembolso e o que ele preencheu (categoria, valor, descrição).
+  void _limparPreenchimentoReembolso() {
+    _valorController.text = '0,00';
+    _descricaoController.clear();
+    setState(() {
+      _resetarPagamento();
+      _categoria = null;
+      _valor = 0;
+    });
+  }
+
+  Widget _bloqueavel(bool bloqueado, Widget child) => AnimatedOpacity(
+    opacity: bloqueado ? 0.4 : 1,
+    duration: const Duration(milliseconds: 200),
+    child: IgnorePointer(
+      ignoring: bloqueado,
+      child: ExcludeFocus(excluding: bloqueado, child: child),
+    ),
+  );
+  
+  void _alternarCredito() {
+    if (_reembolso) _limparPreenchimentoReembolso();
+    setState(() {
+      _pagamento = _pagamento == PagamentoLancamento.credito
+          ? null
+          : PagamentoLancamento.credito;
+    });
+  }
+
+  Future<void> _alternarReembolso() async {
+    if (_tipo == TipoLancamento.saida) return;
+
+    // Clicou de novo: desseleciona e esquece a despesa.
+    if (_reembolso) {
+      _limparPreenchimentoReembolso();
+      return;
+    }
+
+    var querEscolher = false;
+    await mostrarDialogo(
+      context: context,
+      builder: (ctx) => ReembolsoDialog(
+        onEscolherDespesa: () {
+          querEscolher = true;
+          Navigator.of(ctx).pop();
+        },
+      ),
+    );
+    if (!querEscolher || !mounted) return;
+
+    final despesa = await widget.onEscolherDespesa();
+    if (despesa == null || !mounted) return;
+
+    final categoriaReembolso = context
+        .read<FinanceProvider>()
+        .categoriasPorTipo(TipoLancamento.entrada)
+        .where((c) => c.nome.trim().toLowerCase() == 'reembolso')
+        .firstOrNull;
+    final desc = despesa.descricao?.trim();
+
+    _valorController.text = _numeroBr(despesa.valor);
+    _descricaoController.text = (desc == null || desc.isEmpty)
+        ? 'Reembolso de ${despesa.categoriaNome}'
+        : desc;
+
+    setState(() {
+      _pagamento = PagamentoLancamento.reembolso;
+      _despesaReembolso = despesa;
+      _valor = despesa.valor;
+      if (_tipo != TipoLancamento.entrada) {
+        _tipo = TipoLancamento.entrada;
+        _categoria = null;
+      }
+      if (categoriaReembolso != null) _categoria = categoriaReembolso;
+      _erroTipo = false;
+      _erroCategoria = false;
+      _erroValor = false;
+      _resetarRecorrencia(); // Reembolso não pode ser recorrente
+    });
+  }
+
+  Widget _campoCartaoCredito() {
+    final reembolsoBloqueado = _tipo == TipoLancamento.saida;
+    final despesa = _despesaReembolso;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _rotulo('Cartão de crédito'),
+        Row(
+          children: [
+            Expanded(
+              child: botaoSelecionavel(
+                label: 'Crédito',
+                selecionado: _pagamento == PagamentoLancamento.credito,
+                cor: _kCorCredito,
+                onTap: _alternarCredito,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: AnimatedOpacity(
+                opacity: reembolsoBloqueado ? 0.4 : 1,
+                duration: const Duration(milliseconds: 200),
+                child: IgnorePointer(
+                  ignoring: reembolsoBloqueado,
+                  child: botaoSelecionavel(
+                    label: 'Reembolso',
+                    selecionado: _reembolso,
+                    cor: _kCorCredito,
+                    onTap: _alternarReembolso,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (despesa != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Reembolso de: ${despesa.categoriaNome} · R\$ ${despesa.valor.toStringAsFixed(2).replaceAll('.', ',')}',
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   /// Tipo no "meu modelo": um botão que alterna + ícone de trocar.
   /// Usado no MOBILE e no DESKTOP COMPACTO.
   Widget _tipoCiclico() => Column(
@@ -293,7 +462,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            'Tipo',
+            'Tipo *',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -421,7 +590,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   children: [
                     Expanded(child: _campoData()),
                     SizedBox(width: largo ? 16 : 12),
-                    Expanded(child: largo ? _tipoDoisBotoes() : _tipoCiclico()),
+                    Expanded(child: _bloqueavel(
+                        _reembolso,
+                        largo ? _tipoDoisBotoes() : _tipoCiclico(),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -445,9 +618,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         ],
                       ),
               ),
+              _sec(_campoCartaoCredito()),
               _sec(_campoDescricao(), depois: 16),
 
-              _switchRecorrenteDesktop(),
+              _bloqueavel(_reembolso, _switchRecorrenteDesktop()),
               _blocoRecorrenciaAnimado(largo),
 
               _botoesDesktop(),
@@ -466,7 +640,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         child: ToqueElastico(
           child: TextButton.icon(
             onPressed: _limpar,
-            icon: const Icon(Icons.restart_alt_rounded, size: 18),
+            icon: AnimatedRotation(
+              turns: _rotacaoLimpar.toDouble(),
+              duration: const Duration(milliseconds: 450),
+              child: const Icon(Icons.restart_alt_rounded, size: 18),
+            ),
             label: const Text('Limpar'),
             style:
                 estiloBotao(
@@ -503,7 +681,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Text(
-          'Tipo',
+          'Tipo *',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -855,7 +1033,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   children: [
                     Expanded(child: _campoData()),
                     const SizedBox(width: 12),
-                    Expanded(child: _tipoCiclico()),
+                    Expanded(child: _bloqueavel(_reembolso, _tipoCiclico())),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -871,9 +1049,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         SizedBox(
                           height: 52,
                           child: Center(
-                            child: SwitchRecorrencia(
-                              ativo: _recorrenciaAtiva,
-                              onChanged: _alternarRecorrenciaMobile,
+                            child: _bloqueavel(
+                              _reembolso,
+                              SwitchRecorrencia(
+                                ativo: _recorrenciaAtiva,
+                                onChanged: _alternarRecorrenciaMobile,
+                              ),
                             ),
                           ),
                         ),
@@ -881,6 +1062,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 20),
+                _campoCartaoCredito(),
                 const SizedBox(height: 20),
                 _campoDescricao(),
                 const SizedBox(height: 8),

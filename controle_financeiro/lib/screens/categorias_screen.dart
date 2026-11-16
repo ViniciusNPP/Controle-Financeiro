@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../models/categoria.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/adicionar_categoria_dialog.dart';
-import '../widgets/categoria_detalhes_dialog.dart';
+import '../widgets/dialogs/adicionar_categoria_dialog.dart';
+import '../widgets/dialogs/categoria_detalhes_dialog.dart';
 import '../widgets/layout_dois_containers.dart';
 import '../utils/dialog_fade.dart';
 

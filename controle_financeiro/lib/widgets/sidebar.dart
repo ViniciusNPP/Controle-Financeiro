@@ -52,7 +52,7 @@ class AppSidebarContent extends StatelessWidget {
             _item(context, icon: Icons.bar_chart_rounded, label: 'Gráficos', indice: 1),
             _item(context, icon: Icons.sell_outlined, label: 'Categorias', indice: 4),
             _item(context, icon: Icons.monetization_on_outlined, label: 'Recorrências', indice: 3),
-            _item(context, icon: Icons.credit_card, label: 'Crédito', indice: 5),
+            _item(context, icon: Icons.credit_card, label: 'Créditos', indice: 5),
             const Spacer(),
             _item(
               context,

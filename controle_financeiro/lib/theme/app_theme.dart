@@ -28,6 +28,8 @@ class AppColors {
   static const Color border = Color(0xFFE5E7EE);
   static const Color disabledFill = Color(0xFFECEDF2);
 
+  static const Color credito = Color(0xFF3e3b79);
+
   /// Entradas: tons igualmente espaçados do verde escuro ao verde de entrada.
   static const List<Color> entradaPalette = [
     Color(0xFF0A5C36),

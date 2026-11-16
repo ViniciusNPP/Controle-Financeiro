@@ -1,7 +1,7 @@
 import 'categoria.dart';
 import 'transacao.dart';
 
-enum CampoFiltro { data, tipo, categoria, valor }
+enum CampoFiltro { data, tipo, categoria, valor, pagamento }
 
 extension CampoFiltroLabel on CampoFiltro {
   String get rotulo {
@@ -14,6 +14,8 @@ extension CampoFiltroLabel on CampoFiltro {
         return 'Categoria';
       case CampoFiltro.valor:
         return 'Valor';
+      case CampoFiltro.pagamento:
+        return 'Pagamento';
     }
   }
 }
@@ -63,6 +65,8 @@ class FiltroHistorico {
     this.operador = Operador.maior,
   });
 
+  bool get ehCredito => campo == CampoFiltro.pagamento && texto == 'Crédito';
+  
   bool aplica(Transacao t) {
     switch (campo) {
       case CampoFiltro.tipo:
@@ -83,6 +87,10 @@ class FiltroHistorico {
 
       case CampoFiltro.valor:
         return _aplicaIntervalo<double>(valor: t.valor, v1: numero1, v2: numero2, comparar: (a, b) => a.compareTo(b));
+      
+      case CampoFiltro.pagamento:
+        if (texto == null || texto!.trim().isEmpty) return true;
+        return texto == 'Crédito' ? t.usaCartao : !t.usaCartao;
     }
   }
 

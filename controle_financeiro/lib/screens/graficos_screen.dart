@@ -28,6 +28,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
   int _totalPaginas = 0;
   String? _categoriaEntradas;
   String? _categoriaSaidas;
+  bool _somenteCredito = false;
   late PageController _pageController;
 
   @override
@@ -54,6 +55,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
         data2: ultimoDiaIncluido,
         tipo: tipo,
         categoria: categoria,
+        somenteCredito: _somenteCredito,
       ),
     );
   }
@@ -74,6 +76,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
         data2: data2,
         tipo: tipo,
         categoria: categoria,
+        somenteCredito: _somenteCredito,
       ),
     );
   }
@@ -81,7 +84,10 @@ class _ChartsScreenState extends State<ChartsScreen> {
   @override
   Widget build(BuildContext context) {
     final finance = context.watch<FinanceProvider>();
-    final transacoes = finance.transacoes;
+    final transacoes = [
+      for (final t in finance.transacoes)
+        if (_somenteCredito ? t.usaCartao : !t.neutralizadaPorReembolso) t,
+    ];
     final filtro = _filtro ?? PeriodoUtils.mes(DateTime.now());
 
     final saidasPorCategoria = Agregador.porCategoria(
@@ -170,9 +176,37 @@ class _ChartsScreenState extends State<ChartsScreen> {
               ),
               const SizedBox(height: 16),
             ],
-            PeriodSelector(
-              todasTransacoes: transacoes,
-              onChanged: (f) => setState(() => _filtro = f),
+                        Row(
+              children: [
+                Expanded(
+                  child: PeriodSelector(
+                    todasTransacoes: finance.transacoes, // todas, não a lista filtrada
+                    onChanged: (f) => setState(() => _filtro = f),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Tooltip(
+                  message: 'Mostrar somente lançamentos de crédito',
+                  child: ChipAnimado(
+                    label: 'Crédito',
+                    selecionado: _somenteCredito,
+                    onTap: () =>
+                        setState(() => _somenteCredito = !_somenteCredito),
+                    fundoSelecionado: AppColors.credito,
+                    fundoNormal: AppColors.surface,
+                    textoSelecionado: Colors.white,
+                    textoNormal: AppColors.textSecondary,
+                    bordaSelecionada: AppColors.credito,
+                    bordaNormal: AppColors.border,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    raio: 12,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             Expanded(

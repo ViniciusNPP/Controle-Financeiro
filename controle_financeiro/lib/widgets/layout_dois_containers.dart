@@ -11,11 +11,12 @@ class ConfigBloco {
   final IndexedWidgetBuilder itemBuilder;
   final String mensagemVazia;
   final Widget? cabecalhoTabela;
-
-  /// Aparece acima da lista, só quando há itens
+  final bool desabilitado;
   final Widget? rodape;
 
   /// Fixo abaixo da lista
+  final String? totalTexto;
+  final bool destacado;
 
   const ConfigBloco({
     required this.titulo,
@@ -25,6 +26,9 @@ class ConfigBloco {
     required this.mensagemVazia,
     this.cabecalhoTabela,
     this.rodape,
+    this.desabilitado = false,
+    this.destacado = false,
+    this.totalTexto,
   });
 }
 
@@ -33,12 +37,14 @@ class TelaDuasListas extends StatefulWidget {
   final String titulo;
   final ConfigBloco primeiro;
   final ConfigBloco segundo;
+  final Widget? acao;
 
   const TelaDuasListas({
     super.key,
     required this.titulo,
     required this.primeiro,
     required this.segundo,
+    this.acao,
   });
 
   @override
@@ -73,10 +79,17 @@ class _TelaDuasListasState extends State<TelaDuasListas> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (sidebarVisivel(context)) ...[
-          Text(
-            widget.titulo,
-            style: Theme.of(context).textTheme.headlineMedium,
+        if (sidebarVisivel(context) || widget.acao != null) ...[
+          Row(
+            children: [
+              if (sidebarVisivel(context))
+                Text(
+                  widget.titulo,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+              const Spacer(),
+              if (widget.acao != null) widget.acao!,
+            ],
           ),
           const SizedBox(height: 16),
         ],
@@ -103,9 +116,9 @@ class _TelaDuasListasState extends State<TelaDuasListas> {
                 );
               }
 
-              final atual = _mostrarSegundoCompacto
-                  ? widget.segundo
-                  : widget.primeiro;
+              final mostrarSegundo =
+                  _mostrarSegundoCompacto && !widget.segundo.desabilitado;
+              final atual = mostrarSegundo ? widget.segundo : widget.primeiro;
               return TrocaFadeThrough(
                 // Também faz fade ao trocar de lista no modo compacto.
                 chave: _mostrarSegundoCompacto
@@ -136,8 +149,24 @@ class _TelaDuasListasState extends State<TelaDuasListas> {
   Widget _bloco(
     BuildContext context,
     ConfigBloco c, {
+    VoidCallback? onTrocar,
+  }) => AnimatedOpacity(
+    opacity: c.desabilitado ? 0.45 : 1,
+    duration: AppMotion.fade,
+    child: IgnorePointer(
+      ignoring: c.desabilitado,
+      child: _blocoInterno(context, c, onTrocar: onTrocar),
+    ),
+  );
+
+  Widget _blocoInterno(
+    BuildContext context,
+    ConfigBloco c, {
     VoidCallback? onTrocar, // se não-nulo, usa o layout "compacto" do cabeçalho
   }) {
+    final estiloTitulo = Theme.of(
+      context,
+    ).textTheme.titleMedium?.copyWith(color: c.destacado ? c.cor : null);
     final vazio = c.quantidade == 0;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -167,8 +196,20 @@ class _TelaDuasListasState extends State<TelaDuasListas> {
                           const SizedBox(width: 8),
                           Text(
                             c.titulo,
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: estiloTitulo,
                           ),
+                          if (c.totalTexto != null) ...[
+                            const SizedBox(height: 6, width: 20),
+                            Text(
+                              c.totalTexto!,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: c.cor,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
                         ]
                       : [
                           Container(
@@ -182,8 +223,20 @@ class _TelaDuasListasState extends State<TelaDuasListas> {
                           const SizedBox(width: 8),
                           Text(
                             c.titulo,
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: estiloTitulo,
                           ),
+                          if (c.totalTexto != null) ...[
+                            const SizedBox(height: 6, width: 20),
+                            Text(
+                              c.totalTexto!,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: c.cor,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
                         ],
                 ),
                 if (onTrocar != null)

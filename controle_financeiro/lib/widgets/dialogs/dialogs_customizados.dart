@@ -2,7 +2,7 @@ import 'package:controle_financeiro/models/categoria.dart';
 import 'package:controle_financeiro/utils/app_atalhos.dart';
 import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';

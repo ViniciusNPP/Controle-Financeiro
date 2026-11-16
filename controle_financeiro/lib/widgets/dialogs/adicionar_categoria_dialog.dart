@@ -2,9 +2,9 @@ import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/categoria.dart';
-import '../providers/finance_provider.dart';
-import '../theme/app_theme.dart';
+import '../../models/categoria.dart';
+import '../../providers/finance_provider.dart';
+import '../../theme/app_theme.dart';
 
 class AdicionarCategoriaDialog extends StatefulWidget {
   final TipoLancamento tipo;

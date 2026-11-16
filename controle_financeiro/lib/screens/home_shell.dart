@@ -1,11 +1,13 @@
 import 'dart:io';
+import 'dart:async';
+import 'package:flutter/material.dart';
+
 import 'package:controle_financeiro/screens/creditos_screen.dart';
 import 'package:controle_financeiro/screens/recorrentes_screen.dart';
 import 'package:controle_financeiro/services/sync_service.dart';
 import 'package:controle_financeiro/services/update_service.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
-import 'package:controle_financeiro/widgets/update_dialog.dart';
-import 'package:flutter/material.dart';
+import 'package:controle_financeiro/widgets/dialogs/update_dialog.dart';
 import 'package:provider/provider.dart';
 import '../models/filtro_historico.dart';
 import '../providers/finance_provider.dart';
@@ -14,6 +16,7 @@ import '../widgets/sidebar.dart';
 import '../widgets/abas_animadas.dart';
 import '../utils/dialog_fade.dart';
 import '../widgets/animacoes_base.dart';
+import '../models/transacao.dart';
 
 import 'add_transacao_screen.dart';
 import 'categorias_screen.dart';
@@ -51,6 +54,31 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  // Seleção de despesa para reembolso (Adicionar -> Crédito -> Adicionar)
+  Completer<Transacao?>? _selecaoDespesa;
+
+  Future<Transacao?> _escolherDespesaParaReembolso() {
+    _selecaoDespesa?.complete(null);
+    final c = Completer<Transacao?>();
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _selecaoDespesa = c;
+      _aba = 5; // aba Crédito
+    });
+    return c.future;
+  }
+
+  /// Chamado pela aba Crédito: despesa escolhida, ou null se cancelou.
+  void _finalizarSelecaoDespesa(Transacao? despesa) {
+    final c = _selecaoDespesa;
+    if (c == null) return;
+    setState(() {
+      _selecaoDespesa = null;
+      _aba = 0;
+    });
+    c.complete(despesa);
+  }
+  
   // Pedido de navegação Gráficos -> Histórico
   List<FiltroHistorico>? _filtrosParaHistorico;
   int _pedidoParaHistoricoId = 0;
@@ -66,7 +94,10 @@ class _HomeShellState extends State<HomeShell> {
 
   void _selecionarAba(int i) {
     FocusManager.instance.primaryFocus?.unfocus();
+    final pendente = _selecaoDespesa;
+    _selecaoDespesa = null;
     setState(() => _aba = i);
+    pendente?.complete(null);
   }
 
   void _abrirSincronizacao(BuildContext context) {
@@ -94,7 +125,10 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final telas = [
-      AddTransactionScreen(ativa: _aba == 0),
+      AddTransactionScreen(
+        ativa: _aba == 0,
+        onEscolherDespesa: _escolherDespesaParaReembolso,
+      ),
       ChartsScreen(onAbrirHistorico: _abrirHistoricoComFiltros),
       HistoricoScreen(
         filtrosExternos: _filtrosParaHistorico,
@@ -102,7 +136,10 @@ class _HomeShellState extends State<HomeShell> {
       ),
       RecorrentesScreen(),
       CategoriasScreen(),
-      CreditosScreen(),
+      CreditosScreen(
+        modoSelecao: _selecaoDespesa != null,
+        onSelecionarDespesa: _finalizarSelecaoDespesa,
+      ),
     ];
     final titulos = [
       'Adicionar lançamento',
@@ -110,7 +147,7 @@ class _HomeShellState extends State<HomeShell> {
       'Histórico',
       'Recorrências',
       'Categorias',
-      'Crédito'
+      'Créditos'
     ];
 
     final conteudo = AbasAnimadas(

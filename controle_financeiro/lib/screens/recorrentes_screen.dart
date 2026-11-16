@@ -10,7 +10,7 @@ import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatadores.dart';
 import '../widgets/layout_dois_containers.dart';
-import '../widgets/transacao_detalhes_dialog.dart';
+import '../widgets/dialogs/transacao_detalhes_dialog.dart';
 import '../utils/dialog_fade.dart';
 
 enum _Campo { nome, proxima, termino, valor }

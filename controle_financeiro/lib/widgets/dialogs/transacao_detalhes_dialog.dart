@@ -1,18 +1,18 @@
 import 'package:controle_financeiro/widgets/widgets_extras.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/categoria.dart';
-import '../models/recorrencia.dart';
-import '../models/transacao.dart';
-import '../providers/finance_provider.dart';
-import '../theme/app_theme.dart';
-import '../utils/dropdown.dart';
-import '../utils/formatadores.dart';
-import 'form_fields.dart';
-import 'categoria_selecionador.dart';
-import 'botoes_personalizados.dart';
+import '../../models/categoria.dart';
+import '../../models/recorrencia.dart';
+import '../../models/transacao.dart';
+import '../../providers/finance_provider.dart';
+import '../../theme/app_theme.dart';
+import '../../utils/dropdown.dart';
+import '../../utils/formatadores.dart';
+import '../form_fields.dart';
+import '../categoria_selecionador.dart';
+import '../botoes_personalizados.dart';
 import 'dialogs_customizados.dart';
-import 'recorrencia_widgets.dart' show SwitchRecorrencia;
+import '../recorrencia_widgets.dart' show SwitchRecorrencia;
 
 class TransacaoDetailDialog extends StatefulWidget {
   final Transacao transacao;
@@ -40,6 +40,7 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
   late TipoLancamento _tipo;
   Categoria? _categoria;
   double _valor = 0;
+  PagamentoLancamento? _pagamento;
   final _descricaoController = TextEditingController();
 
   // Página 2 (só recorrência)
@@ -54,6 +55,10 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
   bool _erroValor = false;
 
   bool get _valido => _categoria != null && _valor > 0;
+
+  /// Reembolso e despesa reembolsada têm vínculo: tipo e pagamento ficam fixos.
+  bool get _travado =>
+      widget.transacao.ehReembolso || widget.transacao.reembolsado;
 
   static String _labelPeriodo(PeriodoRecorrencia p) => switch (p) {
     PeriodoRecorrencia.diariamente => 'Diariamente',
@@ -89,6 +94,7 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
       tipo: widget.transacao.tipo,
     );
     _descricaoController.text = widget.transacao.descricao ?? '';
+    _pagamento = widget.transacao.pagamento;
 
     final m = _molde;
     if (m != null) {
@@ -138,6 +144,12 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
             categoriaNome: _categoria!.nome,
             valor: _valor,
             descricao: descricao.isEmpty ? null : descricao,
+            pagamento: _pagamento,
+            reembolsado: widget.transacao.reembolsado,
+            reembolsoDeId: widget.transacao.reembolsoDeId,
+            pago: _pagamento == widget.transacao.pagamento
+                ? widget.transacao.pago
+                : false,
           ),
         );
       }
@@ -156,7 +168,7 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
       titulo: recorrente ? 'Excluir recorrência' : 'Excluir lançamento',
       mensagem: recorrente
           ? 'Tem certeza que deseja excluir esta recorrência? Os lançamentos já gerados continuam no histórico. Essa ação não pode ser desfeita.'
-          : 'Tem certeza que deseja excluir este lançamento? Essa ação não pode ser desfeita.',
+          : 'Tem certeza que deseja excluir este lançamento?${widget.transacao.reembolsado ? ' O reembolso dele também será excluído.' : ''} Essa ação não pode ser desfeita.',
       corBotaoExcluir: AppColors.saida,
       aoConfirmar: () {
         final provider = context.read<FinanceProvider>();
@@ -239,7 +251,7 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
           ),
         LinhaDetalhe(
           rotulo: 'Tipo',
-          conteudo: _editando
+          conteudo: _editando && !_travado
               ? SeletorTipo(
                   tipoSelecionado: _tipo,
                   onSelecionar: (t) => setState(() {
@@ -252,6 +264,40 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
                   cor: corTipo,
                 ),
         ),
+        if (!rec)
+          LinhaDetalhe(
+            rotulo: 'Pagamento',
+            conteudo: _editando && !_travado
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: botaoSelecionavel(
+                          label: 'Crédito',
+                          selecionado:
+                              _pagamento == PagamentoLancamento.credito,
+                          cor: AppColors.credito,
+                          onTap: () => setState(
+                            () => _pagamento = PagamentoLancamento.credito,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: botaoSelecionavel(
+                          label: 'Não crédito',
+                          selecionado: _pagamento == null,
+                          cor: AppColors.saldo,
+                          onTap: () => setState(() => _pagamento = null),
+                        ),
+                      ),
+                    ],
+                  )
+                : ValorEstatico(switch (_pagamento) {
+                    PagamentoLancamento.credito => 'Crédito',
+                    PagamentoLancamento.reembolso => 'Reembolso',
+                    null => 'Não crédito',
+                  }),
+          ),
         LinhaDetalhe(
           rotulo: 'Categoria',
           erro: _editando && _erroCategoria,
@@ -322,7 +368,9 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
         rotulo: 'Repetir',
         conteudo: _editando
             ? dropdownEstilizado(
-                opcoes: [for (final p in PeriodoRecorrencia.values) _labelPeriodo(p)],
+                opcoes: [
+                  for (final p in PeriodoRecorrencia.values) _labelPeriodo(p),
+                ],
                 valorSelecionado: _labelPeriodo(_periodo),
                 onSelecionar: (label) => setState(() {
                   _periodo = PeriodoRecorrencia.values.firstWhere(
@@ -340,7 +388,8 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
                 compact: true,
                 onChanged: (d) => setState(() {
                   _dataInicio = d;
-                  if (_dataProxima.isBefore(_dataInicio)) _dataProxima = _dataInicio;
+                  if (_dataProxima.isBefore(_dataInicio))
+                    _dataProxima = _dataInicio;
                   if (!_dataTermino.isAfter(_dataInicio)) {
                     _dataTermino = _dataInicio.add(const Duration(days: 1));
                   }
@@ -370,7 +419,9 @@ class _TransacaoDetailDialogState extends State<TransacaoDetailDialog> {
                 onChanged: (d) => setState(() => _dataTermino = d),
               )
             : ValorEstatico(
-                _indeterminado ? 'Indeterminado' : Formatters.data(_dataTermino),
+                _indeterminado
+                    ? 'Indeterminado'
+                    : Formatters.data(_dataTermino),
               ),
       ),
       if (_editando)

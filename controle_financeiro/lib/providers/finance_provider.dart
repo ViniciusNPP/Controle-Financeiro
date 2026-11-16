@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/categoria.dart';
 import '../models/recorrencia.dart';
@@ -7,6 +9,7 @@ import '../models/transacao.dart';
 import '../services/storage_service.dart';
 import '../services/sync_service.dart';
 import '../utils/recorrencia_calculadora.dart';
+import '../models/config_credito.dart';
 
 class FinanceProvider extends ChangeNotifier {
   final StorageService _storage = StorageService();
@@ -16,6 +19,9 @@ class FinanceProvider extends ChangeNotifier {
   DadosApp _dados = DadosApp.vazio();
   DateTime? _ultimaSincronizacao;
   bool _carregado = false;
+  static const _chaveConfigCredito = 'config_credito';
+  ConfigCredito _configCredito = const ConfigCredito();
+  ConfigCredito get configCredito => _configCredito;
 
   DadosApp get dados => _dados;
   List<Categoria> get categorias => _dados.categorias;
@@ -36,6 +42,8 @@ class FinanceProvider extends ChangeNotifier {
     await _migrarIdsCategorias();
     await _adicionarCategoriasPadraoNovas();
     await _gerarTransacoesPendentes();
+    await _carregarConfigCredito();
+    await _processarDebitoAutomatico();
 
     _carregado = true;
     notifyListeners();
@@ -72,6 +80,94 @@ class FinanceProvider extends ChangeNotifier {
       ],
     );
     await _storage.salvar(_dados);
+  }
+
+  // --- Crédito ---
+  Future<void> marcarComoPago(String id) async {
+    _dados = _dados.copyWith(
+      transacoes: [
+        for (final t in _dados.transacoes)
+          if (t.id == id) t.copyWith(pago: true) else t,
+      ],
+    );
+    await _persistirETentarSincronizar();
+  }
+
+  Future<void> marcarTodosComoPagos() async {
+    _dados = _dados.copyWith(
+      transacoes: [
+        for (final t in _dados.transacoes)
+          if (t.pendenteNoCredito) t.copyWith(pago: true) else t,
+      ],
+    );
+    await _persistirETentarSincronizar();
+  }
+
+  Future<void> _carregarConfigCredito() async {
+    final prefs = await SharedPreferences.getInstance();
+    final texto = prefs.getString(_chaveConfigCredito);
+    if (texto == null) return;
+    try {
+      _configCredito = ConfigCredito.fromJson(
+        jsonDecode(texto) as Map<String, dynamic>,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> salvarConfigCredito(ConfigCredito nova) async {
+    _configCredito = nova;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_chaveConfigCredito, jsonEncode(nova.toJson()));
+    await _processarDebitoAutomatico();
+    await _persistirETentarSincronizar(); // também notifica
+  }
+
+  static DateTime _somarMeses(DateTime d, int meses) {
+    final primeiro = DateTime(d.year, d.month + meses, 1);
+    final ultimoDia = DateTime(primeiro.year, primeiro.month + 1, 0).day;
+    return DateTime(
+      primeiro.year,
+      primeiro.month,
+      d.day > ultimoDia ? ultimoDia : d.day,
+    );
+  }
+
+  /// Se o débito automático está ligado e a data escolhida já chegou, paga
+  /// tudo e avança as duas datas para o(s) mês(es) seguinte(s).
+  Future<void> _processarDebitoAutomatico() async {
+    final cfg = _configCredito;
+    final alvo = cfg.dataDebito;
+    if (!cfg.debitoAutomatico || alvo == null) return;
+
+    final agora = DateTime.now();
+    final hoje = DateTime(agora.year, agora.month, agora.day);
+    if (alvo.isAfter(hoje)) return;
+
+    _dados = _dados.copyWith(
+      transacoes: [
+        for (final t in _dados.transacoes)
+          if (t.pendenteNoCredito) t.copyWith(pago: true) else t,
+      ],
+    );
+    await _storage.salvar(_dados);
+
+    var meses = 1;
+    while (!_somarMeses(alvo, meses).isAfter(hoje)) {
+      meses++;
+    }
+    final f = cfg.fechamento;
+    final v = cfg.vencimento;
+    _configCredito = ConfigCredito(
+      debitoAutomatico: true,
+      debitoEm: cfg.debitoEm,
+      fechamento: f == null ? null : _somarMeses(f, meses),
+      vencimento: v == null ? null : _somarMeses(v, meses),
+    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _chaveConfigCredito,
+      jsonEncode(_configCredito.toJson()),
+    );
   }
 
   /// Adiciona categorias padrão novas sem recriar as que o usuário excluiu de propósito.
@@ -175,9 +271,26 @@ class FinanceProvider extends ChangeNotifier {
       if (!idsRecorrentesLocal.contains(r.id)) recorrentesMesclados.add(r);
     }
 
+    final remotoPorId = {for (final t in remoto.transacoes) t.id: t};
+    for (var i = 0; i < transacoesMescladas.length; i++) {
+      final t = transacoesMescladas[i];
+      if (!t.pago && (remotoPorId[t.id]?.pago ?? false)) {
+        transacoesMescladas[i] = t.copyWith(pago: true);
+      }
+    }
+
+    final reembolsados = {
+      for (final t in transacoesMescladas)
+        if (t.reembolsoDeId != null) t.reembolsoDeId!,
+    };
+    final transacoesFinais = [
+      for (final t in transacoesMescladas)
+        reembolsados.contains(t.id) ? t.copyWith(reembolsado: true) : t,
+    ];
+
     return DadosApp(
       categorias: categoriasMescladas,
-      transacoes: transacoesMescladas,
+      transacoes: transacoesFinais,
       recorrentes: recorrentesMesclados,
     );
   }
@@ -196,6 +309,8 @@ class FinanceProvider extends ChangeNotifier {
     required String categoriaNome,
     required double valor,
     String? descricao,
+    PagamentoLancamento? pagamento,
+    String? reembolsoDeId,
   }) async {
     final nova = Transacao(
       id: _uuid.v4(),
@@ -205,10 +320,19 @@ class FinanceProvider extends ChangeNotifier {
       categoriaNome: categoriaNome,
       valor: valor,
       descricao: descricao,
+      pagamento: pagamento,
+      reembolsoDeId: reembolsoDeId,
     );
 
     _dados = _dados.copyWith(
-      transacoes: [..._dados.transacoes, nova],
+      transacoes: [
+        for (final t in _dados.transacoes)
+          if (reembolsoDeId != null && t.id == reembolsoDeId)
+            t.copyWith(reembolsado: true)
+          else
+            t,
+        nova,
+      ],
       categorias: [
         for (final c in _dados.categorias)
           if (c.id == categoriaId)
@@ -306,14 +430,33 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> excluirTransacao(String id, String categoriaId) async {
+    final alvo = _dados.transacoes.where((t) => t.id == id).firstOrNull;
+
+    final idsRemover = {
+      id,
+      if (alvo?.reembolsado ?? false)
+        ..._dados.transacoes
+            .where((t) => t.reembolsoDeId == id)
+            .map((t) => t.id),
+    };
+    final removidas = _dados.transacoes
+        .where((t) => idsRemover.contains(t.id))
+        .toList();
+    final despesaId =
+        alvo?.reembolsoDeId; // apagou um reembolso: despesa volta a valer
+
     _dados = _dados.copyWith(
-      transacoes: _dados.transacoes.where((t) => t.id != id).toList(),
+      transacoes: [
+        for (final t in _dados.transacoes)
+          if (!idsRemover.contains(t.id))
+            (t.id == despesaId ? t.copyWith(reembolsado: false) : t),
+      ],
       categorias: [
         for (final c in _dados.categorias)
-          if (c.id == categoriaId)
-            c.copyWith(vezesUsada: c.vezesUsada - 1)
-          else
-            c,
+          () {
+            final n = removidas.where((t) => t.categoriaId == c.id).length;
+            return n == 0 ? c : c.copyWith(vezesUsada: c.vezesUsada - n);
+          }(),
       ],
     );
     await _persistirETentarSincronizar();

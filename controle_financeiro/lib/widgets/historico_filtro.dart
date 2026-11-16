@@ -49,6 +49,7 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
   final _scrollFiltrosAtivos = ScrollController();
   TextEditingController? _autocompleteController;
   String? _tipoSelecionado;
+  String? _pagamentoSelecionado;
   Operador _operador = Operador.maior;
   DateTime? _data1;
   DateTime? _data2;
@@ -86,6 +87,7 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
     _data1Controller.clear();
     _data2Controller.clear();
     _autocompleteController?.clear();
+    _pagamentoSelecionado = null;
     _tipoSelecionado = null;
     _data1 = null;
     _data2 = null;
@@ -102,6 +104,14 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
     if (_campo == CampoFiltro.tipo) {
       if (_tipoSelecionado == null) return null;
       return FiltroHistorico(id: id, campo: _campo, texto: _tipoSelecionado!);
+    }
+    if (_campo == CampoFiltro.pagamento) {
+      if (_pagamentoSelecionado == null) return null;
+      return FiltroHistorico(
+        id: id,
+        campo: _campo,
+        texto: _pagamentoSelecionado!,
+      );
     }
     if (_campo == CampoFiltro.categoria) {
       final texto = (_autocompleteController?.text ?? '').trim();
@@ -387,6 +397,35 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
         ],
       );
     }
+    if (_campo == CampoFiltro.pagamento) {
+      return Row(
+        children: [
+          Expanded(
+            child: botaoSelecionavel(
+              label: 'Crédito',
+              selecionado: _pagamentoSelecionado == 'Crédito',
+              cor: AppColors.credito,
+              onTap: () {
+                setState(() => _pagamentoSelecionado = 'Crédito');
+                _emitirFiltroRapido();
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: botaoSelecionavel(
+              label: 'Não crédito',
+              selecionado: _pagamentoSelecionado == 'Não crédito',
+              cor: AppColors.saldo,
+              onTap: () {
+                setState(() => _pagamentoSelecionado = 'Não crédito');
+                _emitirFiltroRapido();
+              },
+            ),
+          ),
+        ],
+      );
+    }
     if (_campo == CampoFiltro.categoria) {
       return autocompleteEstilizado(
         key: const ValueKey('autocomplete_categoria'),
@@ -663,6 +702,9 @@ class _FiltroBuilderState extends State<FiltroBuilder> {
         if (f.data2 != null)
           return 'Data ${f.operador.simbolo} ${Formatters.data(f.data2!)}';
         return 'Data = ${Formatters.data(f.data1 ?? DateTime.now())}';
+
+      case CampoFiltro.pagamento:
+        return 'Pagamento: ${f.texto}';
     }
   }
 }
