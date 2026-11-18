@@ -429,24 +429,11 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(flex: 3, child: Text('DATA', style: estilo)),
-          Expanded(flex: 4, child: Text('CATEGORIA', style: estilo)),
-          Expanded(
-            flex: 3,
-            child: Text(
-              'PAGAMENTO',
-              style: estilo,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text('VALOR', style: estilo, textAlign: TextAlign.right),
-          ),
-        ],
+      child: _ColunasHistorico(
+        data: Text('DATA', style: estilo),
+        categoria: Text('CATEGORIA', style: estilo),
+        pagamento: _TextoCortado('PAGAMENTO', estilo: estilo),
+        valor: Text('VALOR', style: estilo, textAlign: TextAlign.right),
       ),
     );
   }
@@ -463,48 +450,34 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 3,
-              child: Text(
-                Formatters.data(t.data),
-                style: const TextStyle(fontSize: 13.5),
-              ),
+                child: _ColunasHistorico(
+          data: Text(
+            Formatters.data(t.data),
+            maxLines: 1,
+            softWrap: false,
+            style: const TextStyle(fontSize: 13.5),
+          ),
+          categoria: Text(
+            t.categoriaNome,
+            style: const TextStyle(fontSize: 13.5),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          pagamento: _TextoCortado(
+            _rotuloPagamento(t),
+            estilo: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+          ),
+          valor: Text(
+            Formatters.moeda(t.valor),
+            textAlign: TextAlign.right,
+            maxLines: 1,
+            softWrap: false,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: cor,
             ),
-            Expanded(
-              flex: 4,
-              child: Text(
-                t.categoriaNome,
-                style: const TextStyle(fontSize: 13.5),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Expanded(
-              flex: 3,
-              child: Text(
-                _rotuloPagamento(t),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 3,
-              child: Text(
-                Formatters.moeda(t.valor),
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  color: cor,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -539,6 +512,93 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Divide a largura da linha entre as 4 colunas: Data e Valor nunca ficam
+/// abaixo do mínimo; o que sobra é dividido entre Categoria e Pagamento.
+class _ColunasHistorico extends StatelessWidget {
+  final Widget data;
+  final Widget categoria;
+  final Widget pagamento;
+  final Widget valor;
+
+  static const _minData = 84.0; // cabe "dd/mm/aaaa" em uma linha
+  static const _minValor = 100.0; // cabe "R$ 123.456,78"
+  static const _pesoCategoria = 5.0; // sobra: Categoria 5 x Pagamento 3
+  static const _pesoPagamento = 3.0;
+
+  const _ColunasHistorico({
+    required this.data,
+    required this.categoria,
+    required this.pagamento,
+    required this.valor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, box) {
+        final total = box.maxWidth;
+        final wData = (total * 3 / 13).clamp(_minData, double.infinity);
+        final wValor = (total * 3 / 13).clamp(_minValor, double.infinity);
+        final resto = (total - wData - wValor).clamp(0.0, double.infinity);
+        final soma = _pesoCategoria + _pesoPagamento;
+        final wCategoria = resto * _pesoCategoria / soma;
+        final wPagamento = resto * _pesoPagamento / soma;
+
+        return Row(
+          children: [
+            SizedBox(width: wData, child: data),
+            SizedBox(width: wCategoria, child: categoria),
+            SizedBox(width: wPagamento, child: pagamento),
+            SizedBox(width: wValor, child: valor),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Texto de uma linha só. Se não couber, corta e termina com "." (ex.: "Créd.").
+class _TextoCortado extends StatelessWidget {
+  final String texto;
+  final TextStyle estilo;
+
+  const _TextoCortado(this.texto, {required this.estilo});
+
+  double _largura(String s) {
+    final tp = TextPainter(
+      text: TextSpan(text: s, style: estilo),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    final w = tp.width;
+    tp.dispose();
+    return w;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, box) {
+        var t = texto;
+        if (texto.isNotEmpty && _largura(texto) > box.maxWidth) {
+          var n = texto.length - 1;
+          while (n > 1 && _largura('${texto.substring(0, n)}.') > box.maxWidth) {
+            n--;
+          }
+          t = '${texto.substring(0, n)}.';
+        }
+        return Text(
+          t,
+          style: estilo,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.clip,
+        );
+      },
     );
   }
 }

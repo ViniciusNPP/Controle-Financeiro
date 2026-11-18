@@ -202,16 +202,16 @@ class _ChartsScreenState extends State<ChartsScreen> {
               ),
               const SizedBox(height: 16),
             ],
-            if (_filtroExpandido)
-              seletorPeriodo
-            else
-              Row(
-                children: [
-                  Expanded(child: seletorPeriodo),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: seletorPeriodo),
+                if (!_filtroExpandido) ...[
                   const SizedBox(width: 12),
                   botaoCredito,
                 ],
-              ),
+              ],
+            ),
             const SizedBox(height: 20),
             Expanded(
               child: LayoutBuilder(
