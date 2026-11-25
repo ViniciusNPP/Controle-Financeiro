@@ -54,9 +54,10 @@ Filtros por data, tipo, categoria e valor que já atualizam a lista enquanto voc
 2. Selecione o tipo clicando sobre o texto "Entrada" ou "Saída"
 3. Selecione a categoria clicando sobre o campo de categoria que ficará disponível assim que selecionar o tipo
 4. OPCIONAL: Selecione a descrição clicando sobre o campo de descrição e escreva brevemente o que é a despesa
-5. Adicione o valor clicando no campo com o valor padrão de R$0,00
-6. OPCIONAL: Para tornar o lançamento recorrente, ative o botão **Recorrente** ao lado do campo de categoria (veja **'como configurar'**)
-7. Após todos os campos obrigatórios serem preenchidos, clique no botão Salvar lançamento.
+5. OPCIONAL: Selecione se a despesa é de crédito ou reembolso
+6. Adicione o valor clicando no campo com o valor padrão de R$0,00
+7. OPCIONAL: Para tornar o lançamento recorrente, ative o botão **Recorrente** ao lado do campo de categoria (veja **'como configurar'**)
+8. Após todos os campos obrigatórios serem preenchidos, clique no botão Salvar lançamento.
 
 #### Configurando a recorrência
 
@@ -71,6 +72,10 @@ Ao ativar o botão **Recorrente**, abre uma janela para configurar a repetição
 
 > ⚠️ Se a data de início for hoje, o lançamento de hoje é criado na hora e o próximo já fica agendado. Se for uma data futura, só a recorrência é criada, e o lançamento aparece no Histórico quando a data chegar.
 > Se você sair da aba Adicionar sem salvar, a recorrência que estava sendo configurada é descartada.
+
+#### Reembolso
+
+Ao selecionar "Reembolso" você será redirecionado para a tela "Créditos" para selecionar alguma despesa de crédito. Após selecionar alguma despesa você retornará para a tela de adicionar lançamento e os campos Categoria (se tiver a categoria "reembolso" senão será necessário criar uma para ela ser selecionada automaticamente), Descrição (se a despesa selecionada tiver alguma) e Valor. Após salvar o lançamento a despesa de crédito reembolsada e o reembolso não serão contados mais nas somas dos lançamentos.
 
 ### 3\. Exportar e importar dados
 
@@ -105,9 +110,9 @@ Disponível somente no computador, é usada para que o app sincronize automatica
 #### Gráficos
 
 1. Ao clicar nos botões 'Mensal' e 'Anual' altera o tipo de filtro dos dados mostrados no gráfico
-1.1. Mensal: Filtra os dados no período do mês escolhido na barra cinza, bimestral, trimestral, semestral e todo o período em meses que se tem lançamentos.
-1.2. Anual: Filtra os dados no período do ano escolhido na barra cinza ou de todo o período em anos que se tem lançamentos.
-1.3. Personalizado: Essa opção permite selecionar um período específico de tempo para filtrar os dados, no filtro 'Mensal' o período de meses e em 'Anual' o período de anos.
+  1.1. Mensal: Filtra os dados no período do mês escolhido na barra cinza, bimestral, trimestral, semestral e todo o período em meses que se tem lançamentos.
+  1.2. Anual: Filtra os dados no período do ano escolhido na barra cinza ou de todo o período em anos que se tem lançamentos.
+  1.3. Personalizado: Essa opção permite selecionar um período específico de tempo para filtrar os dados, no filtro 'Mensal' o período de meses e em 'Anual' o período de anos.
 2. Nos gráficos de barras ao clicar no nome deles (Exemplo: 'Entradas: Todas ▾') abrirá uma lista de categorias, permitindo que filtre os valores daquela categoria naquele período de tempo escolhido.
 3. Ao clicar duas vezes na barra em qualquer gráfico de barras, será redirecionado para a aba 'Histórico' mostrando todas as despesas daquela categoria, naquele mês ou ano daquele tipo categoria (entrada ou saída).
 4. Nos gráficos de pizza ao passar o mouse em cima de uma fatia, ou clique longo no Android, mostra o valor daquela fatia.
@@ -118,26 +123,26 @@ Disponível somente no computador, é usada para que o app sincronize automatica
 #### Histórico
 
 1. Na parte de filtros é possível aplicar um filtro de data, tipo, categoria e/ou valor preenchendo os devidos campos e logo após clicar no botão 'Adicionar filtro'.
-1.1. Data: Seleciona um período mensal, anual ou personalizado, basta mudar o modo do filtro clicando no botão na direita acima do retângulo cinza com o texto 'Meses' ou 'Anos' ou 'Personalizado'
-1.2. Tipo: Seleciona um dos dois tipos existentes, entradas para os débitos e saídas para as despesas.
-1.3. Categoria: Seleciona alguma categoria existente para ser filtrada, basta começar a digitar o nome da categoria que logo aparecerá como sugestão.
-1.4. Valor: Possível filtrar valores acima ou abaixo do colocado no campo da direita, filtrar entre os dois valores digitados nos dois campos e filtrar por valores exatamente iguais ao do campo da esquerda.
+  1.1. Data: Seleciona um período mensal, anual ou personalizado, basta mudar o modo do filtro clicando no botão na direita acima do retângulo cinza com o texto 'Meses' ou 'Anos' ou 'Personalizado'
+  1.2. Tipo: Seleciona um dos dois tipos existentes, entradas para os débitos e saídas para as despesas.
+  1.3. Categoria: Seleciona alguma categoria existente para ser filtrada, basta começar a digitar o nome da categoria que logo aparecerá como sugestão.
+  1.4. Valor: Possível filtrar valores acima ou abaixo do colocado no campo da direita, filtrar entre os dois valores digitados nos dois campos e filtrar por valores exatamente iguais ao do campo da esquerda.
 2. Ao clicar em qualquer lançamento vai abrir uma janela mostrando todas as informações daquele lançamento, dando opções de fechar a janela (botão 'X Cancelar' ou 'X'), excluir (botão '🗑️Excluir' ou '🗑️') que abrirá uma janela de confirmação e editar (botão '✏️ Editar' ou '✏️').
 3. Ao clicar em 'Editar' você terá a permissão de editar todas as informações daquele lançamento (data, tipo, categoria, descrição e valor). Para salvar qualquer alteração clique no botão **verde** com o texto **'Salvar'** ou com o ícone **💾**. Caso queria voltar ou sair clique no botão **'Voltar'** ou **⬅** e depois **Cancelar** ou **X**, ou clique fora da janela.
 4. Ao preencher os filtros, já será aplicado um filtro rápido que não ficará após mudar o tipo de filtro ou apagar o texto escrito.
 5. Ao clicar no botão abaixo de 'Adicionar Filtro', a lista de lançamentos vai mudar baseado no que estiver escolhido
-1.1. Data (mais recente): Ordena pela data mais próxima da atual
-1.2. Data (mais antiga): Ordena pela data mais longe da atual
-1.3. Maior valor: Ordena pelo valor mais alto
-1.4. Menor valor: Ordena pelo valor mais baixo
-1.5. Categoria (A-Z): Ordena por ordem alfabética
-1.6. Categoria (Z-A): Ordena por ordem alfabética inversa
+  5.1. Data (mais recente): Ordena pela data mais próxima da atual
+  5.2. Data (mais antiga): Ordena pela data mais longe da atual
+  5.3. Maior valor: Ordena pelo valor mais alto
+  5.4. Menor valor: Ordena pelo valor mais baixo
+  5.5. Categoria (A-Z): Ordena por ordem alfabética
+  5.6. Categoria (Z-A): Ordena por ordem alfabética inversa
 
 #### Categoria
 
 1. Clicar no botão '+' abre uma janela para adicionar uma nova categoria do tipo das categorias exibidas acima dele (o tipo da categoria exibidos estará no nome da coluna, podendo ser 'Categoria de entrada' ou 'Categoria de saída').
-1.1. Preenche o campo com o nome da categoria e depois clique no botão 'Adicionar' para adicionar.
-1.2. A janela não vai fechar após adicionar, então para sair basta clicar em qualquer lugar da tela fora da janela ou no botão 'Fechar'.
+  1.1. Preenche o campo com o nome da categoria e depois clique no botão 'Adicionar' para adicionar.
+  1.2. A janela não vai fechar após adicionar, então para sair basta clicar em qualquer lugar da tela fora da janela ou no botão 'Fechar'.
 2. Clicar em uma categoria em específico vai abrir uma janela como a descrita no tópico de **Histórico do 2 ao 3**, mas com somente os campos 'Nome' e 'Tipo'
 3. Se a largura do aplicativo for pequena, ao invés de ter duas colunas terá somente uma, para trocar de coluna basta clicar no botão '⇄'.
 
@@ -145,20 +150,33 @@ Disponível somente no computador, é usada para que o app sincronize automatica
 
 A aba **Recorrente** serve para acompanhar e gerenciar todos os lançamentos que se repetem automaticamente. Cada recorrência funciona como um "molde": quando a data chega, o app cria um lançamento normal no Histórico com o mesmo tipo, categoria, descrição e valor do molde, e a data do dia em que ele foi lançado. As recorrências são criadas na aba **Adicionar** (veja **'Configurando a recorrência'**).
 
-1. A aba mostra duas listas:
-1.1. **Em andamento:** recorrências que ainda vão gerar novos lançamentos, ordenadas pela próxima data mais próxima.
-1.2. **Finalizadas:** recorrências cuja data de término já passou e que não geram mais lançamentos.
+1. A aba mostra duas listas ou uma com possibilidade de trocar de lista no botão de troca '⇄':
+  1.1. **Em andamento:** recorrências que ainda vão gerar novos lançamentos, ordenadas pela próxima data mais próxima.
+  1.2. **Finalizadas:** recorrências cuja data de término já passou e que não geram mais lançamentos.
 2. Cada recorrência mostra quatro informações:
-2.1. **Nome:** a descrição do lançamento (se não tiver descrição, mostra o nome da categoria).
-2.2. **Próxima:** a data em que o próximo lançamento será criado.
-2.3. **Término:** a data em que a recorrência acaba, ou '-' se for indeterminada.
-2.4. **Valor:** em **verde** para entradas e em **vermelho** para saídas.
+  2.1. **Nome:** a descrição do lançamento (se não tiver descrição, mostra o nome da categoria).
+  2.2. **Próxima:** a data em que o próximo lançamento será criado.
+  2.3. **Término:** a data em que a recorrência acaba, ou '-' se for indeterminada.
+  2.4. **Valor:** em **verde** para entradas e em **vermelho** para saídas.
 3. Ao clicar em uma recorrência abre uma janela com **duas páginas**, que você alterna pelas setas **‹ ›** no topo da janela:
-3.1. **Página 1:** os dados do lançamento (tipo, categoria, descrição e valor).
-3.2. **Página 2:** as regras da recorrência (Repetir, A partir de, Próxima e Termina em).
+  3.1. **Página 1:** os dados do lançamento (tipo, categoria, descrição e valor).
+  3.2. **Página 2:** as regras da recorrência (Repetir, A partir de, Próxima e Termina em).
 4. Ao clicar em 'Editar' é possível alterar as informações das **duas páginas**, independente de qual delas estava aberta. Também é possível ativar ou desativar o 'Indeterminado' para definir ou remover a data de término. Para salvar clique no botão **verde** 'Salvar' ou **💾**. Para sair da edição sem salvar, clique em 'Voltar' ou **⬅**.
 5. Ao clicar em 'Excluir' (e confirmar) a recorrência é removida e nenhum lançamento novo será criado.
-6. Se a largura do aplicativo for pequena, ao invés de duas listas lado a lado, aparece somente uma, e para trocar entre 'Em andamento' e 'Finalizadas' basta clicar no botão '⇄'.
 
 > ⚠️ Editar ou excluir uma recorrência **não altera** os lançamentos que ela já gerou: eles continuam no Histórico e devem ser editados ou excluídos por lá, individualmente.
+> 
+#### Créditos
 
+Permite visualizar todas as despesas e entradas marcadas como crédito
+
+1. A aba mostra duas listas ou uma com possibilidade de trocar de lista no botão de troca '⇄':
+  1.1. **Negativo:** lançamentos de créditos marcados como "saída"
+  1.2. **Positivo:** lançamentos de créditos marcados como "entrada"
+  1.3. Permite ver o saldo total de cada coluna, ficando com o nome destacado a lista com maior saldo
+2. Na lista de Negativo é possível apertar o botão "Pago" para marcá-la como paga e fazê-la desaparecer da lista
+3. Na lista de Negativo o botão "Tudo pago" faz o mesmo que o botão "Pago", porém para todas as despesas
+4. Ao apertar "Configurações" abrirá um painel com 2 (dois) tipos de configurações
+   4.1. Débito automático ao ativá-lo expandirá seu "menu" mostrando as opções "Fechamento" e "Vencimento", simbolizando que todas as despesas serão marcadas como pagas na data de fechamento ou vencimento do cartão
+   4.2. Data de fatura do cartão é o local que você definirá as datas de fechamento e vencimento do cartão possibilitando o débito automático de ser ativado
+     4.2.1. A data de vencimento deve ser ao menos 1 dia a mais que o dia de fechamento. Por exemplo: se o fechamento for todo dia 20, o vencimento deve ser no mínimo dia 21.
