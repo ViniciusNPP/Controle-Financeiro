@@ -1,14 +1,15 @@
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
-import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'storage_service.dart';
+// Web -> download/upload de arquivo; Windows/Android -> pastas e seletor nativo.
+import 'sync_plataforma_web.dart' if (dart.library.io) 'sync_plataforma_io.dart';
 
 /// Sincronização
 class SyncService {
   static const _chavePasta = 'pasta_sincronizacao';
   static const _nomeArquivo = 'dados_financeiro.json';
+
+  final SyncPlataforma _plataforma = SyncPlataforma();
 
   Future<String?> pastaConfigurada() async {
     final prefs = await SharedPreferences.getInstance();
@@ -16,9 +17,7 @@ class SyncService {
   }
 
   Future<String?> escolherPasta() async {
-    final caminho = await FilePicker.getDirectoryPath(
-      dialogTitle: 'Escolha a pasta do Google Drive / OneDrive para sincronizar',
-    );
+    final caminho = await _plataforma.escolherPasta();
     if (caminho != null) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_chavePasta, caminho);
@@ -37,8 +36,7 @@ class SyncService {
     final pasta = await pastaConfigurada();
     if (pasta == null) return;
     try {
-      final file = File('$pasta${Platform.pathSeparator}$_nomeArquivo');
-      await file.writeAsString(jsonStr);
+      await _plataforma.escreverNaPasta(pasta, _nomeArquivo, jsonStr);
     } catch (_) {}
   }
 
@@ -46,9 +44,8 @@ class SyncService {
     final pasta = await pastaConfigurada();
     if (pasta == null) return null;
     try {
-      final file = File('$pasta${Platform.pathSeparator}$_nomeArquivo');
-      if (!await file.exists()) return null;
-      final conteudo = await file.readAsString();
+      final conteudo = await _plataforma.lerDaPasta(pasta, _nomeArquivo);
+      if (conteudo == null) return null;
       return DadosApp.fromJson(jsonDecode(conteudo) as Map<String, dynamic>);
     } catch (_) {
       return null;
@@ -59,22 +56,7 @@ class SyncService {
   Future<bool> exportarArquivo(DadosApp dados) async {
     try {
       final jsonStr = jsonEncode(dados.toJson());
-      if (Platform.isAndroid) {
-        final bytes = Uint8List.fromList(utf8.encode(jsonStr));
-        final caminho = await FilePicker.saveFile(
-          dialogTitle: 'Salvar dados na pasta do Drive/OneDrive',
-          fileName: _nomeArquivo,
-          bytes: bytes,
-        );
-        return caminho != null;
-      }
-      final caminho = await FilePicker.saveFile(
-        dialogTitle: 'Salvar dados na pasta do Drive/OneDrive',
-        fileName: _nomeArquivo,
-      );
-      if (caminho == null) return false;
-      await File(caminho).writeAsString(jsonStr);
-      return true;
+      return await _plataforma.exportar(_nomeArquivo, jsonStr);
     } catch (_) {
       return false;
     }
@@ -83,27 +65,15 @@ class SyncService {
   /// Importação manual: abre o seletor de arquivos para escolher o
   /// dados_financeiro.json salvo anteriormente na pasta compartilhada.
   Future<DadosApp?> importarArquivo() async {
-    final resultado = await FilePicker.pickFiles(
-      dialogTitle: 'Selecione o arquivo dados_financeiro.json',
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-      withData: true,
-    );
-    if (resultado == null) return null; // usuário cancelou, sem erro
-
-    final arquivo = resultado.files.single;
     String? conteudo;
     try {
-      if (arquivo.path != null) {
-        conteudo = await File(arquivo.path!).readAsString();
-      } else if (arquivo.bytes != null) {
-        conteudo = utf8.decode(arquivo.bytes!);
-      }
+      conteudo = await _plataforma.selecionarELer();
     } catch (_) {
       throw FormatoInvalidoException('Não foi possível ler o arquivo selecionado.');
     }
+    if (conteudo == null) return null; // usuário cancelou, sem erro
 
-    if (conteudo == null || conteudo.trim().isEmpty) {
+    if (conteudo.trim().isEmpty) {
       throw FormatoInvalidoException('O arquivo selecionado está vazio.');
     }
 

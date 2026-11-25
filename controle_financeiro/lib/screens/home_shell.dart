@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 
@@ -6,6 +5,7 @@ import 'package:controle_financeiro/screens/creditos_screen.dart';
 import 'package:controle_financeiro/screens/recorrentes_screen.dart';
 import 'package:controle_financeiro/services/sync_service.dart';
 import 'package:controle_financeiro/services/update_service.dart';
+import 'package:controle_financeiro/utils/plataforma.dart';
 import 'package:controle_financeiro/widgets/botoes_personalizados.dart';
 import 'package:controle_financeiro/widgets/dialogs/update_dialog.dart';
 import 'package:provider/provider.dart';
@@ -375,7 +375,23 @@ class _SincronizacaoDialogState extends State<_SincronizacaoDialog> {
               const SizedBox(height: 16),
 
               // Sincronização automática por pasta — só faz sentido no desktop
-              if (!Platform.isAndroid) ...[
+              if (Plataforma.ehWeb) ...[
+                const Divider(),
+                const SizedBox(height: 10),
+                Text(
+                  'No navegador, seus dados ficam salvos só neste aparelho e neste navegador. '
+                  'Use "Exportar dados" para fazer backup ou levar tudo para outro aparelho, '
+                  'e "Importar dados" para trazer de lá.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Limpar os dados do navegador apaga o que está salvo aqui. '
+                  'No iPhone/iPad, adicione o app à Tela de Início: o Safari pode apagar '
+                  'os dados de sites que ficam muitos dias sem uso.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ] else if (!Plataforma.ehAndroid) ...[
                 const Divider(),
                 const SizedBox(height: 10),
                 Text(

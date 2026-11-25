@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 import '../models/categoria.dart';
 import '../models/recorrencia.dart';
 import '../models/transacao.dart';
+// Web -> localStorage; Windows/Android -> arquivo (escolhido em tempo de compilação).
+import 'armazenamento_local_web.dart'
+    if (dart.library.io) 'armazenamento_local_io.dart';
 
 class DadosApp {
   final List<Categoria> categorias;
@@ -56,26 +56,16 @@ class DadosApp {
 }
 
 class StorageService {
-  static const String _fileName = 'dados_financeiro.json';
-
-  Future<File> _localFile() async {
-    final dir = await getApplicationSupportDirectory();
-    final pasta = Directory(path.join(dir.path, 'data'));
-    if (!await pasta.exists()) {
-      await pasta.create(recursive: true);
-    }
-    return File(path.join(pasta.path, _fileName));
-  }
+  final ArmazenamentoLocal _armazenamento = ArmazenamentoLocal();
 
   Future<DadosApp> carregar() async {
     try {
-      final file = await _localFile();
-      if (!await file.exists()) {
+      final conteudo = await _armazenamento.ler();
+      if (conteudo == null) {
         final dados = DadosApp.vazio();
         await salvar(dados);
         return dados;
       }
-      final conteudo = await file.readAsString();
       return DadosApp.fromJson(jsonDecode(conteudo) as Map<String, dynamic>);
     } catch (e, st) {
       print('Erro ao carregar dados: $e\n$st');
@@ -85,8 +75,7 @@ class StorageService {
 
   Future<void> salvar(DadosApp dados) async {
     try {
-      final file = await _localFile();
-      await file.writeAsString(jsonEncode(dados.toJson()));
+      await _armazenamento.escrever(jsonEncode(dados.toJson()));
     } catch (e, st) {
       print('Erro ao salvar dados: $e\n$st');
       rethrow;

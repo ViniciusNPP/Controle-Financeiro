@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:controle_financeiro/services/update_service.dart';
 import 'package:controle_financeiro/utils/dialog_fade.dart';
+import 'package:controle_financeiro/utils/plataforma.dart';
 import 'package:controle_financeiro/widgets/animacoes_base.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -51,7 +51,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     });
 
     try {
-      if (Platform.isAndroid) {
+      if (Plataforma.ehAndroid) {
         await UpdateService.baixarEInstalarAndroid(widget.info, _onProgresso);
       } else {
         await UpdateService.baixarEInstalarWindows(widget.info, _onProgresso);
