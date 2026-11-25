@@ -1,7 +1,6 @@
 name: Publicar versão web
 
 # Compila o Flutter para web e publica no GitHub Pages a cada push na branch main.
-# Antes do primeiro uso: no repositório vá em Settings > Pages > Source e escolha "GitHub Actions".
 on:
   push:
     branches: [main]
@@ -19,6 +18,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: controle_financeiro
     steps:
       - uses: actions/checkout@v4
 
@@ -26,11 +28,10 @@ jobs:
         with:
           channel: stable
           cache: true
+          cache-dependency-path: controle_financeiro/pubspec.lock
 
       - run: flutter pub get
 
-      # --base-href: o site fica em https://USUARIO.github.io/NOME-DO-REPOSITORIO/
-      # --no-web-resources-cdn: embute o CanvasKit no site (o app abre offline depois da 1ª visita)
       - run: >
           flutter build web --release
           --base-href "/${{ github.event.repository.name }}/"
@@ -38,7 +39,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: build/web
+          path: controle_financeiro/build/web
 
   deploy:
     needs: build
