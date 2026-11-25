@@ -1,6 +1,7 @@
 # Meu Financeiro
 
 Aplicativo para controlar finanças pessoais no Windows e Android. Ele permite registrar receitas e despesas, organizar categorias, visualizar histórico e analisar o comportamento financeiro com gráficos.
+Versão web do aplicativo [Controle Financeiro](https://viniciusnpp.github.io/Controle-Financeiro/) para Iphone, Mac e Linux. É recomendado que crie um atalho na tela inicial ou área de trabalho para fácil acesso do site e para que possa acessar sem internet.
 
 ## O que faz
 
